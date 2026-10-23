@@ -22,6 +22,8 @@ server/.env
 public/uploads/videos/*
 !public/uploads/videos/.gitkeep
 !public/uploads/videos/demo_sample.mp4
+public/uploads/avatars/*
+!public/uploads/avatars/.gitkeep
 .app.pid
 server.pid
 scratch/

@@ -14,6 +14,7 @@ if (fs.existsSync(envPath)) {
 
 const DATA_FILE = path.resolve(process.cwd(), 'data', 'submissions.json');
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'videos');
+const AVATAR_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'avatars');
 
 // Ensure data folder, upload folder and seed file exist
 function initStorage() {
@@ -23,6 +24,9 @@ function initStorage() {
   }
   if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(AVATAR_DIR)) {
+    fs.mkdirSync(AVATAR_DIR, { recursive: true });
   }
 
   if (!fs.existsSync(DATA_FILE)) {
@@ -133,6 +137,25 @@ async function getStoredApplications() {
 
 async function saveApplication(appData) {
   initStorage();
+
+  // Auto-convert any base64 avatar to persistent disk file
+  let finalAvatarUrl = appData.avatarUrl || '';
+  if (finalAvatarUrl.startsWith('data:image/')) {
+    try {
+      const matches = finalAvatarUrl.match(/^data:image\/([A-Za-z0-9-+]+);base64,(.+)$/);
+      if (matches && matches[2]) {
+        const rawExt = matches[1].toLowerCase().replace('jpeg', 'jpg');
+        const ext = rawExt.startsWith('.') ? rawExt : `.${rawExt}`;
+        const avatarFilename = `avatar_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`;
+        const avatarPath = path.join(AVATAR_DIR, avatarFilename);
+        fs.writeFileSync(avatarPath, Buffer.from(matches[2], 'base64'));
+        finalAvatarUrl = `/uploads/avatars/${avatarFilename}`;
+        appData.avatarUrl = finalAvatarUrl;
+      }
+    } catch (e) {
+      console.warn('Failed to extract base64 avatar', e);
+    }
+  }
 
   // Save to MySQL if available
   if (dbAvailable && dbPool) {
@@ -254,20 +277,27 @@ export function createApiMiddleware() {
           });
         };
 
-        // 1. File Upload endpoint (Local high-speed streaming storage)
+        // 1. File Upload endpoint (Local high-speed streaming storage for video & avatar)
         if (pathname === '/api/upload' && req.method === 'POST') {
           try {
             initStorage();
-            const bb = busboy({ headers: req.headers, limits: { fileSize: 500 * 1024 * 1024 } });
+            const uploadType = url.searchParams.get('type') || 'video';
+            const isAvatar = uploadType === 'avatar';
+            const targetDir = isAvatar ? AVATAR_DIR : UPLOAD_DIR;
+            const prefix = isAvatar ? 'avatar_' : 'video_';
+            const subDir = isAvatar ? 'avatars' : 'videos';
+            const maxLimit = isAvatar ? 15 * 1024 * 1024 : 500 * 1024 * 1024;
+
+            const bb = busboy({ headers: req.headers, limits: { fileSize: maxLimit } });
             let savedFilename = '';
             let originalFilename = '';
             let savePromise = null;
 
             bb.on('file', (name, fileStream, info) => {
-              originalFilename = info.filename || 'upload.mp4';
-              const ext = path.extname(originalFilename) || '.mp4';
-              savedFilename = `video_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`;
-              const saveTo = path.join(UPLOAD_DIR, savedFilename);
+              originalFilename = info.filename || (isAvatar ? 'avatar.jpg' : 'upload.mp4');
+              const ext = path.extname(originalFilename) || (isAvatar ? '.jpg' : '.mp4');
+              savedFilename = `${prefix}${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`;
+              const saveTo = path.join(targetDir, savedFilename);
               const writeStream = fs.createWriteStream(saveTo);
 
               savePromise = new Promise((resolve, reject) => {
@@ -281,7 +311,7 @@ export function createApiMiddleware() {
               try {
                 if (savePromise) {
                   await savePromise;
-                  const publicUrl = `/uploads/videos/${savedFilename}`;
+                  const publicUrl = `/uploads/${subDir}/${savedFilename}`;
                   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
                   res.end(JSON.stringify({
                     code: 0,

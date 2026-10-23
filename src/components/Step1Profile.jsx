@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 export default function Step1Profile({ formData, onChange, onNext }) {
   const fileInputRef = useRef(null);
   const [errors, setErrors] = useState({});
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
@@ -13,16 +14,35 @@ export default function Step1Profile({ formData, onChange, onNext }) {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert('图片大小不能超过 10MB');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('图片大小不能超过 15MB');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      onChange({ avatarUrl: event.target.result });
-    };
-    reader.readAsDataURL(file);
+    // 1. Instant local preview
+    const localPreview = URL.createObjectURL(file);
+    onChange({ avatarUrl: localPreview });
+    setIsUploadingAvatar(true);
+
+    // 2. Upload to persistent server storage
+    const uploadForm = new FormData();
+    uploadForm.append('file', file);
+
+    fetch('/api/upload?type=avatar', {
+      method: 'POST',
+      body: uploadForm
+    })
+      .then(res => res.json())
+      .then(resData => {
+        setIsUploadingAvatar(false);
+        if (resData.code === 0 && resData.url) {
+          onChange({ avatarUrl: resData.url });
+        }
+      })
+      .catch(err => {
+        setIsUploadingAvatar(false);
+        console.warn('Avatar server upload notice', err);
+      });
   };
 
   const removeAvatar = (e) => {
@@ -86,21 +106,31 @@ export default function Step1Profile({ formData, onChange, onNext }) {
             style={{ display: 'none' }} 
           />
           <div 
-            className="avatar-circle-box" 
-            onClick={() => fileInputRef.current?.click()}
+            className={`avatar-circle-box ${isUploadingAvatar ? 'uploading' : ''}`} 
+            onClick={() => !isUploadingAvatar && fileInputRef.current?.click()}
             title="点击上传个人头像"
           >
             {formData.avatarUrl ? (
               <div className="avatar-preview-wrap">
                 <img src={formData.avatarUrl} alt="头像预览" className="avatar-preview-img" />
-                <button 
-                  type="button" 
-                  className="avatar-remove-btn" 
-                  onClick={removeAvatar}
-                  title="删除头像"
-                >
-                  ✕
-                </button>
+                {isUploadingAvatar ? (
+                  <div className="avatar-loading-overlay">
+                    <div className="avatar-mini-spinner"></div>
+                  </div>
+                ) : (
+                  <button 
+                    type="button" 
+                    className="avatar-remove-btn" 
+                    onClick={removeAvatar}
+                    title="删除头像"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ) : isUploadingAvatar ? (
+              <div className="avatar-loading-overlay">
+                <div className="avatar-mini-spinner"></div>
               </div>
             ) : (
               <div className="avatar-placeholder">
