@@ -26,31 +26,7 @@ function initStorage() {
   }
 
   if (!fs.existsSync(DATA_FILE)) {
-    const initialData = [
-      {
-        id: 'KOS-202610-1001',
-        name: '张雅涵',
-        gender: '女',
-        department: '财富管理事业部',
-        position: '投资顾问经理',
-        jobNo: 'EMP0892',
-        mobile: '13800138000',
-        avatarUrl: '/images/kos_hero.jpg',
-        surveyCompleted: true,
-        surveyTime: '2026-10-22 14:32',
-        surveyScore: 92,
-        videoTitle: '3分钟带你读懂震荡市的资产配置底层逻辑',
-        videoCategory: '稳健理财与资产配置派',
-        videoIntro: '针对当前低利率环境与市场震荡痛点，面向大众白领投资者，以生动的生活场景类比股债平衡，传递长期定投与资产均衡配置的理性投资观。',
-        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-woman-talking-on-a-video-call-with-a-laptop-41484-large.mp4',
-        videoSize: '24.5 MB',
-        videoDuration: '02:18',
-        videoCover: '/images/kos_hero.jpg',
-        status: '初筛通过',
-        submittedAt: '2026-10-22 15:40:12'
-      }
-    ];
-    fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
+    fs.writeFileSync(DATA_FILE, '[]', 'utf-8');
   }
 }
 
@@ -129,21 +105,19 @@ async function getStoredApplications() {
   if (dbAvailable && dbPool) {
     try {
       const [rows] = await dbPool.query('SELECT * FROM htf_kos_applications ORDER BY createdAt DESC');
-      if (rows && rows.length > 0) {
-        return rows.map(r => {
-          let parsedAnswers = r.surveyAnswers;
-          if (typeof parsedAnswers === 'string') {
-            try {
-              parsedAnswers = JSON.parse(parsedAnswers);
-            } catch (e) {}
-          }
-          return {
-            ...r,
-            surveyCompleted: !!r.surveyCompleted,
-            surveyAnswers: parsedAnswers
-          };
-        });
-      }
+      return (rows || []).map(r => {
+        let parsedAnswers = r.surveyAnswers;
+        if (typeof parsedAnswers === 'string') {
+          try {
+            parsedAnswers = JSON.parse(parsedAnswers);
+          } catch (e) {}
+        }
+        return {
+          ...r,
+          surveyCompleted: !!r.surveyCompleted,
+          surveyAnswers: parsedAnswers
+        };
+      });
     } catch (e) {
       console.warn('[Database] Query failed, falling back to local file:', e.message);
     }
