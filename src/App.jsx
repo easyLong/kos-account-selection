@@ -37,7 +37,7 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(() => {
     try {
       const p = new URLSearchParams(window.location.search);
-      return p.get('admin') === '1' || window.location.hash === '#admin';
+      return p.get('htf') !== null || p.get('admin') === 'htf' || p.get('admin') === '1' || window.location.hash === '#htf' || window.location.hash === '#admin';
     } catch (e) {
       return false;
     }

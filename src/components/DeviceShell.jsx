@@ -30,9 +30,9 @@ export default function DeviceShell({
     checkScreen();
     window.addEventListener('resize', checkScreen);
 
-    // Auto open if ?admin=1 or #admin in URL
+    // Auto open if ?htf or ?admin=htf or #htf in URL
     const params = new URLSearchParams(window.location.search);
-    if (params.get('admin') === '1' || window.location.hash === '#admin') {
+    if (params.get('htf') !== null || params.get('admin') === 'htf' || params.get('admin') === '1' || window.location.hash === '#htf' || window.location.hash === '#admin') {
       handleOpenAdmin();
     }
 
@@ -72,7 +72,7 @@ export default function DeviceShell({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const judgeDirectUrl = mobileUrl.includes('?') ? `${mobileUrl}&admin=1` : `${mobileUrl}?admin=1`;
+  const judgeDirectUrl = mobileUrl.includes('?') ? `${mobileUrl}&htf=1` : `${mobileUrl}?htf=1`;
 
   const handleCopyAdminUrl = () => {
     navigator.clipboard.writeText(judgeDirectUrl);
@@ -216,7 +216,7 @@ export default function DeviceShell({
             <h4>💡 架构要点</h4>
             <ul>
               <li><strong>数据真实沉淀</strong>：所有报名与27题问卷原生保存在 `data/submissions.json`。</li>
-              <li><strong>评审权限解耦</strong>：支持 `?admin=1` 专用参数直接打开审核名单。</li>
+              <li><strong>评审权限解耦</strong>：支持 `?htf=1` 专属参数直接打开审核名单。</li>
               <li><strong>一键导出花名册</strong>：后台支持直接导出 UTF-8 BOM CSV / Excel 报表。</li>
             </ul>
           </div>

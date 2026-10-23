@@ -29,7 +29,7 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
           clearInterval(timer);
           setIsUploading(false);
           onChange({
-            videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-woman-talking-on-a-video-call-with-a-laptop-41484-large.mp4',
+            videoUrl: '/uploads/videos/demo_sample.mp4',
             videoName: 'KOS出镜自我介绍与试镜提案.mp4',
             videoSize: '24.8 MB',
             videoDuration: '02:15'

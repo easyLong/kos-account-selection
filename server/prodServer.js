@@ -38,20 +38,39 @@ const MIME_TYPES = {
   '.ttf': 'font/ttf'
 };
 
-function serveFile(filePath, res) {
+function serveFile(filePath, req, res) {
   const ext = path.extname(filePath).toLowerCase();
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
   const stat = fs.statSync(filePath);
+  const fileSize = stat.size;
+  const range = req.headers.range;
 
-  res.writeHead(200, {
-    'Content-Type': contentType,
-    'Content-Length': stat.size,
-    'Access-Control-Allow-Origin': '*',
-    'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable'
-  });
+  // Support video chunked/range streaming (required for Chrome/Safari/WeChat mobile seeking)
+  if (range && (ext === '.mp4' || ext === '.mov')) {
+    const parts = range.replace(/bytes=/, '').split('-');
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    const chunksize = (end - start) + 1;
+    const stream = fs.createReadStream(filePath, { start, end });
 
-  const stream = fs.createReadStream(filePath);
-  stream.pipe(res);
+    res.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunksize,
+      'Content-Type': contentType,
+      'Access-Control-Allow-Origin': '*'
+    });
+    stream.pipe(res);
+  } else {
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'Content-Length': fileSize,
+      'Accept-Ranges': 'bytes',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable'
+    });
+    fs.createReadStream(filePath).pipe(res);
+  }
 }
 
 const server = http.createServer((req, res) => {
@@ -68,7 +87,7 @@ const server = http.createServer((req, res) => {
     if (pathname.startsWith('/uploads/') || pathname.startsWith('/images/') || pathname === '/favicon.svg' || pathname === '/icons.svg') {
       const publicFilePath = path.join(PUBLIC_DIR, pathname);
       if (fs.existsSync(publicFilePath) && fs.statSync(publicFilePath).isFile()) {
-        serveFile(publicFilePath, res);
+        serveFile(publicFilePath, req, res);
         return;
       }
     }
@@ -77,14 +96,14 @@ const server = http.createServer((req, res) => {
     let distFilePath = path.join(DIST_DIR, pathname);
 
     if (fs.existsSync(distFilePath) && fs.statSync(distFilePath).isFile()) {
-      serveFile(distFilePath, res);
+      serveFile(distFilePath, req, res);
       return;
     }
 
     // SPA fallback: index.html
     const indexHtml = path.join(DIST_DIR, 'index.html');
     if (fs.existsSync(indexHtml)) {
-      serveFile(indexHtml, res);
+      serveFile(indexHtml, req, res);
     } else {
       res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(`

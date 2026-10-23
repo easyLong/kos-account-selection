@@ -358,12 +358,16 @@ export default function AdminDrawer({ isOpen, onClose }) {
                   </div>
 
                   {selectedCandidate.videoUrl ? (
-                    <video 
-                      src={selectedCandidate.videoUrl} 
-                      controls 
-                      className="admin-video-player"
-                      playsInline
-                    />
+                    <div className="video-player-container">
+                      <video 
+                        key={selectedCandidate.id + '_' + selectedCandidate.videoUrl}
+                        src={selectedCandidate.videoUrl} 
+                        controls 
+                        className="admin-video-player"
+                        playsInline
+                        preload="auto"
+                      />
+                    </div>
                   ) : (
                     <div className="no-video-tip">候选人未上传视频</div>
                   )}
