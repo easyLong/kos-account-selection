@@ -57,6 +57,30 @@ async function getOssClient() {
   return null;
 }
 
+// Upload local file to Alibaba Cloud OSS with automatic large file multipart support
+async function uploadToOss(objectKey, localFilePath) {
+  const oss = await getOssClient();
+  if (!oss) return null;
+  try {
+    const stats = fs.statSync(localFilePath);
+    if (stats.size > 20 * 1024 * 1024) {
+      // Large files (>20MB) use multipart upload for maximum network resilience
+      await oss.multipartUpload(objectKey, localFilePath, {
+        partSize: 5 * 1024 * 1024,
+        parallel: 4
+      });
+    } else {
+      await oss.put(objectKey, localFilePath);
+    }
+    const publicUrl = oss.generateObjectUrl(objectKey).replace(/^http:\/\//, 'https://');
+    console.log(`[OSS] File successfully uploaded to OSS: ${publicUrl}`);
+    return publicUrl;
+  } catch (err) {
+    console.warn(`[OSS] Upload failed for ${objectKey}, fallback to local file:`, err.message);
+    return null;
+  }
+}
+
 // Database connection state
 let dbPool = null;
 let dbAvailable = false;
@@ -173,6 +197,11 @@ async function saveApplication(appData) {
         const avatarPath = path.join(AVATAR_DIR, avatarFilename);
         fs.writeFileSync(avatarPath, Buffer.from(matches[2], 'base64'));
         finalAvatarUrl = `/uploads/avatars/${avatarFilename}`;
+        // Sync to OSS if configured
+        const ossUrl = await uploadToOss(`kos/avatars/${avatarFilename}`, avatarPath);
+        if (ossUrl) {
+          finalAvatarUrl = ossUrl;
+        }
         appData.avatarUrl = finalAvatarUrl;
       }
     } catch (e) {
@@ -315,12 +344,13 @@ export function createApiMiddleware() {
             let savedFilename = '';
             let originalFilename = '';
             let savePromise = null;
+            let saveTo = '';
 
             bb.on('file', (name, fileStream, info) => {
               originalFilename = info.filename || (isAvatar ? 'avatar.jpg' : 'upload.mp4');
               const ext = path.extname(originalFilename) || (isAvatar ? '.jpg' : '.mp4');
               savedFilename = `${prefix}${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`;
-              const saveTo = path.join(targetDir, savedFilename);
+              saveTo = path.join(targetDir, savedFilename);
               const writeStream = fs.createWriteStream(saveTo);
 
               savePromise = new Promise((resolve, reject) => {
@@ -332,23 +362,14 @@ export function createApiMiddleware() {
 
             bb.on('close', async () => {
               try {
-                if (savePromise) {
+                if (savePromise && saveTo) {
                   await savePromise;
                   let publicUrl = `/uploads/${subDir}/${savedFilename}`;
 
                   // If OSS is configured, automatically upload to Alibaba Cloud OSS
-                  const oss = await getOssClient();
-                  if (oss) {
-                    try {
-                      const ossObjectKey = `kos/${subDir}/${savedFilename}`;
-                      const ossRes = await oss.put(ossObjectKey, saveTo);
-                      if (ossRes && ossRes.url) {
-                        publicUrl = ossRes.url.replace(/^http:\/\//, 'https://');
-                        console.log(`[OSS] File successfully uploaded to OSS: ${publicUrl}`);
-                      }
-                    } catch (ossErr) {
-                      console.warn('[OSS] Upload to OSS failed, using local file fallback:', ossErr.message);
-                    }
+                  const ossUrl = await uploadToOss(`kos/${subDir}/${savedFilename}`, saveTo);
+                  if (ossUrl) {
+                    publicUrl = ossUrl;
                   }
 
                   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });

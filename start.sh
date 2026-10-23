@@ -26,9 +26,9 @@ if ! command -v node >/dev/null 2>&1; then
     exit 1
 fi
 
-# 2. 检查依赖包
-if [ ! -d "$PROJECT_DIR/node_modules" ]; then
-    echo "📦 首次部署，正在安装项目依赖..."
+# 2. 检查依赖包 (确保所有必需依赖如 ali-oss 均已就绪)
+if [ ! -d "$PROJECT_DIR/node_modules" ] || [ ! -d "$PROJECT_DIR/node_modules/ali-oss" ]; then
+    echo "📦 正在检测/更新项目依赖 (安装 ali-oss 及相关包)..."
     npm install
     if [ $? -ne 0 ]; then
         echo "❌ 依赖安装失败，请检查网络或配置"
