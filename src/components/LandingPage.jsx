@@ -55,18 +55,6 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
             <span>⚡ 全程仅需 3 步 · 约 3 分钟即可完成</span>
           </div>
 
-          {/* Discreet text link for internal judges / HR */}
-          {onOpenAdmin && (
-            <div className="landing-admin-entry">
-              <button 
-                type="button" 
-                className="btn-subtle-admin"
-                onClick={onOpenAdmin}
-              >
-                内部评审通道 ›
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>

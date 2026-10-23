@@ -16,7 +16,6 @@ export default function DeviceShell({
   const [isMobileScreen, setIsMobileScreen] = useState(false);
   const [viewMode, setViewMode] = useState('phone'); // 'phone' | 'fullscreen'
   const [copied, setCopied] = useState(false);
-  const [copiedAdmin, setCopiedAdmin] = useState(false);
 
   const isAdminOpen = propIsAdminOpen !== undefined ? propIsAdminOpen : internalAdminOpen;
   const handleOpenAdmin = onOpenAdmin || (() => setInternalAdminOpen(true));
@@ -70,14 +69,6 @@ export default function DeviceShell({
     navigator.clipboard.writeText(mobileUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const judgeDirectUrl = mobileUrl.includes('?') ? `${mobileUrl}&htf=1` : `${mobileUrl}?htf=1`;
-
-  const handleCopyAdminUrl = () => {
-    navigator.clipboard.writeText(judgeDirectUrl);
-    setCopiedAdmin(true);
-    setTimeout(() => setCopiedAdmin(false), 2000);
   };
 
   // If already on mobile screen or user chose fullscreen mode
@@ -143,13 +134,13 @@ export default function DeviceShell({
         </div>
       </div>
 
-      {/* Right Column: Dev / QR / Architecture Sidebar */}
+      {/* Right Column: QR Code & Link Only */}
       <div className="desktop-sidebar-column">
         <div className="sidebar-card">
           <div className="sidebar-header">
-            <span className="sidebar-tag">微信生态 H5 联调服务</span>
-            <h3 className="sidebar-title">手机真机扫码体验</h3>
-            <p className="sidebar-sub">已绑定局域网 IP，同一 Wi-Fi 下手机微信可直接扫码打开</p>
+            <span className="sidebar-tag">KOS 账号海选</span>
+            <h3 className="sidebar-title">手机微信扫码直达</h3>
+            <p className="sidebar-sub">手机微信或浏览器扫码，直接进入移动端报名</p>
           </div>
 
           {/* QR Code Container */}
@@ -170,55 +161,6 @@ export default function DeviceShell({
                 {copied ? '已复制 ✓' : '复制报名链接'}
               </button>
             </div>
-          </div>
-
-          {/* Reviewer / Judge Direct Link Box */}
-          <div className="admin-link-card-box">
-            <div className="admin-link-header">
-              <span className="admin-icon-tag">⚖️</span>
-              <span className="admin-box-title">评委评审直达专属链接</span>
-            </div>
-            <p className="admin-box-desc">发送此链接给评委或 HR，手机或电脑打开直接进入审核后台：</p>
-            <div className="admin-url-row">
-              <input 
-                type="text" 
-                readOnly 
-                value={judgeDirectUrl} 
-                className="admin-url-input" 
-              />
-              <button className="btn-copy-admin" onClick={handleCopyAdminUrl}>
-                {copiedAdmin ? '已复制 ✓' : '复制评审链接'}
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="sidebar-action-list">
-            <button 
-              className="btn-sidebar-primary"
-              onClick={handleOpenAdmin}
-            >
-              <span className="icon">📋</span>
-              <span>在当前电脑打开评审审核后台</span>
-            </button>
-
-            <button 
-              className="btn-sidebar-secondary"
-              onClick={() => setViewMode('fullscreen')}
-            >
-              <span className="icon">🖥️</span>
-              <span>切换为全屏视图</span>
-            </button>
-          </div>
-
-          {/* Architecture Highlights */}
-          <div className="sidebar-arch-summary">
-            <h4>💡 架构要点</h4>
-            <ul>
-              <li><strong>数据真实沉淀</strong>：所有报名与27题问卷原生保存在 `data/submissions.json`。</li>
-              <li><strong>评审权限解耦</strong>：支持 `?htf=1` 专属参数直接打开审核名单。</li>
-              <li><strong>一键导出花名册</strong>：后台支持直接导出 UTF-8 BOM CSV / Excel 报表。</li>
-            </ul>
           </div>
         </div>
       </div>

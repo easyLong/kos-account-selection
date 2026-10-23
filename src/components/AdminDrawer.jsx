@@ -167,14 +167,6 @@ export default function AdminDrawer({ isOpen, onClose }) {
             <h3 className="admin-title">KOS 账号海选 · 评审审核后台</h3>
           </div>
           <div className="admin-header-actions">
-            <button 
-              type="button" 
-              className="btn-export-csv" 
-              onClick={handleExportCSV}
-              title="导出当前全部候选人 Excel / CSV 数据"
-            >
-              📥 导出花名册 (Excel)
-            </button>
             <button className="modal-close-btn" onClick={onClose} title="关闭">✕</button>
           </div>
         </div>
