@@ -837,46 +837,6 @@
   margin-top: 5px;
 }
 
-.q-presets-box {
-  margin-top: 12px;
-  background: #FAF6ED;
-  border: 1px dashed #DFCFAE;
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-
-.q-presets-title {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #8C7238;
-  margin-bottom: 6px;
-}
-
-.q-presets-chips {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.q-preset-chip {
-  text-align: left;
-  font-size: 12px;
-  line-height: 1.45;
-  padding: 6px 10px;
-  background: #FFFFFF;
-  border: 1px solid #DFD5C2;
-  border-radius: 8px;
-  color: #5C4D32;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.q-preset-chip:hover {
-  background: #FFFDF8;
-  border-color: #C59A3F;
-  color: #8A5B0B;
-}
 
 /* Bottom Action Bar */
 .native-survey-bottom-bar {
@@ -997,66 +957,18 @@
   margin-bottom: 0;
 }
 
-.btn-use-sample-compact {
+.upload-action-pill {
   font-size: 12px;
   font-weight: 600;
   color: #946313;
   background: #FAF1DD;
   border: 1px solid rgba(197, 154, 63, 0.35);
-  padding: 6px 12px;
+  padding: 5px 12px;
   border-radius: var(--radius-full);
-  cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s ease;
+  pointer-events: none;
 }
 
-.btn-use-sample-compact:hover {
-  background: #F3E5C5;
-  border-color: #C59A3F;
-}
-
-/* 灵感选题快速填入胶囊 */
-.topic-presets-section {
-  margin: 12px 0 14px;
-  background: rgba(197, 154, 63, 0.07);
-  border: 1px solid rgba(197, 154, 63, 0.22);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-}
-
-.topic-presets-label {
-  font-size: 12px;
-  color: #8C7238;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.topic-presets-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.topic-preset-chip {
-  font-size: 12px;
-  color: #4A4032;
-  background: #FFFFFF;
-  border: 1px solid #DFD7C7;
-  padding: 5px 11px;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  font-weight: 500;
-}
-
-.topic-preset-chip:hover {
-  background: #FFF9EE;
-  border-color: #C59A3F;
-  color: #8A5B0B;
-  box-shadow: 0 2px 6px rgba(197, 154, 63, 0.15);
-}
 
 /* Step 2 Survey Completed Status */
 .survey-completed-status {

@@ -255,30 +255,6 @@ export default function SurveyModal({ isOpen, onClose, mobile, onSurveyComplete,
               );
             })}
           </div>
-
-          {/* Quick Demo Pre-fill Toolbar */}
-          <div className="evaluator-sample-strip">
-            <div className="strip-title">
-              <span className="sparkle">✦</span>
-              <span>评测演示辅助填充：</span>
-            </div>
-            <div className="strip-buttons">
-              <button 
-                type="button" 
-                className="btn-sample-fill s-fill"
-                onClick={() => handleQuickFill('S')}
-              >
-                填入 S级·标杆IP 答卷（138分）
-              </button>
-              <button 
-                type="button" 
-                className="btn-sample-fill a-fill"
-                onClick={() => handleQuickFill('A')}
-              >
-                填入 A级·主力IP 答卷（98分）
-              </button>
-            </div>
-          </div>
         </main>
 
         {/* Bottom Floating Navigation Toolbar */}

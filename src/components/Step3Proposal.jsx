@@ -17,30 +17,6 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
     '其它创新创意派'
   ];
 
-  // Sample video for fast demonstration
-  const handleUseDemoVideo = (e) => {
-    e.stopPropagation();
-    setIsUploading(true);
-    setUploadProgress(10);
-
-    const timer = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(timer);
-          setIsUploading(false);
-          onChange({
-            videoUrl: '/uploads/videos/demo_sample.mp4',
-            videoName: 'KOS出镜自我介绍与试镜提案.mp4',
-            videoSize: '24.8 MB',
-            videoDuration: '02:15'
-          });
-          return 100;
-        }
-        return prev + 18;
-      });
-    }, 150);
-  };
-
   const handleVideoFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -121,44 +97,11 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Topic presets for instant 1-click inspiration
-  const TOPIC_PRESETS = [
-    {
-      title: '3分钟搞懂ETF定投心法',
-      category: '基金定投与实战派',
-      intro: '针对年轻职场人，拆解指数ETF定投选基、止盈与微笑曲线心法，用大白话降低投资门槛。'
-    },
-    {
-      title: '低利率时代：资产稳健配置三笔钱',
-      category: '稳健理财与资产配置派',
-      intro: '结合当下低利率市场环境，拆解活钱、稳钱与长钱的比例分配，传递理性长期投资理念。'
-    },
-    {
-      title: '理财经理不会告诉你的避坑常识',
-      category: '投教科普与避坑指南派',
-      intro: '以真实投资痛点切入，深度拆解收益率与波动风险陷阱，打造有温度、接地气的专业UP主形象。'
-    }
-  ];
-
-  const applyPreset = (preset) => {
-    onChange({
-      videoTitle: preset.title,
-      videoCategory: preset.category,
-      videoIntro: preset.intro
-    });
-    setErrors((prev) => ({
-      ...prev,
-      videoTitle: null,
-      videoCategory: null,
-      videoIntro: null
-    }));
-  };
-
   const validate = () => {
     const newErrors = {};
 
     if (!formData.videoUrl) {
-      newErrors.video = '请上传自我出镜短视频或使用演示样片';
+      newErrors.video = '请上传自我出镜短视频';
     }
 
     if (!formData.videoTitle?.trim()) {
@@ -254,40 +197,14 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
 
               <div className="upload-text-compact">
                 <h4 className="upload-main-title">上传出镜短视频<span className="required-star">*</span></h4>
-                <p className="upload-sub-title">MP4/MOV · 1-3分钟 · 手机可直接拍</p>
+                <p className="upload-sub-title">MP4/MOV · 1-3分钟 · 手机可直接拍摄或相册选择</p>
               </div>
 
-              <button 
-                type="button" 
-                className="btn-use-sample-compact" 
-                onClick={handleUseDemoVideo}
-                title="一键填入演示视频"
-              >
-                ⚡ 示例样片
-              </button>
+              <span className="upload-action-pill">点击上传 ›</span>
             </div>
           )}
         </div>
         {errors.video && <div className="form-error-msg">{errors.video}</div>}
-
-        {/* 灵感选题快速填入胶囊 */}
-        <div className="topic-presets-section">
-          <div className="topic-presets-label">
-            <span>💡 热门选题推荐（点击一键自动填入）：</span>
-          </div>
-          <div className="topic-presets-chips">
-            {TOPIC_PRESETS.map((preset, idx) => (
-              <button
-                key={idx}
-                type="button"
-                className="topic-preset-chip"
-                onClick={() => applyPreset(preset)}
-              >
-                + {preset.title}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* 提案标题 * */}
         <div className="form-group">
@@ -298,7 +215,7 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
             id="input-video-title"
             type="text" 
             className={`form-input ${errors.videoTitle ? 'error' : ''}`}
-            placeholder="给你的选题起一个名字（或点击上方推荐）"
+            placeholder="请为你的试镜选题起一个清晰、有吸引力的名字"
             value={formData.videoTitle || ''}
             onChange={(e) => {
               onChange({ videoTitle: e.target.value });

@@ -20,18 +20,6 @@ SURVEY_MODULES.forEach((m, mIdx) => {
   });
 });
 
-const Q26_PRESETS = [
-  '古典音乐10年，擅长用复调对位法比喻多元资产配置与股债再平衡',
-  '资深马拉松跑者，擅长将耐力运动的长跑自律与基金定投微笑曲线相结合',
-  '国家二级心理咨询师，深耕行为金融学，善于剖析投资者追涨杀跌的人性弱点'
-];
-
-const Q27_PRESETS = [
-  '打造“温和理性闺蜜型”理财管家，专注教年轻职场人建立第一份科学底仓',
-  '打造“一针见血的实战派投顾老兵”，坚决不讲晦涩黑话，专注大势拆解与风险排雷',
-  '打造“硬核数据派理财侦探”，擅长用可视化图表深度拆解基金经理真实持仓风格'
-];
-
 export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState(() => formData.surveyAnswers || {});
@@ -80,12 +68,6 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
     onChange({ surveyAnswers: nextAnswers });
   };
 
-  const handleApplyTextPreset = (preset) => {
-    const nextAnswers = { ...answers, [currentQ.id]: preset };
-    setAnswers(nextAnswers);
-    onChange({ surveyAnswers: nextAnswers });
-  };
-
   const handlePrevQuestion = () => {
     if (currentIdx > 0) {
       setAnimDirection('backward');
@@ -100,28 +82,6 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
       setAnimDirection('forward');
       setCurrentIdx(prev => prev + 1);
     }
-  };
-
-  // 1-Click Fast Pre-fill for reviewers / testers
-  const handleQuickFillAll = () => {
-    const sample = {};
-    for (let i = 1; i <= 25; i++) {
-      sample[i] = i % 4 === 0 ? 4 : 5;
-    }
-    sample[26] = Q26_PRESETS[0];
-    sample[27] = Q27_PRESETS[0];
-    setAnswers(sample);
-    onChange({
-      surveyAnswers: sample,
-      surveyCompleted: true,
-      surveyScore: 128,
-      surveyScaleScore: 114,
-      surveySubjectiveScore: 14,
-      surveyRating: 'S级·标杆IP',
-      surveyTime: new Date().toLocaleString('zh-CN', { hour12: false })
-    });
-    // Jump to review summary or last question
-    setCurrentIdx(totalCount - 1);
   };
 
   // Complete survey and advance to Step 3
@@ -156,14 +116,6 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
         </div>
 
         <div className="survey-strip-right">
-          <button 
-            type="button" 
-            className="btn-quick-autofill"
-            onClick={handleQuickFillAll}
-            title="一键预填演示问卷"
-          >
-            ⚡ 演示速填
-          </button>
           <span className="survey-step-num">
             <strong>{currentIdx + 1}</strong> / {totalCount} 题
           </span>
@@ -231,26 +183,8 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
               onChange={(e) => handleTextChange(e.target.value)}
             />
 
-            <div className="text-word-count">
-              <span>建议展开 15-100 字</span>
+            <div className="text-word-count" style={{ justifyContent: 'flex-end' }}>
               <span>{(answers[currentQ.id] || '').length} 字</span>
-            </div>
-
-            {/* Quick Inspiration Preset Chips */}
-            <div className="q-presets-box">
-              <span className="q-presets-title">💡 选题灵感推荐（点击填入）：</span>
-              <div className="q-presets-chips">
-                {(currentQ.id === 26 ? Q26_PRESETS : Q27_PRESETS).map((preset, pIdx) => (
-                  <button
-                    key={pIdx}
-                    type="button"
-                    className="q-preset-chip"
-                    onClick={() => handleApplyTextPreset(preset)}
-                  >
-                    + {preset}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         )}

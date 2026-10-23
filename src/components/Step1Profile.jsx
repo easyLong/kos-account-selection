@@ -73,20 +73,6 @@ export default function Step1Profile({ formData, onChange, onNext }) {
     }
   };
 
-  const fillSampleData = (e) => {
-    e.preventDefault();
-    onChange({
-      name: '陈若琳',
-      gender: '女',
-      department: '数字金融部',
-      position: '投教内容策划',
-      jobNo: 'HTF-9082',
-      mobile: '13812345678',
-      avatarUrl: formData.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'
-    });
-    setErrors({});
-  };
-
   return (
     <div className="step-content-card animate-fade-in">
       <form onSubmit={handleSubmit} noValidate>
@@ -126,14 +112,6 @@ export default function Step1Profile({ formData, onChange, onNext }) {
           <div className="avatar-text-desc">
             <div className="avatar-title-row">
               <h4 className="avatar-title">上传头像 <span className="optional-tag">（选填）</span></h4>
-              <button 
-                type="button" 
-                className="btn-quick-fill-hint" 
-                onClick={fillSampleData}
-                title="一键填入演示测试信息"
-              >
-                ⚡ 示例填入
-              </button>
             </div>
             <p className="avatar-hint">建议清晰本人正脸照，未来将作为 UP 主官方头像</p>
           </div>
