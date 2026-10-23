@@ -1205,87 +1205,176 @@
   color: #A39D92;
 }
 
-/* Timeline */
+/* Redesigned Evaluation Timeline Stepper - 100% Aligned */
 .timeline-card {
   width: 100%;
   background: #FFFFFF;
-  border: 1px solid #EAE3D5;
+  border: 1px solid rgba(197, 154, 63, 0.28);
   border-radius: var(--radius-md);
-  padding: 18px 14px;
+  padding: 18px 16px;
   margin-bottom: 18px;
+  box-shadow: 0 4px 18px rgba(165, 116, 30, 0.05);
   text-align: left;
 }
 
-.timeline-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-text-title);
-  margin-bottom: 16px;
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
 }
 
-.timeline-flow {
+.timeline-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--color-text-title);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.timeline-title .sparkle-gold {
+  color: #B58226;
+  font-size: 13px;
+}
+
+.timeline-status-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8C5E13;
+  background: #FAF2DF;
+  border: 1px solid rgba(197, 154, 63, 0.35);
+  padding: 2.5px 8px;
+  border-radius: var(--radius-full);
+}
+
+.timeline-stepper-wrap {
+  width: 100%;
+}
+
+.stepper-nodes-track {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 0 20px;
+  margin-bottom: 10px;
 }
 
-.timeline-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 6px;
-  width: 58px;
-}
-
-.timeline-flow-3steps .timeline-step {
-  width: 86px;
-}
-
-.tl-dot {
-  width: 24px;
-  height: 24px;
+.stepper-dot {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
   border-radius: 50%;
-  background: #EAE5D9;
-  color: #7A7160;
-  font-size: 12px;
-  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  z-index: 2;
 }
 
-.timeline-step.passed .tl-dot {
-  background: #9E6F1A;
+.stepper-dot.passed {
+  background: linear-gradient(135deg, #A87823 0%, #8C5E13 100%);
   color: #FFFFFF;
+  box-shadow: 0 3px 8px rgba(140, 94, 19, 0.3);
 }
 
-.timeline-step.current .tl-dot {
-  background: #D4A33B;
-  color: #1A1305;
-  box-shadow: 0 0 10px rgba(212, 163, 59, 0.5);
+.stepper-dot.current {
+  background: #FFFDF8;
+  color: #8C5E13;
+  border: 2px solid #C59A3F;
+  box-shadow: 0 0 0 3px rgba(197, 154, 63, 0.2), 0 3px 8px rgba(140, 94, 19, 0.15);
+  animation: pulseDot 2s infinite ease-in-out;
 }
 
-.tl-name {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #3D372E;
+.stepper-dot.upcoming {
+  background: #F4EFE6;
+  color: #A39B8B;
+  border: 1.5px solid #E5DECF;
 }
 
-.tl-time {
-  font-size: 10px;
-  color: #9C9485;
-}
-
-.timeline-line {
+.stepper-line {
   flex: 1;
-  height: 2px;
-  background: #E8E2D4;
-  margin-top: -18px;
+  height: 3px;
+  background: #EAE3D5;
+  border-radius: 3px;
+  margin: 0 8px;
 }
 
-.timeline-line.active {
-  background: #C59A3F;
+.stepper-line.passed {
+  background: linear-gradient(90deg, #9E6F1A 0%, #C59A3F 100%);
+}
+
+.stepper-text-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.25fr;
+  gap: 4px;
+}
+
+.stepper-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stepper-col:nth-child(1) {
+  align-items: flex-start;
+  text-align: left;
+  padding-left: 4px;
+}
+
+.stepper-col:nth-child(2) {
+  align-items: center;
+  text-align: center;
+}
+
+.stepper-col:nth-child(3) {
+  align-items: flex-end;
+  text-align: right;
+  padding-right: 2px;
+}
+
+.stepper-col .step-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #383228;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.stepper-col.current .step-title {
+  color: #8C5E13;
+  font-weight: 700;
+}
+
+.stepper-col.upcoming .step-title {
+  color: #8C8474;
+}
+
+.step-tag-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1.5px 7px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.step-tag-pill.passed {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid rgba(46, 125, 50, 0.25);
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(197, 154, 63, 0.2), 0 3px 8px rgba(140, 94, 19, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(197, 154, 63, 0.35), 0 4px 12px rgba(140, 94, 19, 0.25);
+  }
 }
 
 /* Summary Snapshot Card */

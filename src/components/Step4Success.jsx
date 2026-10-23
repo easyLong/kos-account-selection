@@ -47,31 +47,45 @@ export default function Step4Success({ submission, onRestart }) {
         <div className="reg-time">提交时间：{submission.submittedAt || new Date().toLocaleString()}</div>
       </div>
 
-      {/* Evaluation Process Timeline - 3 Steps ending directly with Company UP Host */}
+      {/* Evaluation Process Timeline - Clean, Perfectly Aligned & Modern */}
       <div className="timeline-card">
-        <h4 className="timeline-title">海选评审流程</h4>
-        <div className="timeline-flow timeline-flow-3steps">
-          <div className="timeline-step passed">
-            <div className="tl-dot">✓</div>
-            <div className="tl-info">
-              <span className="tl-name">提交报名</span>
-              <span className="tl-time">已完成</span>
+        <div className="timeline-header">
+          <h4 className="timeline-title">
+            <span className="sparkle-gold">✦</span>
+            <span>海选评审流程</span>
+          </h4>
+          <span className="timeline-status-hint">已进入初筛池</span>
+        </div>
+
+        <div className="timeline-stepper-wrap">
+          {/* Top Nodes & Connecting Lines Track */}
+          <div className="stepper-nodes-track">
+            <div className="stepper-dot passed" title="已完成">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div className="stepper-line passed"></div>
+            <div className="stepper-dot current" title="评审团初筛进行中">
+              <span>2</span>
+            </div>
+            <div className="stepper-line"></div>
+            <div className="stepper-dot upcoming" title="成为公司级UP主">
+              <span>3</span>
             </div>
           </div>
-          <div className="timeline-line active"></div>
-          <div className="timeline-step current">
-            <div className="tl-dot">2</div>
-            <div className="tl-info">
-              <span className="tl-name">评审团初筛</span>
-              <span className="tl-time">进行中 (5个工作日)</span>
+
+          {/* Bottom Step Titles Grid */}
+          <div className="stepper-text-grid">
+            <div className="stepper-col passed">
+              <span className="step-title">提交报名</span>
+              <span className="step-tag-pill passed">已完成</span>
             </div>
-          </div>
-          <div className="timeline-line"></div>
-          <div className="timeline-step upcoming">
-            <div className="tl-dot">3</div>
-            <div className="tl-info">
-              <span className="tl-name">成为公司级UP主</span>
-              <span className="tl-time">官方签约 · 流量扶持</span>
+            <div className="stepper-col current">
+              <span className="step-title">评审团初筛</span>
+            </div>
+            <div className="stepper-col upcoming">
+              <span className="step-title">成为公司级UP主</span>
             </div>
           </div>
         </div>
