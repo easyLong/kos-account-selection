@@ -114,6 +114,9 @@ const server = http.createServer((req, res) => {
   });
 });
 
+server.timeout = 15 * 60 * 1000;
+server.requestTimeout = 15 * 60 * 1000;
+
 server.listen(PORT, HOST, () => {
   console.log(`====================================================`);
   console.log(`  🚀 KOS 生产环境服务已启动`);

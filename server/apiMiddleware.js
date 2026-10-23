@@ -66,8 +66,11 @@ async function uploadToOss(objectKey, localFilePath) {
     if (stats.size > 20 * 1024 * 1024) {
       // Large files (>20MB) use multipart upload for maximum network resilience
       await oss.multipartUpload(objectKey, localFilePath, {
-        partSize: 5 * 1024 * 1024,
-        parallel: 4
+        partSize: 10 * 1024 * 1024,
+        parallel: 4,
+        progress: (p) => {
+          console.log(`[OSS] Uploading ${path.basename(objectKey)}: ${(p * 100).toFixed(1)}%`);
+        }
       });
     } else {
       await oss.put(objectKey, localFilePath);
@@ -331,6 +334,8 @@ export function createApiMiddleware() {
 
         // 1. File Upload endpoint (Local high-speed streaming storage for video & avatar)
         if (pathname === '/api/upload' && req.method === 'POST') {
+          req.setTimeout(15 * 60 * 1000);
+          res.setTimeout(15 * 60 * 1000);
           try {
             initStorage();
             const uploadType = url.searchParams.get('type') || 'video';
@@ -338,7 +343,7 @@ export function createApiMiddleware() {
             const targetDir = isAvatar ? AVATAR_DIR : UPLOAD_DIR;
             const prefix = isAvatar ? 'avatar_' : 'video_';
             const subDir = isAvatar ? 'avatars' : 'videos';
-            const maxLimit = isAvatar ? 15 * 1024 * 1024 : 500 * 1024 * 1024;
+            const maxLimit = isAvatar ? 15 * 1024 * 1024 : 550 * 1024 * 1024;
 
             const bb = busboy({ headers: req.headers, limits: { fileSize: maxLimit } });
             let savedFilename = '';
