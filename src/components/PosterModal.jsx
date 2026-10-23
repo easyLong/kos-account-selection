@@ -28,11 +28,17 @@ export default function PosterModal({ isOpen, onClose, submission }) {
 
             <div className="poster-creator-profile">
               <div className="poster-avatar-ring">
-                <img 
-                  src={submission.avatarUrl || '/images/kos_hero.jpg'} 
-                  alt={submission.name} 
-                  className="poster-avatar-img"
-                />
+                {submission.avatarUrl ? (
+                  <img 
+                    src={submission.avatarUrl} 
+                    alt={submission.name} 
+                    className="poster-avatar-img"
+                  />
+                ) : (
+                  <div className="poster-avatar-monogram">
+                    {submission.name ? submission.name.slice(0, 1) : 'UP'}
+                  </div>
+                )}
               </div>
               <h3 className="poster-creator-name">{submission.name}</h3>
               <p className="poster-creator-dept">

@@ -15,6 +15,7 @@ PORT=5173
 mkdir -p "$LOG_DIR"
 mkdir -p "$PROJECT_DIR/public/uploads/videos"
 mkdir -p "$PROJECT_DIR/public/uploads/avatars"
+mkdir -p "$PROJECT_DIR/public/uploads/graphics"
 
 echo "===================================================="
 echo "  正在准备启动 KOS 账号海选服务..."

@@ -53,11 +53,11 @@ export default function AdminDrawer({ isOpen, onClose }) {
     if (searchKeyword.trim()) {
       const kw = searchKeyword.trim().toLowerCase();
       const matchName = item.name?.toLowerCase().includes(kw);
-      const matchJobNo = item.jobNo?.toLowerCase().includes(kw);
       const matchDept = item.department?.toLowerCase().includes(kw);
-      const matchPhone = item.mobile?.includes(kw);
+      const matchPos = item.position?.toLowerCase().includes(kw);
       const matchTitle = item.videoTitle?.toLowerCase().includes(kw);
-      if (!matchName && !matchJobNo && !matchDept && !matchPhone && !matchTitle) {
+      const matchId = item.id?.toLowerCase().includes(kw);
+      if (!matchName && !matchDept && !matchPos && !matchTitle && !matchId) {
         return false;
       }
     }
@@ -107,18 +107,17 @@ export default function AdminDrawer({ isOpen, onClose }) {
       '所属部门',
       '当前岗位',
       '申报账号/方向',
-      '员工工号',
-      '通知手机号',
+      '作品形式',
+      '作品标题',
+      '选题派别',
       '问卷总分',
       '量表得分',
       '主观得分',
       'ABS推荐评级',
       'Q27账号人设定位',
       'Q26深耕爱好专长',
-      '选题派别',
-      '提案视频标题',
-      '提案介绍构思',
-      '试镜视频URL',
+      '作品介绍构思',
+      '作品链接/文件URL',
       '评审初筛状态',
       '报名提交时间'
     ];
@@ -130,18 +129,17 @@ export default function AdminDrawer({ isOpen, onClose }) {
       c.department || '',
       c.position || '',
       `"${(c.accountName || c.videoCategory || '').replace(/"/g, '""')}"`,
-      c.jobNo || '',
-      c.mobile || '',
+      c.workType === 'graphic' ? '图文作品' : '视频作品',
+      `"${(c.videoTitle || '').replace(/"/g, '""')}"`,
+      c.videoCategory || '',
       c.surveyScore || '',
       c.surveyScaleScore || '',
       c.surveySubjectiveScore || '',
       c.surveyRating || '',
       `"${(c.accountPersona || c.surveyAnswers?.['27'] || '').replace(/"/g, '""')}"`,
       `"${(c.specialtyTalent || c.surveyAnswers?.['26'] || '').replace(/"/g, '""')}"`,
-      c.videoCategory || '',
-      `"${(c.videoTitle || '').replace(/"/g, '""')}"`,
       `"${(c.videoIntro || '').replace(/"/g, '""')}"`,
-      c.videoUrl || '',
+      c.videoUrl || (c.graphicImages?.[0]?.url || ''),
       c.status || '待初筛',
       c.submittedAt || ''
     ]);
@@ -254,11 +252,17 @@ export default function AdminDrawer({ isOpen, onClose }) {
                   onClick={() => setSelectedCandidate(cand)}
                 >
                   <div className="c-card-top">
-                    <img 
-                      src={cand.avatarUrl || '/images/kos_hero.jpg'} 
-                      alt={cand.name} 
-                      className="c-avatar-mini"
-                    />
+                    {cand.avatarUrl ? (
+                      <img 
+                        src={cand.avatarUrl} 
+                        alt={cand.name} 
+                        className="c-avatar-mini"
+                      />
+                    ) : (
+                      <div className="c-avatar-monogram">
+                        {cand.name ? cand.name.slice(0, 1) : 'UP'}
+                      </div>
+                    )}
                     <div className="c-info">
                       <div className="c-name-row">
                         <span className="c-name">{cand.name}</span>
@@ -279,7 +283,9 @@ export default function AdminDrawer({ isOpen, onClose }) {
                   </div>
 
                   <div className="c-card-bottom">
-                    <span className="c-jobno">工号：{cand.jobNo}</span>
+                    <span className="c-work-badge">
+                      {cand.workType === 'graphic' ? '📝 图文作品' : '🎥 视频作品'}
+                    </span>
                     <span className="c-date">{cand.submittedAt || cand.created_at || '刚刚'}</span>
                   </div>
                 </div>
@@ -287,18 +293,24 @@ export default function AdminDrawer({ isOpen, onClose }) {
             )}
           </div>
 
-          {/* Right Column: Candidate Detail & Video Review */}
+          {/* Right Column: Candidate Detail & Video/Graphic Review */}
           <div className="candidate-detail-col">
             {selectedCandidate ? (
               <div className="detail-view-card">
                 {/* Header Profile Bar & Quick Status Actions */}
                 <div className="detail-header">
                   <div className="detail-profile-row">
-                    <img 
-                      src={selectedCandidate.avatarUrl || '/images/kos_hero.jpg'} 
-                      alt={selectedCandidate.name} 
-                      className="detail-avatar" 
-                    />
+                    {selectedCandidate.avatarUrl ? (
+                      <img 
+                        src={selectedCandidate.avatarUrl} 
+                        alt={selectedCandidate.name} 
+                        className="detail-avatar" 
+                      />
+                    ) : (
+                      <div className="detail-avatar-monogram">
+                        {selectedCandidate.name ? selectedCandidate.name.slice(0, 1) : 'UP'}
+                      </div>
+                    )}
                     <div>
                       <div className="detail-title-line">
                         <h4 className="detail-name">{selectedCandidate.name}</h4>
@@ -308,11 +320,10 @@ export default function AdminDrawer({ isOpen, onClose }) {
                         </span>
                       </div>
                       <p className="detail-sub">
-                        {selectedCandidate.department} · {selectedCandidate.position} · 工号 <strong>{selectedCandidate.jobNo}</strong>
+                        {selectedCandidate.department} · {selectedCandidate.position} · 参赛形式：<strong>{selectedCandidate.workType === 'graphic' ? '📝 图文作品' : '🎥 视频作品'}</strong>
                       </p>
                       <p className="detail-phone">
-                        通知手机：<strong>{selectedCandidate.mobile}</strong>
-                        <span className="id-sub-code">（编号：{selectedCandidate.id}）</span>
+                        评审编号：<strong>{selectedCandidate.id}</strong> · 提交时间：{selectedCandidate.submittedAt || '刚刚'}
                       </p>
                     </div>
                   </div>
@@ -340,16 +351,56 @@ export default function AdminDrawer({ isOpen, onClose }) {
                   </div>
                 </div>
 
-                {/* Video Playback Container */}
+                {/* Work Review Container (Video or Graphic Images) */}
                 <div className="detail-video-wrap">
                   <div className="video-section-header">
-                    <h5 className="section-title">🎬 提案试镜视频</h5>
+                    <h5 className="section-title">
+                      {selectedCandidate.workType === 'graphic' ? '📝 提案图文作品' : '🎬 提案试镜视频'}
+                    </h5>
                     <span className="video-specs-text">
-                      文件大小：{selectedCandidate.videoSize || '24.5 MB'} · 时长：{selectedCandidate.videoDuration || '已就绪'}
+                      {selectedCandidate.workType === 'graphic' 
+                        ? `包含 ${(selectedCandidate.graphicImages || []).length || (selectedCandidate.videoUrl ? 1 : 0)} 份图文配图/长图`
+                        : `文件大小：${selectedCandidate.videoSize || '已就绪'}`}
                     </span>
                   </div>
 
-                  {selectedCandidate.videoUrl ? (
+                  {selectedCandidate.workType === 'graphic' ? (
+                    <div className="admin-graphic-display-area">
+                      {selectedCandidate.graphicImages && selectedCandidate.graphicImages.length > 0 ? (
+                        <div className="admin-graphic-grid">
+                          {selectedCandidate.graphicImages.map((img, i) => (
+                            <a 
+                              key={img.url || i} 
+                              href={img.url} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              className="admin-graphic-card"
+                              title="点击在新窗口查看高清原图"
+                            >
+                              <img src={img.url} alt={img.name || `图文配图 ${i+1}`} className="admin-graphic-img" />
+                              <span className="admin-graphic-tag">图 {i+1}（点击放大）</span>
+                            </a>
+                          ))}
+                        </div>
+                      ) : selectedCandidate.videoUrl ? (
+                        <div className="admin-graphic-grid">
+                          <a href={selectedCandidate.videoUrl} target="_blank" rel="noreferrer" className="admin-graphic-card">
+                            <img src={selectedCandidate.videoUrl} alt="图文作品" className="admin-graphic-img" />
+                            <span className="admin-graphic-tag">点击查看图文原图</span>
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="no-video-tip">候选人未上传图片文件</div>
+                      )}
+
+                      {selectedCandidate.graphicContent && (
+                        <div className="admin-graphic-text-box">
+                          <h6 className="graphic-text-title">📄 图文正文 / 核心观点文案：</h6>
+                          <div className="graphic-text-body">{selectedCandidate.graphicContent}</div>
+                        </div>
+                      )}
+                    </div>
+                  ) : selectedCandidate.videoUrl ? (
                     <div className="video-player-container">
                       <video 
                         key={selectedCandidate.id + '_' + selectedCandidate.videoUrl}

@@ -1,55 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 
 export default function Step1Profile({ formData, onChange, onNext }) {
-  const fileInputRef = useRef(null);
   const [errors, setErrors] = useState({});
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-
-  const handleAvatarChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('请选择有效的图片文件（JPG/PNG）');
-      return;
-    }
-
-    if (file.size > 15 * 1024 * 1024) {
-      alert('图片大小不能超过 15MB');
-      return;
-    }
-
-    // 1. Instant local preview
-    const localPreview = URL.createObjectURL(file);
-    onChange({ avatarUrl: localPreview });
-    setIsUploadingAvatar(true);
-
-    // 2. Upload to persistent server storage
-    const uploadForm = new FormData();
-    uploadForm.append('file', file);
-
-    fetch('/api/upload?type=avatar', {
-      method: 'POST',
-      body: uploadForm
-    })
-      .then(res => res.json())
-      .then(resData => {
-        setIsUploadingAvatar(false);
-        if (resData.code === 0 && resData.url) {
-          onChange({ avatarUrl: resData.url });
-        }
-      })
-      .catch(err => {
-        setIsUploadingAvatar(false);
-        console.warn('Avatar server upload notice', err);
-      });
-  };
-
-  const removeAvatar = (e) => {
-    e.stopPropagation();
-    onChange({ avatarUrl: '' });
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
 
   const validate = () => {
     const newErrors = {};
@@ -66,16 +18,6 @@ export default function Step1Profile({ formData, onChange, onNext }) {
       newErrors.position = '请填写当前岗位';
     }
 
-    if (!formData.jobNo?.trim()) {
-      newErrors.jobNo = '请填写员工工号';
-    }
-
-    if (!formData.mobile?.trim()) {
-      newErrors.mobile = '请填写手机号';
-    } else if (!/^1[3-9]\d{9}$/.test(formData.mobile.trim())) {
-      newErrors.mobile = '请输入正确的11位大陆手机号码';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -85,7 +27,6 @@ export default function Step1Profile({ formData, onChange, onNext }) {
     if (validate()) {
       onNext();
     } else {
-      // Scroll to first error
       const firstErrorEl = document.querySelector('.form-input.error');
       if (firstErrorEl) {
         firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -95,69 +36,23 @@ export default function Step1Profile({ formData, onChange, onNext }) {
 
   return (
     <div className="step-content-card animate-fade-in">
+      <div className="step-intro-banner">
+        <h3 className="step-section-heading">基本信息</h3>
+        <p className="step-section-sub">请填写参赛者的真实姓名与所在部门，便于评审团核实身份</p>
+      </div>
+
       <form onSubmit={handleSubmit} noValidate>
-        {/* Avatar Upload Row - Compact & Refined */}
-        <div className="avatar-upload-row">
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            accept="image/*" 
-            onChange={handleAvatarChange} 
-            style={{ display: 'none' }} 
-          />
-          <div 
-            className={`avatar-circle-box ${isUploadingAvatar ? 'uploading' : ''}`} 
-            onClick={() => !isUploadingAvatar && fileInputRef.current?.click()}
-            title="点击上传个人头像"
-          >
-            {formData.avatarUrl ? (
-              <div className="avatar-preview-wrap">
-                <img src={formData.avatarUrl} alt="头像预览" className="avatar-preview-img" />
-                {isUploadingAvatar ? (
-                  <div className="avatar-loading-overlay">
-                    <div className="avatar-mini-spinner"></div>
-                  </div>
-                ) : (
-                  <button 
-                    type="button" 
-                    className="avatar-remove-btn" 
-                    onClick={removeAvatar}
-                    title="删除头像"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            ) : isUploadingAvatar ? (
-              <div className="avatar-loading-overlay">
-                <div className="avatar-mini-spinner"></div>
-              </div>
-            ) : (
-              <div className="avatar-placeholder">
-                <span className="plus-icon">+</span>
-              </div>
-            )}
-          </div>
-
-          <div className="avatar-text-desc">
-            <div className="avatar-title-row">
-              <h4 className="avatar-title">上传头像 <span className="optional-tag">（选填）</span></h4>
-            </div>
-            <p className="avatar-hint">建议清晰本人正脸照，未来将作为 UP 主官方头像</p>
-          </div>
-        </div>
-
         {/* 姓名 & 性别 并排布局 */}
         <div className="form-row-grid form-row-name-gender">
           <div className="form-group flex-name-col">
             <label className="form-label" htmlFor="input-name">
-              姓名<span className="required-star">*</span>
+              真实姓名<span className="required-star">*</span>
             </label>
             <input 
               id="input-name"
               type="text" 
               className={`form-input ${errors.name ? 'error' : ''}`}
-              placeholder="请输入真实姓名"
+              placeholder="请输入您的姓名"
               value={formData.name || ''}
               onChange={(e) => {
                 onChange({ name: e.target.value });
@@ -194,13 +89,13 @@ export default function Step1Profile({ formData, onChange, onNext }) {
         <div className="form-row-grid">
           <div className="form-group">
             <label className="form-label" htmlFor="input-department">
-              所属部门<span className="required-star">*</span>
+              所属部门 / 团队<span className="required-star">*</span>
             </label>
             <input 
               id="input-department"
               type="text" 
               className={`form-input ${errors.department ? 'error' : ''}`}
-              placeholder="请输入所属部门"
+              placeholder="例如：财富管理部 / 投研部"
               value={formData.department || ''}
               onChange={(e) => {
                 onChange({ department: e.target.value });
@@ -212,13 +107,13 @@ export default function Step1Profile({ formData, onChange, onNext }) {
 
           <div className="form-group">
             <label className="form-label" htmlFor="input-position">
-              岗位<span className="required-star">*</span>
+              现任岗位 / 职级<span className="required-star">*</span>
             </label>
             <input 
               id="input-position"
               type="text" 
               className={`form-input ${errors.position ? 'error' : ''}`}
-              placeholder="请输入岗位名称"
+              placeholder="例如：投资顾问 / 渠道经理"
               value={formData.position || ''}
               onChange={(e) => {
                 onChange({ position: e.target.value });
@@ -229,48 +124,6 @@ export default function Step1Profile({ formData, onChange, onNext }) {
           </div>
         </div>
 
-        {/* 工号 & 手机号 双列布局 */}
-        <div className="form-row-grid">
-          <div className="form-group">
-            <label className="form-label" htmlFor="input-jobno">
-              工号<span className="required-star">*</span>
-            </label>
-            <input 
-              id="input-jobno"
-              type="text" 
-              className={`form-input ${errors.jobNo ? 'error' : ''}`}
-              placeholder="请输入工号"
-              value={formData.jobNo || ''}
-              onChange={(e) => {
-                onChange({ jobNo: e.target.value });
-                if (errors.jobNo) setErrors(prev => ({ ...prev, jobNo: null }));
-              }}
-            />
-            {errors.jobNo && <div className="form-error-msg">{errors.jobNo}</div>}
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="input-mobile">
-              手机号<span className="required-star">*</span>
-              <span className="hint">接收评审结果</span>
-            </label>
-            <input 
-              id="input-mobile"
-              type="tel" 
-              maxLength="11"
-              className={`form-input ${errors.mobile ? 'error' : ''}`}
-              placeholder="11位手机号"
-              value={formData.mobile || ''}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, '');
-                onChange({ mobile: val });
-                if (errors.mobile) setErrors(prev => ({ ...prev, mobile: null }));
-              }}
-            />
-            {errors.mobile && <div className="form-error-msg">{errors.mobile}</div>}
-          </div>
-        </div>
-
         {/* Submit Step 1 Action */}
         <div className="step-actions">
           <button 
@@ -278,7 +131,7 @@ export default function Step1Profile({ formData, onChange, onNext }) {
             type="submit" 
             className="btn-gold-primary"
           >
-            <span>下一步：在线问卷</span>
+            <span>下一步：在线问卷测评</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M5 12h14"></path>
               <path d="M12 5l7 7-7 7"></path>

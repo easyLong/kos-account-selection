@@ -17,6 +17,9 @@ const initialFormData = {
   jobNo: '',
   mobile: '',
   avatarUrl: '',
+  workType: 'video', // 'video' | 'graphic'
+  graphicImages: [], // array of { url, name, size }
+  graphicContent: '',
   surveyCompleted: false,
   surveyScore: 92,
   surveyTime: '',

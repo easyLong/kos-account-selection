@@ -3624,5 +3624,382 @@
   border: 1px solid #C8E6C9;
 }
 
+/* ========================================================
+   Step 1 Streamlined Intro Banner
+   ======================================================== */
+.step-intro-banner {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #F0EAE0;
+}
+
+.step-section-heading {
+  font-size: 17px;
+  font-weight: 700;
+  color: #2B2418;
+  margin: 0 0 4px 0;
+}
+
+.step-section-sub {
+  font-size: 13px;
+  color: #8C8273;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ========================================================
+   Work Type Segmented Tabs (Video vs Graphic Works)
+   ======================================================== */
+.work-type-selector-wrapper {
+  margin-bottom: 16px;
+}
+
+.work-type-segmented-tabs {
+  display: flex;
+  gap: 8px;
+  background: #F4EFE6;
+  padding: 5px;
+  border-radius: var(--radius-lg);
+  border: 1px solid #E5D9C7;
+  margin-top: 6px;
+}
+
+.work-type-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 8px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+}
+
+.work-type-tab:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.work-type-tab.active {
+  background: #FFFFFF;
+  border-color: #D6BD88;
+  box-shadow: 0 3px 12px rgba(184, 134, 11, 0.12);
+}
+
+.work-type-tab .tab-icon {
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+
+.work-type-tab .tab-label {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #2C2417;
+  letter-spacing: 0.3px;
+}
+
+.work-type-tab.active .tab-label {
+  color: #8C5E13;
+}
+
+.work-type-tab .tab-badge {
+  font-size: 10.5px;
+  color: #9E9382;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.work-type-tab.active .tab-badge {
+  color: #A37320;
+}
+
+/* ========================================================
+   Graphic / Multi-Image Upload Box & Grid
+   ======================================================== */
+.graphic-upload-box {
+  background: #FFFFFF;
+  border: 1.5px dashed var(--border-dashed);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.graphic-upload-box.error {
+  border-color: #D32F2F;
+  background: #FFFBFB;
+}
+
+.graphic-upload-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.graphic-count-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  background: #F8F3EA;
+  color: #8C5E13;
+  border: 1px solid #E5D5BA;
+  white-space: nowrap;
+}
+
+.graphic-thumbnails-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.graphic-thumb-item {
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid #E5DBCC;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.graphic-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.graphic-thumb-remove-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #FFFFFF;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  z-index: 2;
+}
+
+.graphic-thumb-remove-btn:hover {
+  background: #D32F2F;
+}
+
+.graphic-thumb-idx {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  z-index: 2;
+}
+
+.graphic-add-box {
+  aspect-ratio: 1 / 1;
+  border: 1.5px dashed #D6C29E;
+  border-radius: var(--radius-md);
+  background: #FDFBF8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 8px;
+  text-align: center;
+}
+
+.graphic-add-box:hover {
+  border-color: #B8860B;
+  background: #F9F4EB;
+}
+
+.graphic-add-box.uploading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.graphic-add-icon {
+  font-size: 24px;
+  color: #8C5E13;
+  line-height: 1;
+  margin-bottom: 4px;
+  font-weight: 300;
+}
+
+.graphic-add-text {
+  font-size: 11px;
+  color: #7A6F5D;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.graphic-mini-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #8C5E13;
+}
+
+.spinner-gold-sm {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #EBD5A2;
+  border-top-color: #9E6F1A;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ========================================================
+   Monogram Avatar Badges (When Avatar is omitted)
+   ======================================================== */
+.c-avatar-monogram {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #DEBA76 0%, #9E6F1A 100%);
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(158, 111, 26, 0.25);
+  border: 1.5px solid #F8ECD2;
+}
+
+.detail-avatar-monogram {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ECC884 0%, #9E6F1A 100%);
+  color: #FFFFFF;
+  font-size: 24px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(158, 111, 26, 0.3);
+  border: 2.5px solid #FDF5E3;
+}
+
+.poster-avatar-monogram {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ECC884 0%, #9E6F1A 100%);
+  color: #FFFFFF;
+  font-size: 32px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.c-work-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #F3ECE0;
+  color: #8C5E13;
+  border: 1px solid #E3D6C1;
+}
+
+/* ========================================================
+   Admin Graphic Gallery & Text Display
+   ======================================================== */
+.admin-graphic-display-area {
+  background: #FAF6EF;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  border: 1px solid #ECE0CF;
+}
+
+.admin-graphic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.admin-graphic-card {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid #DFD2BE;
+  background: #FFFFFF;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  display: block;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-graphic-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(158, 111, 26, 0.2);
+}
+
+.admin-graphic-img {
+  width: 100%;
+  height: 115px;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-graphic-tag {
+  display: block;
+  font-size: 11px;
+  text-align: center;
+  padding: 5px 6px;
+  background: #FFFFFF;
+  color: #8C5E13;
+  font-weight: 600;
+  border-top: 1px solid #F0E6D6;
+}
+
+.admin-graphic-text-box {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border-radius: var(--radius-sm);
+  border: 1px solid #E6D7C2;
+}
+
+.graphic-text-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #3C3325;
+  margin: 0 0 6px 0;
+}
+
+.graphic-text-body {
+  font-size: 13px;
+  color: #5A5040;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+
 
 

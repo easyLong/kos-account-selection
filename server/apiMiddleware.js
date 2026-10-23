@@ -15,6 +15,7 @@ if (fs.existsSync(envPath)) {
 const DATA_FILE = path.resolve(process.cwd(), 'data', 'submissions.json');
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'videos');
 const AVATAR_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'avatars');
+const GRAPHIC_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'graphics');
 
 // Ensure data folder, upload folder and seed file exist
 function initStorage() {
@@ -27,6 +28,9 @@ function initStorage() {
   }
   if (!fs.existsSync(AVATAR_DIR)) {
     fs.mkdirSync(AVATAR_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(GRAPHIC_DIR)) {
+    fs.mkdirSync(GRAPHIC_DIR, { recursive: true });
   }
 
   if (!fs.existsSync(DATA_FILE)) {
@@ -123,6 +127,9 @@ async function initDatabase() {
         jobNo VARCHAR(64),
         mobile VARCHAR(32),
         avatarUrl TEXT,
+        workType VARCHAR(32) DEFAULT 'video',
+        graphicImages LONGTEXT,
+        graphicContent LONGTEXT,
         surveyCompleted TINYINT(1) DEFAULT 0,
         surveyTime VARCHAR(64),
         surveyScore INT DEFAULT 0,
@@ -145,6 +152,12 @@ async function initDatabase() {
         INDEX idx_mobile (mobile)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
+
+    // Ensure columns for graphic works exist on legacy table
+    try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN workType VARCHAR(32) DEFAULT 'video'`); } catch (e) {}
+    try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN graphicImages LONGTEXT`); } catch (e) {}
+    try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN graphicContent LONGTEXT`); } catch (e) {}
+
     conn.release();
     dbAvailable = true;
   } catch (err) {
@@ -166,8 +179,17 @@ async function getStoredApplications() {
             parsedAnswers = JSON.parse(parsedAnswers);
           } catch (e) {}
         }
+        let parsedGraphicImages = r.graphicImages;
+        if (typeof parsedGraphicImages === 'string') {
+          try {
+            parsedGraphicImages = JSON.parse(parsedGraphicImages);
+          } catch (e) {}
+        }
         return {
           ...r,
+          workType: r.workType || 'video',
+          graphicImages: parsedGraphicImages || [],
+          graphicContent: r.graphicContent || '',
           surveyCompleted: !!r.surveyCompleted,
           surveyAnswers: parsedAnswers
         };
@@ -216,19 +238,22 @@ async function saveApplication(appData) {
   if (dbAvailable && dbPool) {
     try {
       const answersJson = appData.surveyAnswers ? JSON.stringify(appData.surveyAnswers) : null;
+      const graphicImagesJson = appData.graphicImages ? JSON.stringify(appData.graphicImages) : null;
       const q26 = appData.surveyAnswers?.['26'] || appData.specialtyTalent || '';
       const q27 = appData.surveyAnswers?.['27'] || appData.accountPersona || '';
 
       const sql = `
         INSERT INTO htf_kos_applications (
           id, name, gender, department, position, accountName, jobNo, mobile, avatarUrl,
+          workType, graphicImages, graphicContent,
           surveyCompleted, surveyTime, surveyScore, surveyScaleScore, surveySubjectiveScore, surveyRating, surveyAnswers,
           videoTitle, videoCategory, videoIntro, accountPersona, specialtyTalent,
           videoUrl, videoSize, videoDuration, status, submittedAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           name=VALUES(name), gender=VALUES(gender), department=VALUES(department),
           position=VALUES(position), accountName=VALUES(accountName), jobNo=VALUES(jobNo), avatarUrl=VALUES(avatarUrl),
+          workType=VALUES(workType), graphicImages=VALUES(graphicImages), graphicContent=VALUES(graphicContent),
           surveyCompleted=VALUES(surveyCompleted), surveyTime=VALUES(surveyTime),
           surveyScore=VALUES(surveyScore), surveyScaleScore=VALUES(surveyScaleScore), surveySubjectiveScore=VALUES(surveySubjectiveScore),
           surveyRating=VALUES(surveyRating), surveyAnswers=VALUES(surveyAnswers),
@@ -247,6 +272,9 @@ async function saveApplication(appData) {
         appData.jobNo || '',
         appData.mobile || '',
         appData.avatarUrl || '',
+        appData.workType || 'video',
+        graphicImagesJson,
+        appData.graphicContent || '',
         appData.surveyCompleted ? 1 : 0,
         appData.surveyTime || '',
         appData.surveyScore || 0,
@@ -277,7 +305,7 @@ async function saveApplication(appData) {
     list.push(...JSON.parse(raw));
   } catch (e) {}
 
-  const existingIndex = list.findIndex(item => item.id === appData.id || (item.mobile && item.mobile === appData.mobile));
+  const existingIndex = list.findIndex(item => item.id === appData.id);
   if (existingIndex >= 0) {
     list[existingIndex] = { ...list[existingIndex], ...appData, updatedAt: new Date().toISOString() };
   } else {
@@ -340,10 +368,11 @@ export function createApiMiddleware() {
             initStorage();
             const uploadType = url.searchParams.get('type') || 'video';
             const isAvatar = uploadType === 'avatar';
-            const targetDir = isAvatar ? AVATAR_DIR : UPLOAD_DIR;
-            const prefix = isAvatar ? 'avatar_' : 'video_';
-            const subDir = isAvatar ? 'avatars' : 'videos';
-            const maxLimit = isAvatar ? 15 * 1024 * 1024 : 550 * 1024 * 1024;
+            const isGraphic = uploadType === 'graphic' || uploadType === 'image';
+            const targetDir = isGraphic ? GRAPHIC_DIR : (isAvatar ? AVATAR_DIR : UPLOAD_DIR);
+            const prefix = isGraphic ? 'graphic_' : (isAvatar ? 'avatar_' : 'video_');
+            const subDir = isGraphic ? 'graphics' : (isAvatar ? 'avatars' : 'videos');
+            const maxLimit = isGraphic ? 50 * 1024 * 1024 : (isAvatar ? 15 * 1024 * 1024 : 550 * 1024 * 1024);
 
             const bb = busboy({ headers: req.headers, limits: { fileSize: maxLimit } });
             let savedFilename = '';
@@ -352,8 +381,8 @@ export function createApiMiddleware() {
             let saveTo = '';
 
             bb.on('file', (name, fileStream, info) => {
-              originalFilename = info.filename || (isAvatar ? 'avatar.jpg' : 'upload.mp4');
-              const ext = path.extname(originalFilename) || (isAvatar ? '.jpg' : '.mp4');
+              originalFilename = info.filename || (isGraphic ? 'image.jpg' : (isAvatar ? 'avatar.jpg' : 'upload.mp4'));
+              const ext = path.extname(originalFilename) || (isGraphic || isAvatar ? '.jpg' : '.mp4');
               savedFilename = `${prefix}${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`;
               saveTo = path.join(targetDir, savedFilename);
               const writeStream = fs.createWriteStream(saveTo);

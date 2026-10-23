@@ -102,8 +102,10 @@ export default function Step4Success({ submission, onRestart }) {
           <span className="s-val">{submission.department} · {submission.position}</span>
         </div>
         <div className="summary-row">
-          <span className="s-label">通知手机号</span>
-          <span className="s-val">{submission.mobile}</span>
+          <span className="s-label">作品形式</span>
+          <span className="s-val font-semibold">
+            {submission.workType === 'graphic' ? '📝 图文作品' : '🎥 视频作品'}
+          </span>
         </div>
         <div className="summary-row">
           <span className="s-label">在线问卷</span>
@@ -114,15 +116,17 @@ export default function Step4Success({ submission, onRestart }) {
           <span className="s-val text-gold">{submission.videoCategory}</span>
         </div>
         <div className="summary-row">
-          <span className="s-label">提案短视频</span>
+          <span className="s-label">
+            {submission.workType === 'graphic' ? '图文作品' : '提案短视频'}
+          </span>
           <span className="s-val text-ellipsis" title={submission.videoTitle}>“{submission.videoTitle}”</span>
         </div>
       </div>
 
       {/* Notice Banner */}
       <div className="sms-notice-box">
-        <span className="sms-icon">📱</span>
-        <p>评审结果将以<strong>手机短信</strong>形式通知，请保持手机畅通。初筛入围者将直接签约成为<strong>公司级 UP 主</strong>，开启全平台官方资源扶持！</p>
+        <span className="sms-icon">📢</span>
+        <p>评审结果将在内部系统统一公布并定向通知入围名单。初筛入围者将直接签约成为<strong>公司级 UP 主</strong>，开启全平台官方资源扶持！</p>
       </div>
 
       {/* Actions */}
