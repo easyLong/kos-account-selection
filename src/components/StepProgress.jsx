@@ -1,0 +1,69 @@
+import React from 'react';
+
+export default function StepProgress({ currentStep, onBackHome }) {
+  const steps = [
+    { num: 1, label: '个人介绍' },
+    { num: 2, label: '在线问卷' },
+    { num: 3, label: '视频提案' }
+  ];
+
+  return (
+    <div className="step-header-container">
+      {/* Top Title & Quick Return */}
+      <div className="step-header-text">
+        <div className="title-row">
+          <div className="title-left">
+            <h2 className="step-main-title">KOS 账号海选报名</h2>
+            <span className="step-count-pill">第 {currentStep}/3 步</span>
+          </div>
+          {onBackHome && (
+            <button 
+              className="btn-back-home" 
+              onClick={onBackHome} 
+              title="返回首页"
+              type="button"
+            >
+              首页
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Stepper Progress Indicator */}
+      <div className="stepper-indicator">
+        <div className="stepper-track">
+          <div 
+            className="stepper-track-fill" 
+            style={{ 
+              width: currentStep === 1 ? '0%' : currentStep === 2 ? '50%' : '100%' 
+            }}
+          />
+        </div>
+
+        <div className="stepper-items">
+          {steps.map((s) => {
+            const isCompleted = s.num < currentStep;
+            const isActive = s.num === currentStep;
+            
+            return (
+              <div 
+                key={s.num} 
+                className={`stepper-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
+              >
+                <div className="stepper-node">
+                  {isCompleted ? (
+                    <span className="check-icon">✓</span>
+                  ) : (
+                    <span className="step-num">{s.num}</span>
+                  )}
+                </div>
+                <span className="stepper-label">{s.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=no, email=no, address=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#12100d" />
+    <title>KOS 账号海选 - 闪闪发光的公司级 UP 主</title>
+    
+    <!-- Open Graph for WeChat share preview -->
+    <meta property="og:title" content="KOS 账号海选 - 闪闪发光的公司级 UP 主" />
+    <meta property="og:description" content="面向全公司正式员工，不限岗位。让你的才华被看见，公司级KOS账号队伍正在招募！" />
+    <meta property="og:image" content="/images/kos_hero.jpg" />
+    <meta property="og:type" content="website" />
+
+    <!-- Google Fonts for premium serif headers -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Noto+Serif+SC:wght@600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- WeChat Font Size Normalization script -->
+    <script>
+      (function() {
+        if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
+          handleFontSize();
+        } else {
+          if (document.addEventListener) {
+            document.addEventListener("WeixinJSBridgeReady", handleFontSize, false);
+          } else if (document.attachEvent) {
+            document.attachEvent("WeixinJSBridgeReady", handleFontSize);
+            document.attachEvent("onWeixinJSBridgeReady", handleFontSize);
+          }
+        }
+        function handleFontSize() {
+          // Normalize font scaling in WeChat
+          WeixinJSBridge.invoke('setFontSizeCallback', { 'fontSize': 0 });
+          WeixinJSBridge.on('menu:setfont', function() {
+            WeixinJSBridge.invoke('setFontSizeCallback', { 'fontSize': 0 });
+          });
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
