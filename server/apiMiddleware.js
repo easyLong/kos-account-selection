@@ -34,6 +34,29 @@ function initStorage() {
   }
 }
 
+// Alibaba Cloud OSS Client state
+let ossClient = null;
+async function getOssClient() {
+  if (ossClient) return ossClient;
+  if (process.env.OSS_BUCKET && process.env.OSS_ACCESS_KEY_ID && process.env.OSS_ACCESS_KEY_SECRET) {
+    try {
+      const OSSModule = await import('ali-oss');
+      const OSS = OSSModule.default || OSSModule;
+      ossClient = new OSS({
+        region: process.env.OSS_REGION || 'oss-cn-shenzhen',
+        accessKeyId: process.env.OSS_ACCESS_KEY_ID,
+        accessKeySecret: process.env.OSS_ACCESS_KEY_SECRET,
+        bucket: process.env.OSS_BUCKET,
+        secure: true
+      });
+      return ossClient;
+    } catch (e) {
+      console.warn('[OSS] ali-oss load notice:', e.message);
+    }
+  }
+  return null;
+}
+
 // Database connection state
 let dbPool = null;
 let dbAvailable = false;
@@ -311,7 +334,23 @@ export function createApiMiddleware() {
               try {
                 if (savePromise) {
                   await savePromise;
-                  const publicUrl = `/uploads/${subDir}/${savedFilename}`;
+                  let publicUrl = `/uploads/${subDir}/${savedFilename}`;
+
+                  // If OSS is configured, automatically upload to Alibaba Cloud OSS
+                  const oss = await getOssClient();
+                  if (oss) {
+                    try {
+                      const ossObjectKey = `kos/${subDir}/${savedFilename}`;
+                      const ossRes = await oss.put(ossObjectKey, saveTo);
+                      if (ossRes && ossRes.url) {
+                        publicUrl = ossRes.url.replace(/^http:\/\//, 'https://');
+                        console.log(`[OSS] File successfully uploaded to OSS: ${publicUrl}`);
+                      }
+                    } catch (ossErr) {
+                      console.warn('[OSS] Upload to OSS failed, using local file fallback:', ossErr.message);
+                    }
+                  }
+
                   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
                   res.end(JSON.stringify({
                     code: 0,
