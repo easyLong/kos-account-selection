@@ -124,6 +124,21 @@ export default function Step1Profile({ formData, onChange, onNext }) {
           </div>
         </div>
 
+        {/* 账号风格 (选填) */}
+        <div className="form-group" style={{ marginTop: '16px' }}>
+          <label className="form-label" htmlFor="input-account-style">
+            账号风格 <span className="optional-tag">（选填）</span>
+          </label>
+          <input 
+            id="input-account-style"
+            type="text" 
+            className="form-input"
+            placeholder="例如：专业硬核解读 / 轻松幽默脱口秀 / 沉浸式图表说财经等"
+            value={formData.targetAccountStyle || ''}
+            onChange={(e) => onChange({ targetAccountStyle: e.target.value })}
+          />
+        </div>
+
         {/* Submit Step 1 Action */}
         <div className="step-actions">
           <button 
