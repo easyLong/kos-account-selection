@@ -125,34 +125,61 @@
 
 .landing-body {
   flex: 1;
-  padding: 0 22px 30px;
+  padding: 0 16px 28px;
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 3;
-  margin-top: -20px;
+  margin-top: -18px;
 }
 
 .intro-card {
-  padding: 30px 6px 20px;
-  margin-top: 10px;
+  padding: 16px 0 10px;
+  margin-top: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
 }
 
-.intro-paragraph {
-  font-size: 15px;
-  line-height: 2;
-  color: #555047;
+.intro-lines-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+  max-width: 420px;
   text-align: center;
-  letter-spacing: 0.4px;
-  max-width: 340px;
+  align-items: center;
 }
 
-.text-highlight {
+.intro-line {
+  font-size: clamp(10.5px, 2.75vw, 12px);
+  line-height: 1.65;
+  color: #555047;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  margin: 0;
+  display: block;
+}
+
+.intro-line-highlight {
+  color: #3C352B;
+}
+
+.intro-line-highlight .text-highlight {
   color: var(--color-gold-dark);
   font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 375px) {
+  .intro-lines-wrapper {
+    gap: 7px;
+  }
+  .intro-line {
+    font-size: 10.2px;
+    letter-spacing: 0;
+  }
 }
 
 .landing-footer {
