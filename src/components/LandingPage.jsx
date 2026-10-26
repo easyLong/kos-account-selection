@@ -6,9 +6,9 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
       {/* Hero Media Section matching mockup 1 */}
       <div className="hero-section">
         <div className="hero-image-wrap">
-          <img 
-            src="/images/kos_hero.jpg" 
-            alt="KOS 海选 - 闪闪发光的公司级 UP 主" 
+          <img
+            src="/images/kos_hero.jpg"
+            alt="KOS 海选 - 闪闪发光的公司级 UP 主"
             className="hero-img"
           />
           {/* Warm luxury lighting vignettes */}
@@ -37,33 +37,22 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
       {/* Narrative & Body Section matching mockup 1 */}
       <div className="landing-body">
         <div className="intro-card">
-          <div className="intro-manifesto-box">
-            <div className="manifesto-item">
-              <span className="manifesto-sparkle">✦</span>
-              <p className="manifesto-text">
-                如果你热爱内容创作，希望沉淀已久的专业认知被更多人看见；
-              </p>
-            </div>
-            <div className="manifesto-divider"></div>
-            <div className="manifesto-item">
-              <span className="manifesto-sparkle">✦</span>
-              <p className="manifesto-text">
-                如果你乐于分享观点，想把扎实的财经积累转化为大众听得懂的表达；
-              </p>
-            </div>
-            <div className="manifesto-divider"></div>
-            <div className="manifesto-item manifesto-item-cta">
-              <span className="manifesto-sparkle">✦</span>
-              <p className="manifesto-text">
-                如果你愿意跳出固有工作视角，发掘自身更多可能性，<strong className="text-highlight">欢迎报名星火计划！</strong>
-              </p>
-            </div>
+          <div className="intro-lines-wrapper">
+            <p className="intro-line">
+              如果你热爱内容创作，希望沉淀已久的专业认知被更多人看见；
+            </p>
+            <p className="intro-line">
+              如果你乐于分享观点，想把扎实的财经积累转化为大众听得懂的表达；
+            </p>
+            <p className="intro-line intro-line-highlight">
+              如果你愿意跳出固有工作视角，发掘自身更多可能性，<strong className="text-highlight">欢迎报名星火计划！</strong>
+            </p>
           </div>
         </div>
 
         {/* Bottom Floating Action Area */}
         <div className="landing-footer">
-          <button 
+          <button
             id="btn-start-register"
             className="btn-gold-primary hero-btn"
             onClick={onStart}
