@@ -115,13 +115,17 @@ export default function Step4Success({ submission, onRestart }) {
           <span className="s-val">{submission.department} · {submission.position}</span>
         </div>
         <div className="summary-row">
-          <span className="s-label">
-            {submission.workType === 'graphic' ? '图文作品' : '提案短视频'}
-          </span>
+          <span className="s-label">提案短视频</span>
           <span className="s-val text-ellipsis font-semibold text-gold" title={submission.videoTitle}>
             “{submission.videoTitle || '未命名作品'}”
           </span>
         </div>
+        {submission.targetAccountStyle && (
+          <div className="summary-row">
+            <span className="s-label">期望账号风格</span>
+            <span className="s-val text-gold">{submission.targetAccountStyle}</span>
+          </div>
+        )}
       </div>
 
       {/* Notice Banner */}

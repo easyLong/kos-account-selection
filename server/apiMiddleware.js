@@ -153,10 +153,11 @@ async function initDatabase() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
-    // Ensure columns for graphic works exist on legacy table
+    // Ensure columns for graphic works and account style exist on legacy table
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN workType VARCHAR(32) DEFAULT 'video'`); } catch (e) {}
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN graphicImages LONGTEXT`); } catch (e) {}
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN graphicContent LONGTEXT`); } catch (e) {}
+    try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN targetAccountStyle VARCHAR(150)`); } catch (e) {}
 
     conn.release();
     dbAvailable = true;
@@ -264,9 +265,9 @@ async function saveApplication(appData) {
           id, name, gender, department, position, accountName, jobNo, mobile, avatarUrl,
           workType, graphicImages, graphicContent,
           surveyCompleted, surveyTime, surveyScore, surveyScaleScore, surveySubjectiveScore, surveyRating, surveyAnswers,
-          videoTitle, videoCategory, videoIntro, accountPersona, specialtyTalent,
+          videoTitle, videoCategory, videoIntro, targetAccountStyle, accountPersona, specialtyTalent,
           videoUrl, videoSize, videoDuration, status, submittedAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           name=VALUES(name), gender=VALUES(gender), department=VALUES(department),
           position=VALUES(position), accountName=VALUES(accountName), jobNo=VALUES(jobNo), avatarUrl=VALUES(avatarUrl),
@@ -275,7 +276,7 @@ async function saveApplication(appData) {
           surveyScore=VALUES(surveyScore), surveyScaleScore=VALUES(surveyScaleScore), surveySubjectiveScore=VALUES(surveySubjectiveScore),
           surveyRating=VALUES(surveyRating), surveyAnswers=VALUES(surveyAnswers),
           videoTitle=VALUES(videoTitle), videoCategory=VALUES(videoCategory),
-          videoIntro=VALUES(videoIntro), accountPersona=VALUES(accountPersona), specialtyTalent=VALUES(specialtyTalent),
+          videoIntro=VALUES(videoIntro), targetAccountStyle=VALUES(targetAccountStyle), accountPersona=VALUES(accountPersona), specialtyTalent=VALUES(specialtyTalent),
           videoUrl=VALUES(videoUrl), videoSize=VALUES(videoSize), videoDuration=VALUES(videoDuration),
           status=VALUES(status), updatedAt=CURRENT_TIMESTAMP
       `;
@@ -302,6 +303,7 @@ async function saveApplication(appData) {
         appData.videoTitle || '',
         appData.videoCategory || '',
         appData.videoIntro || '',
+        appData.targetAccountStyle || '',
         q27,
         q26,
         appData.videoUrl || '',
