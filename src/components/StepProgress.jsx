@@ -13,23 +13,31 @@ export default function StepProgress({ currentStep, onBackHome }) {
       <div className="step-header-text">
         <div className="title-row">
           <div className="title-left">
+            {onBackHome && (
+              <button 
+                className="btn-text-back" 
+                onClick={onBackHome} 
+                title="返回首页"
+                type="button"
+              >
+                <span className="back-arrow">‹</span>
+                <span className="back-text">首页</span>
+              </button>
+            )}
             <div className="step-brand-pill">
               <span className="sparkle-gold">✦</span>
               <span className="brand-text">星火计划</span>
               <span className="sparkle-gold">✦</span>
             </div>
-            <span className="step-count-pill">第 {currentStep}/3 步</span>
           </div>
-          {onBackHome && (
-            <button 
-              className="btn-back-home" 
-              onClick={onBackHome} 
-              title="返回首页"
-              type="button"
-            >
-              首页
-            </button>
-          )}
+
+          <div className="title-right">
+            <span className="step-count-clean">
+              <strong>0{currentStep}</strong>
+              <span className="step-slash">/</span>
+              <span>03</span>
+            </span>
+          </div>
         </div>
       </div>
 
