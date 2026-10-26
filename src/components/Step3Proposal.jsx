@@ -11,13 +11,15 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
 
   const workType = formData.workType || 'video'; // 'video' | 'graphic'
 
-  // Account positioning categories
+  // Categories matching financial UP topic schools
   const categoryOptions = [
-    '知识科普派',
-    '专家派',
-    '生活体验派',
-    '特定人群派',
-    '其它'
+    '宏观策略与市场研判派',
+    '行业掘金与热点跟踪派',
+    '稳健理财与资产配置派',
+    '投教科普与避坑指南派',
+    '基金定投与实战派',
+    '职场财商与生活消费派',
+    '其它创新创意派'
   ];
 
   // ==========================================
@@ -195,7 +197,7 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
     }
 
     if (!formData.videoCategory) {
-      newErrors.videoCategory = '请选择账号定位';
+      newErrors.videoCategory = '请选择选题派别';
     }
 
     const introLen = formData.videoIntro?.trim().length || 0;
@@ -223,13 +225,6 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
 
   return (
     <div className="step-content-card animate-fade-in">
-      <div className="step-intro-banner">
-        <h3 className="step-section-heading">作品提交</h3>
-        <p className="step-section-sub">
-          作品主题不限，须为本人原创并符合合规与品牌要求；自主选题图文笔记 1 篇，或出镜短视频 1 条。
-        </p>
-      </div>
-
       <form onSubmit={handleFormSubmit} noValidate>
         {/* Work Type Segmented Switcher */}
         <div className="work-type-selector-wrapper">
@@ -327,8 +322,8 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
                   </div>
 
                   <div className="upload-text-compact">
-                    <h4 className="upload-main-title">出镜短视频 1 条<span className="required-star">*</span></h4>
-                    <p className="upload-sub-title">MP4/MOV · 须为本人原创 · 支持最大500MB · 手机直接录制或相册选择</p>
+                    <h4 className="upload-main-title">上传出镜短视频<span className="required-star">*</span></h4>
+                    <p className="upload-sub-title">MP4/MOV · 1-3分钟 · 支持最大500MB · 手机直接录制或相册选择</p>
                   </div>
 
                   <span className="upload-action-pill">点击上传 ›</span>
@@ -358,8 +353,8 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
             <div className={`graphic-upload-box ${errors.work ? 'error' : ''}`}>
               <div className="graphic-upload-header">
                 <div>
-                  <h4 className="upload-main-title">图文笔记 1 篇<span className="required-star">*</span></h4>
-                  <p className="upload-sub-title">作品主题不限 · 支持 JPG / PNG / WEBP / PDF · 可多选 1~9 张 · 单张最大 50MB</p>
+                  <h4 className="upload-main-title">上传图文配图 / 长图 / 作品切片<span className="required-star">*</span></h4>
+                  <p className="upload-sub-title">支持 JPG / PNG / WEBP / PDF · 可多选上传 1~9 张 · 单张最大 50MB</p>
                 </div>
                 <span className="graphic-count-badge">
                   {(formData.graphicImages || []).length} / 9 张
@@ -445,10 +440,10 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
           {errors.videoTitle && <div className="form-error-msg">{errors.videoTitle}</div>}
         </div>
 
-        {/* 账号定位 * */}
+        {/* 选题派别 * */}
         <div className="form-group">
           <label className="form-label" htmlFor="select-video-category">
-            账号定位<span className="required-star">*</span>
+            选题派别<span className="required-star">*</span>
           </label>
           <div className="select-wrapper">
             <select
@@ -460,7 +455,7 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
                 if (errors.videoCategory) setErrors(prev => ({ ...prev, videoCategory: null }));
               }}
             >
-              <option value="">请选择账号定位</option>
+              <option value="">请选择</option>
               {categoryOptions.map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}

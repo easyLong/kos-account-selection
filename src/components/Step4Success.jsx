@@ -40,8 +40,8 @@ export default function Step4Success({ submission, onRestart }) {
       {/* Registration Certificate Card */}
       <div className="reg-id-card">
         <div className="reg-id-header">
-          <span className="reg-label">【星火计划】评审编号</span>
-          <span className="status-badge-active">作品已提交</span>
+          <span className="reg-label">海选评审编号</span>
+          <span className="status-badge-active">已进入初筛池</span>
         </div>
         <div className="reg-id-code">{submission.id}</div>
         <div className="reg-time">提交时间：{submission.submittedAt || new Date().toLocaleString()}</div>
@@ -52,25 +52,25 @@ export default function Step4Success({ submission, onRestart }) {
         <div className="timeline-header">
           <h4 className="timeline-title">
             <span className="sparkle-gold">✦</span>
-            <span>【星火计划】选拔流程</span>
+            <span>海选评审流程</span>
           </h4>
-          <span className="timeline-status-hint">第一阶段已达成</span>
+          <span className="timeline-status-hint">已进入初筛池</span>
         </div>
 
         <div className="timeline-stepper-wrap">
           {/* Top Nodes & Connecting Lines Track */}
           <div className="stepper-nodes-track">
-            <div className="stepper-dot passed" title="作品提交 (已完成)">
+            <div className="stepper-dot passed" title="已完成">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             </div>
             <div className="stepper-line passed"></div>
-            <div className="stepper-dot current" title="路演答辩 (即将开展)">
+            <div className="stepper-dot current" title="评审团初筛进行中">
               <span>2</span>
             </div>
             <div className="stepper-line"></div>
-            <div className="stepper-dot upcoming" title="结果公示">
+            <div className="stepper-dot upcoming" title="成为公司级UP主">
               <span>3</span>
             </div>
           </div>
@@ -78,37 +78,14 @@ export default function Step4Success({ submission, onRestart }) {
           {/* Bottom Step Titles Grid */}
           <div className="stepper-text-grid">
             <div className="stepper-col passed">
-              <span className="step-title">作品提交</span>
+              <span className="step-title">提交报名</span>
               <span className="step-tag-pill passed">已完成</span>
             </div>
             <div className="stepper-col current">
-              <span className="step-title">路演答辩</span>
-              <span className="step-tag-pill ongoing">评审团评审</span>
+              <span className="step-title">评审团初筛</span>
             </div>
             <div className="stepper-col upcoming">
-              <span className="step-title">结果公示</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Detailed Stages Info List */}
-        <div className="timeline-detail-notes">
-          <div className="timeline-note-item passed">
-            <span className="note-dot">✓</span>
-            <div className="note-text">
-              <strong>作品提交：</strong>作品主题不限，须为本人原创并符合合规与品牌要求；自主选题图文笔记 1 篇，或出镜短视频 1 条。
-            </div>
-          </div>
-          <div className="timeline-note-item current">
-            <span className="note-dot">2</span>
-            <div className="note-text">
-              <strong>路演答辩：</strong>参赛人员开展路演答辩，由公司管理层及内部专家组建评审团开展评审。
-            </div>
-          </div>
-          <div className="timeline-note-item upcoming">
-            <span className="note-dot">3</span>
-            <div className="note-text">
-              <strong>结果公示：</strong>结合报名作品质量、现场路演综合得分确定入选名单并予以公示。
+              <span className="step-title">成为公司级UP主</span>
             </div>
           </div>
         </div>
@@ -127,7 +104,7 @@ export default function Step4Success({ submission, onRestart }) {
         <div className="summary-row">
           <span className="s-label">作品形式</span>
           <span className="s-val font-semibold">
-            {submission.workType === 'graphic' ? '📝 图文笔记' : '🎥 出镜短视频'}
+            {submission.workType === 'graphic' ? '📝 图文作品' : '🎥 视频作品'}
           </span>
         </div>
         <div className="summary-row">
@@ -135,12 +112,12 @@ export default function Step4Success({ submission, onRestart }) {
           <span className="s-val text-green">✓ 潜力测评已完成 ({submission.surveyScore || 124}分 · {submission.surveyRating || 'S级'})</span>
         </div>
         <div className="summary-row">
-          <span className="s-label">账号定位</span>
+          <span className="s-label">选题派别</span>
           <span className="s-val text-gold">{submission.videoCategory}</span>
         </div>
         <div className="summary-row">
           <span className="s-label">
-            {submission.workType === 'graphic' ? '图文标题' : '视频标题'}
+            {submission.workType === 'graphic' ? '图文作品' : '提案短视频'}
           </span>
           <span className="s-val text-ellipsis" title={submission.videoTitle}>“{submission.videoTitle}”</span>
         </div>
@@ -149,7 +126,7 @@ export default function Step4Success({ submission, onRestart }) {
       {/* Notice Banner */}
       <div className="sms-notice-box">
         <span className="sms-icon">📢</span>
-        <p>结合报名作品质量、现场路演综合得分确定入选名单并予以公示。参赛人员开展路演答辩日程将以工作通知形式公布，敬请留意！</p>
+        <p>评审结果将在内部系统统一公布并定向通知入围名单。初筛入围者将直接签约成为<strong>公司级 UP 主</strong>，开启全平台官方资源扶持！</p>
       </div>
 
       {/* Actions */}
@@ -160,7 +137,7 @@ export default function Step4Success({ submission, onRestart }) {
           className="btn-gold-primary"
           onClick={() => setShowPoster(true)}
         >
-          <span>生成【星火计划】荣誉海报</span>
+          <span>生成我的海选荣誉海报</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
             <circle cx="8.5" cy="8.5" r="1.5"></circle>

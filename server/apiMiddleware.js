@@ -498,7 +498,7 @@ export function createApiMiddleware() {
               return;
             }
 
-            const id = data.id || `XH-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
+            const id = data.id || `KOS-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
             const record = {
               ...data,
               id,

@@ -2,9 +2,9 @@ import React from 'react';
 
 export default function StepProgress({ currentStep, onBackHome }) {
   const steps = [
-    { num: 1, label: '基本信息' },
+    { num: 1, label: '个人介绍' },
     { num: 2, label: '在线问卷' },
-    { num: 3, label: '作品提交' }
+    { num: 3, label: '视频提案' }
   ];
 
   return (
@@ -13,7 +13,7 @@ export default function StepProgress({ currentStep, onBackHome }) {
       <div className="step-header-text">
         <div className="title-row">
           <div className="title-left">
-            <h2 className="step-main-title">【星火计划】报名</h2>
+            <h2 className="step-main-title">KOS 账号海选报名</h2>
             <span className="step-count-pill">第 {currentStep}/3 步</span>
           </div>
           {onBackHome && (

@@ -117,7 +117,7 @@ export default function DeviceShell({
               ) : (
                 <span className="wx-close-icon">✕</span>
               )}
-              <span className="wx-title">【星火计划】</span>
+              <span className="wx-title">KOS 账号海选</span>
             </div>
             <div className="wx-right">
               <span className="wx-more-dots">···</span>
@@ -138,7 +138,7 @@ export default function DeviceShell({
       <div className="desktop-sidebar-column">
         <div className="sidebar-card">
           <div className="sidebar-header">
-            <span className="sidebar-tag">【星火计划】自媒体创作者选拔</span>
+            <span className="sidebar-tag">KOS 账号海选</span>
             <h3 className="sidebar-title">手机微信扫码直达</h3>
             <p className="sidebar-sub">手机微信或浏览器扫码，直接进入移动端报名</p>
           </div>
