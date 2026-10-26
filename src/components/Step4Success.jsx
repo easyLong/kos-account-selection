@@ -63,35 +63,37 @@ export default function Step4Success({ submission, onRestart }) {
           <span className="timeline-status-hint">第一阶段已达成</span>
         </div>
 
-        <div className="timeline-stepper-wrap">
-          {/* Top Nodes & Connecting Lines Track */}
-          <div className="stepper-nodes-track">
+        <div className="timeline-stepper-flex">
+          {/* Step 1: 作品提交 */}
+          <div className="timeline-step-unit passed">
             <div className="stepper-dot passed" title="作品提交 (已完成)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             </div>
-            <div className="stepper-line passed"></div>
-            <div className="stepper-dot current" title="路演答辩 (评审团评审)">
-              <span>2</span>
-            </div>
-            <div className="stepper-line"></div>
-            <div className="stepper-dot upcoming" title="结果公示">
-              <span>3</span>
-            </div>
-          </div>
-
-          {/* Bottom Step Titles Grid */}
-          <div className="stepper-text-grid">
-            <div className="stepper-col passed">
+            <div className="stepper-label-wrapper">
               <span className="step-title">作品提交</span>
               <span className="step-tag-pill passed">已完成</span>
             </div>
-            <div className="stepper-col current">
+          </div>
+
+          {/* Step 2: 路演答辩 */}
+          <div className="timeline-step-unit current">
+            <div className="stepper-dot current" title="路演答辩 (评审团评审)">
+              <span>2</span>
+            </div>
+            <div className="stepper-label-wrapper">
               <span className="step-title">路演答辩</span>
               <span className="step-tag-pill ongoing">评审团评审</span>
             </div>
-            <div className="stepper-col upcoming">
+          </div>
+
+          {/* Step 3: 结果公示 */}
+          <div className="timeline-step-unit upcoming">
+            <div className="stepper-dot upcoming" title="结果公示">
+              <span>3</span>
+            </div>
+            <div className="stepper-label-wrapper">
               <span className="step-title">结果公示</span>
             </div>
           </div>
