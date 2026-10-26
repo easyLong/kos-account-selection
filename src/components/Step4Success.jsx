@@ -22,6 +22,15 @@ export default function Step4Success({ submission, onRestart }) {
 
   if (!submission) return null;
 
+  const displayId = (() => {
+    if (!submission?.id) return '01';
+    const str = String(submission.id).trim();
+    if (/^\d+$/.test(str)) {
+      return str.padStart(2, '0');
+    }
+    return str;
+  })();
+
   return (
     <div className="step-content-card success-container animate-fade-in">
       {/* Success Golden Icon */}
@@ -43,7 +52,7 @@ export default function Step4Success({ submission, onRestart }) {
           <span className="reg-label">【星火计划】评审编号</span>
           <span className="status-badge-active">作品已提交</span>
         </div>
-        <div className="reg-id-code">{submission.id}</div>
+        <div className="reg-id-code">{displayId}</div>
         <div className="reg-time">提交时间：{submission.submittedAt || new Date().toLocaleString()}</div>
       </div>
 
@@ -103,23 +112,11 @@ export default function Step4Success({ submission, onRestart }) {
           <span className="s-val">{submission.department} · {submission.position}</span>
         </div>
         <div className="summary-row">
-          <span className="s-label">作品形式</span>
-          <span className="s-val font-semibold">
-            {submission.workType === 'graphic' ? '📝 图文作品' : '🎥 视频作品'}
+          <span className="s-label">
+            {submission.workType === 'graphic' ? '图文作品' : '提案短视频'}
           </span>
-        </div>
-        <div className="summary-row">
-          <span className="s-label">在线问卷</span>
-          <span className="s-val text-green">✓ 潜力测评已完成 ({submission.surveyScore || 124}分 · {submission.surveyRating || 'S级'})</span>
-        </div>
-        <div className="summary-row">
-          <span className="s-label">作品标题</span>
-          <span className="s-val text-ellipsis font-semibold text-gold" title={submission.videoTitle}>“{submission.videoTitle}”</span>
-        </div>
-        <div className="summary-row">
-          <span className="s-label">作品构思</span>
-          <span className="s-val text-ellipsis" title={submission.videoIntro}>
-            {submission.videoIntro ? (submission.videoIntro.length > 22 ? submission.videoIntro.slice(0, 22) + '...' : submission.videoIntro) : '已提交'}
+          <span className="s-val text-ellipsis font-semibold text-gold" title={submission.videoTitle}>
+            “{submission.videoTitle || '未命名作品'}”
           </span>
         </div>
       </div>

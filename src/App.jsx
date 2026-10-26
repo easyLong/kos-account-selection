@@ -113,7 +113,7 @@ export default function App() {
       // Fallback offline submission simulation
       const fallbackRecord = {
         ...formData,
-        id: `XH-202610-${Math.floor(1000 + Math.random() * 9000)}`,
+        id: '01',
         status: '待初筛',
         submittedAt: new Date().toLocaleString('zh-CN', { hour12: false })
       };

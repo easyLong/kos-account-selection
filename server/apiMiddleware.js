@@ -207,6 +207,20 @@ async function getStoredApplications() {
   }
 }
 
+async function getNextSequentialId() {
+  const list = await getStoredApplications();
+  let maxNum = 0;
+  for (const item of list) {
+    const raw = String(item.id || '').trim();
+    const num = parseInt(raw, 10);
+    if (!isNaN(num) && num > maxNum) {
+      maxNum = num;
+    }
+  }
+  const nextNum = Math.max(maxNum + 1, list.length + 1);
+  return String(nextNum).padStart(2, '0');
+}
+
 async function saveApplication(appData) {
   initStorage();
 
@@ -498,7 +512,14 @@ export function createApiMiddleware() {
               return;
             }
 
-            const id = data.id || `XH-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
+            // Assign clean sequential ID: 01, 02, 03...
+            let id = data.id;
+            if (!id || id.startsWith('XH-') || id.startsWith('KOS-')) {
+              id = await getNextSequentialId();
+            } else if (/^\d+$/.test(id)) {
+              id = String(id).padStart(2, '0');
+            }
+
             const record = {
               ...data,
               id,
