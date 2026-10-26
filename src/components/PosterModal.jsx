@@ -22,7 +22,7 @@ export default function PosterModal({ isOpen, onClose, submission }) {
               <div className="poster-badge-pill">
                 <span>✦ 官方认证参赛者 ✦</span>
               </div>
-              <h2 className="poster-main-title">闪闪发光的公司级 UP 主</h2>
+              <h2 className="poster-main-title">星火计划</h2>
               <p className="poster-sub">财经类自媒体创作者选拔项目 · 勇敢出镜，才华可见</p>
             </div>
 

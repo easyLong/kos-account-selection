@@ -20,12 +20,12 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
         <div className="hero-content">
           <div className="badge-pill">
             <span className="sparkle">✦</span>
-            <span>星火计划</span>
+            <span>创作者招募</span>
             <span className="sparkle">✦</span>
           </div>
 
           <h1 className="hero-title">
-            闪闪发光的公司级 UP 主
+            星火计划
           </h1>
 
           <p className="hero-subtitle">
