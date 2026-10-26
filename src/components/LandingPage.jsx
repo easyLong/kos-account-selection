@@ -38,14 +38,14 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
       <div className="landing-body">
         <div className="intro-card">
           <div className="intro-lines-wrapper">
-            <p className="intro-line">
-              如果你热爱内容创作，希望沉淀已久的专业认知被更多人看见；
-            </p>
-            <p className="intro-line">
-              如果你乐于分享观点，想把扎实的财经积累转化为大众听得懂的表达；
-            </p>
-            <p className="intro-line intro-line-highlight">
-              如果你愿意跳出固有工作视角，发掘自身更多可能性，<strong className="text-highlight">欢迎报名星火计划！</strong>
+            <p className="intro-line">如果你热爱内容创作，</p>
+            <p className="intro-line">希望沉淀已久的专业认知被更多人看见；</p>
+            <p className="intro-line">如果你乐于分享观点，</p>
+            <p className="intro-line">想把扎实的财经积累转化为大众听得懂的表达；</p>
+            <p className="intro-line">如果你愿意跳出固有工作视角，</p>
+            <p className="intro-line">发掘自身更多可能性，</p>
+            <p className="intro-line intro-line-right">
+              <strong className="text-highlight">欢迎报名星火计划！</strong>
             </p>
           </div>
         </div>
