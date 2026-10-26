@@ -1,10 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import PosterModal from './PosterModal';
 
 export default function Step4Success({ submission, onRestart }) {
-  const [showPoster, setShowPoster] = useState(false);
-  const [showDetail, setShowDetail] = useState(false);
 
   useEffect(() => {
     // Fire celebratory confetti on mount
@@ -130,20 +127,6 @@ export default function Step4Success({ submission, onRestart }) {
       {/* Actions */}
       <div className="success-action-group">
         <button 
-          id="btn-open-poster"
-          type="button" 
-          className="btn-gold-primary"
-          onClick={() => setShowPoster(true)}
-        >
-          <span>生成我的荣誉海报</span>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <polyline points="21 15 16 10 5 21"></polyline>
-          </svg>
-        </button>
-
-        <button 
           type="button" 
           className="btn-secondary" 
           onClick={onRestart}
@@ -151,13 +134,6 @@ export default function Step4Success({ submission, onRestart }) {
           返回首页 / 重新报名
         </button>
       </div>
-
-      {/* Share Poster Modal */}
-      <PosterModal 
-        isOpen={showPoster} 
-        onClose={() => setShowPoster(false)} 
-        submission={submission} 
-      />
     </div>
   );
 }
