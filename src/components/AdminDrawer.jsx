@@ -63,7 +63,7 @@ export default function AdminDrawer({ isOpen, onClose }) {
     }
 
     // Category match
-    if (filterCategory !== 'ALL' && item.videoCategory !== filterCategory) {
+    if (filterCategory !== 'ALL' && item.videoCategory !== filterCategory && !item.videoCategory?.startsWith(filterCategory.split('（')[0])) {
       return false;
     }
 
@@ -109,7 +109,7 @@ export default function AdminDrawer({ isOpen, onClose }) {
       '申报账号/方向',
       '作品形式',
       '作品标题',
-      '选题派别',
+      '账号定位',
       '问卷总分',
       '量表得分',
       '主观得分',
@@ -149,7 +149,7 @@ export default function AdminDrawer({ isOpen, onClose }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `KOS账号海选报名汇总表_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `【星火计划】自媒体创作者选拔报名汇总表_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -162,7 +162,7 @@ export default function AdminDrawer({ isOpen, onClose }) {
         <div className="admin-header">
           <div className="admin-title-wrap">
             <span className="admin-badge">内部通道</span>
-            <h3 className="admin-title">KOS 账号海选 · 评审审核后台</h3>
+            <h3 className="admin-title">【星火计划】· 评审审核后台</h3>
           </div>
           <div className="admin-header-actions">
             <button className="modal-close-btn" onClick={onClose} title="关闭">✕</button>
@@ -203,13 +203,12 @@ export default function AdminDrawer({ isOpen, onClose }) {
               onChange={e => setFilterCategory(e.target.value)}
               className="admin-select"
             >
-              <option value="ALL">全部选题派别</option>
-              <option value="稳健理财与资产配置派">稳健理财与资产配置派</option>
-              <option value="宏观策略与市场研判派">宏观策略与市场研判派</option>
-              <option value="行业掘金与热点跟踪派">行业掘金与热点跟踪派</option>
-              <option value="投教科普与避坑指南派">投教科普与避坑指南派</option>
-              <option value="基金定投与实战派">基金定投与实战派</option>
-              <option value="其它创新创意派">其它创新创意派</option>
+              <option value="ALL">全部账号定位</option>
+              <option value="知识科普派（例：基金小知识）">知识科普派（例：基金小知识）</option>
+              <option value="专家派（例：拆解半导体）">专家派（例：拆解半导体）</option>
+              <option value="生活体验派（例：打工人的投资日记）">生活体验派（例：打工人的投资日记）</option>
+              <option value="特定人群派（例：宝妈理财）">特定人群派（例：宝妈理财）</option>
+              <option value="其它（跨界融合 / 自主选择）">其它（跨界融合 / 自主选择）</option>
             </select>
 
             {/* Status Filter */}
@@ -424,7 +423,7 @@ export default function AdminDrawer({ isOpen, onClose }) {
                     <span className="font-semibold text-title">“{selectedCandidate.videoTitle || '未命名'}”</span>
                   </div>
                   <div className="info-row">
-                    <strong>选题派别：</strong>
+                    <strong>账号定位：</strong>
                     <span className="text-gold font-semibold">{selectedCandidate.videoCategory || '未选择'}</span>
                   </div>
                   <div className="info-row intro-text">

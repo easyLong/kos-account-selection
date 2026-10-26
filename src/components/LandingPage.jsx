@@ -20,7 +20,7 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
         <div className="hero-content">
           <div className="badge-pill">
             <span className="sparkle">✦</span>
-            <span>KOS 账号海选</span>
+            <span>星火计划</span>
             <span className="sparkle">✦</span>
           </div>
 
@@ -29,7 +29,7 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
           </h1>
 
           <p className="hero-subtitle">
-            面向全公司正式员工，不限岗位
+            财经类自媒体创作者选拔项目
           </p>
         </div>
       </div>
@@ -38,7 +38,7 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
       <div className="landing-body">
         <div className="intro-card">
           <p className="intro-paragraph">
-            你有强烈的表达欲吗？愿意<strong className="text-highlight">真人出镜或以真实身份</strong>，把专业知识、市场观点、投资体验变成内容？公司级 KOS 账号队伍正在招募，让你的才华被看见。
+            你有强烈的表达欲吗？愿意<strong className="text-highlight">以真实身份或出镜创作</strong>，把专业财经知识与投资体验变成爆款内容？【星火计划】创作者队伍正在招募，让你的才华被看见！
           </p>
         </div>
 

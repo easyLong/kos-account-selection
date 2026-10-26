@@ -9,7 +9,7 @@ export default function PosterModal({ isOpen, onClose, submission }) {
     <div className="modal-backdrop animate-fade-in" onClick={onClose}>
       <div className="modal-dialog poster-modal-dialog" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="modal-title">KOS 官方参赛荣誉海报</h3>
+          <h3 className="modal-title">【星火计划】官方参赛荣誉海报</h3>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
 
@@ -23,7 +23,7 @@ export default function PosterModal({ isOpen, onClose, submission }) {
                 <span>✦ 官方认证参赛者 ✦</span>
               </div>
               <h2 className="poster-main-title">闪闪发光的公司级 UP 主</h2>
-              <p className="poster-sub">KOS 账号海选 · 勇敢出镜，才华可见</p>
+              <p className="poster-sub">财经类自媒体创作者选拔项目 · 勇敢出镜，才华可见</p>
             </div>
 
             <div className="poster-creator-profile">
@@ -48,7 +48,7 @@ export default function PosterModal({ isOpen, onClose, submission }) {
 
             <div className="poster-proposal-info">
               <div className="poster-tag-row">
-                <span className="poster-school-tag">{submission.videoCategory || '投资创作派'}</span>
+                <span className="poster-school-tag">{submission.videoCategory || '知识科普派'}</span>
                 <span className="poster-id-tag">No. {submission.id}</span>
               </div>
               <h4 className="poster-proposal-title">“{submission.videoTitle || '我的理财与投资提案'}”</h4>
@@ -67,8 +67,8 @@ export default function PosterModal({ isOpen, onClose, submission }) {
                   />
                 </div>
                 <div className="poster-qr-text">
-                  <p className="qr-title">扫码加入公司 KOS 海选</p>
-                  <p className="qr-sub">不限岗位 · 让你的才华被看见</p>
+                  <p className="qr-title">扫码加入【星火计划】</p>
+                  <p className="qr-sub">财经类自媒体创作者选拔 · 让你的才华被看见</p>
                 </div>
               </div>
             </div>
