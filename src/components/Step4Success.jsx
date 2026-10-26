@@ -20,10 +20,14 @@ export default function Step4Success({ submission, onRestart }) {
   if (!submission) return null;
 
   const displayId = (() => {
-    if (!submission?.id) return '01';
+    if (!submission?.id) return 'XH-01';
     const str = String(submission.id).trim();
+    if (/^XH-\d+$/i.test(str)) {
+      const numPart = str.replace(/^XH-/i, '');
+      return `XH-${numPart.padStart(2, '0')}`;
+    }
     if (/^\d+$/.test(str)) {
-      return str.padStart(2, '0');
+      return `XH-${str.padStart(2, '0')}`;
     }
     return str;
   })();

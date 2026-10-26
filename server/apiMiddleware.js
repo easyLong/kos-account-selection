@@ -212,13 +212,16 @@ async function getNextSequentialId() {
   let maxNum = 0;
   for (const item of list) {
     const raw = String(item.id || '').trim();
-    const num = parseInt(raw, 10);
-    if (!isNaN(num) && num > maxNum) {
-      maxNum = num;
+    const match = raw.match(/(?:XH-)?(\d+)/i);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num > maxNum) {
+        maxNum = num;
+      }
     }
   }
   const nextNum = Math.max(maxNum + 1, list.length + 1);
-  return String(nextNum).padStart(2, '0');
+  return `XH-${String(nextNum).padStart(2, '0')}`;
 }
 
 async function saveApplication(appData) {
@@ -512,12 +515,15 @@ export function createApiMiddleware() {
               return;
             }
 
-            // Assign clean sequential ID: 01, 02, 03...
+            // Assign clean sequential ID with XH- prefix: XH-01, XH-02, XH-03...
             let id = data.id;
-            if (!id || id.startsWith('XH-') || id.startsWith('KOS-')) {
+            if (!id || /^(XH-\d{6}-|KOS-)/i.test(id)) {
               id = await getNextSequentialId();
+            } else if (/^XH-\d+$/i.test(id)) {
+              const num = id.replace(/^XH-/i, '');
+              id = `XH-${num.padStart(2, '0')}`;
             } else if (/^\d+$/.test(id)) {
-              id = String(id).padStart(2, '0');
+              id = `XH-${String(id).padStart(2, '0')}`;
             }
 
             const record = {
