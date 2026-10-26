@@ -38,7 +38,7 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
       <div className="landing-body">
         <div className="intro-card">
           <p className="intro-paragraph">
-            你有强烈的表达欲吗？愿意<strong className="text-highlight">以真实身份或出镜创作</strong>，把专业财经知识与投资体验变成爆款内容？【星火计划】创作者队伍正在招募，让你的才华被看见！
+            如果你热爱内容创作，希望沉淀已久的专业认知被更多人看见；如果你乐于分享观点，想把扎实的财经积累转化为大众听得懂的表达；如果你愿意跳出固有工作视角，发掘自身更多可能性，<strong className="text-highlight">欢迎报名星火计划！</strong>
           </p>
         </div>
 
