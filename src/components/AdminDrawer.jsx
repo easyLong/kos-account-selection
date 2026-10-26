@@ -419,15 +419,17 @@ export default function AdminDrawer({ isOpen, onClose }) {
                 <div className="detail-info-block">
                   <h5 className="section-title">💡 提案构思与选题</h5>
                   <div className="info-row">
-                    <strong>选题标题：</strong>
+                    <strong>作品标题：</strong>
                     <span className="font-semibold text-title">“{selectedCandidate.videoTitle || '未命名'}”</span>
                   </div>
-                  <div className="info-row">
-                    <strong>账号定位：</strong>
-                    <span className="text-gold font-semibold">{selectedCandidate.videoCategory || '未选择'}</span>
-                  </div>
+                  {selectedCandidate.videoCategory && (
+                    <div className="info-row">
+                      <strong>账号定位：</strong>
+                      <span className="text-gold font-semibold">{selectedCandidate.videoCategory}</span>
+                    </div>
+                  )}
                   <div className="info-row intro-text">
-                    <strong>构思说明：</strong>
+                    <strong>作品构思：</strong>
                     <p className="intro-paragraph-text">{selectedCandidate.videoIntro || '暂无说明'}</p>
                   </div>
                 </div>

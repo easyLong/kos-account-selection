@@ -11,18 +11,6 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
 
   const workType = formData.workType || 'video'; // 'video' | 'graphic'
 
-  // Account positioning categories with clean name and dynamic example
-  const categoryOptions = [
-    { name: '知识科普派', example: '基金小知识、投资常识拆解' },
-    { name: '专家派', example: '拆解半导体、产业深度研报' },
-    { name: '生活体验派', example: '打工人的投资日记、定投心得' },
-    { name: '特定人群派', example: '宝妈理财、年轻人第一桶金' },
-    { name: '其它', example: '跨界融合、个人专属创意选题' }
-  ];
-
-  const selectedCategoryObj = categoryOptions.find(
-    (c) => c.name === formData.videoCategory || formData.videoCategory?.startsWith(c.name)
-  );
 
   // ==========================================
   // Video Upload Handler
@@ -198,15 +186,11 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
       newErrors.videoTitle = '请给你的作品起一个名字';
     }
 
-    if (!formData.videoCategory) {
-      newErrors.videoCategory = '请选择账号定位';
-    }
-
     const introLen = formData.videoIntro?.trim().length || 0;
     if (introLen === 0) {
-      newErrors.videoIntro = '请填写作品简要介绍与构思';
+      newErrors.videoIntro = '请填写作品构思';
     } else if (introLen > 300) {
-      newErrors.videoIntro = '作品介绍已超过 300 字限制';
+      newErrors.videoIntro = '作品构思已超过 300 字限制';
     }
 
     setErrors(newErrors);
@@ -442,53 +426,17 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
           {errors.videoTitle && <div className="form-error-msg">{errors.videoTitle}</div>}
         </div>
 
-        {/* 账号定位 * */}
-        <div className="form-group">
-          <label className="form-label" htmlFor="select-video-category">
-            账号定位<span className="required-star">*</span>
-          </label>
-          <div className="select-wrapper">
-            <select
-              id="select-video-category"
-              className={`form-select ${errors.videoCategory ? 'error' : ''}`}
-              value={selectedCategoryObj ? selectedCategoryObj.name : ''}
-              onChange={(e) => {
-                onChange({ videoCategory: e.target.value });
-                if (errors.videoCategory) setErrors(prev => ({ ...prev, videoCategory: null }));
-              }}
-            >
-              <option value="">请选择账号定位</option>
-              {categoryOptions.map((opt) => (
-                <option key={opt.name} value={opt.name}>{opt.name}</option>
-              ))}
-            </select>
-            <div className="select-arrow">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A756D" strokeWidth="2">
-                <path d="M6 9l6 6 6-6"></path>
-              </svg>
-            </div>
-          </div>
-          {errors.videoCategory && <div className="form-error-msg">{errors.videoCategory}</div>}
+        {/* 账号定位已移除，仅保留作品标题与构思 */}
 
-          {/* Dynamic Floating Example Badge */}
-          {selectedCategoryObj && (
-            <div className="category-floating-badge animate-fade-in">
-              <span className="floating-badge-icon">💡</span>
-              <span className="floating-badge-tag">参考示例：</span>
-              <span className="floating-badge-desc">{selectedCategoryObj.example}</span>
-            </div>
-          )}
-        </div>
-
-        {/* 提案介绍 * (0/300 字) */}
-        <div className="form-group">
+        {/* 作品构思 * (0/300 字) */}
+        <div className="form-group" style={{ marginTop: '16px' }}>
           <label className="form-label" htmlFor="textarea-video-intro">
-            作品构思与亮点介绍<span className="required-star">*</span>
+            作品构思<span className="required-star">*</span>
           </label>
           <div className="textarea-wrapper">
             <textarea
               id="textarea-video-intro"
-              rows="3"
+              rows="4"
               maxLength={300}
               className={`form-textarea ${errors.videoIntro ? 'error' : ''}`}
               placeholder="简述作品选题构思、面向人群或想传递的核心观点（作品主题不限，须为原创）……"
@@ -499,7 +447,7 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
               }}
             />
             <div className="char-counter">
-              <span className={formData.videoIntro?.length > 300 ? 'text-error' : ''}>
+              <span className={(formData.videoIntro?.length || 0) > 300 ? 'text-error' : ''}>
                 {formData.videoIntro?.length || 0}
               </span>
               <span> / 300 字</span>

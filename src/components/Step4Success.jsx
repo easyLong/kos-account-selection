@@ -113,14 +113,14 @@ export default function Step4Success({ submission, onRestart }) {
           <span className="s-val text-green">✓ 潜力测评已完成 ({submission.surveyScore || 124}分 · {submission.surveyRating || 'S级'})</span>
         </div>
         <div className="summary-row">
-          <span className="s-label">账号定位</span>
-          <span className="s-val text-gold">{submission.videoCategory}</span>
+          <span className="s-label">作品标题</span>
+          <span className="s-val text-ellipsis font-semibold text-gold" title={submission.videoTitle}>“{submission.videoTitle}”</span>
         </div>
         <div className="summary-row">
-          <span className="s-label">
-            {submission.workType === 'graphic' ? '图文作品' : '提案短视频'}
+          <span className="s-label">作品构思</span>
+          <span className="s-val text-ellipsis" title={submission.videoIntro}>
+            {submission.videoIntro ? (submission.videoIntro.length > 22 ? submission.videoIntro.slice(0, 22) + '...' : submission.videoIntro) : '已提交'}
           </span>
-          <span className="s-val text-ellipsis" title={submission.videoTitle}>“{submission.videoTitle}”</span>
         </div>
       </div>
 

@@ -48,7 +48,7 @@ export default function PosterModal({ isOpen, onClose, submission }) {
 
             <div className="poster-proposal-info">
               <div className="poster-tag-row">
-                <span className="poster-school-tag">{submission.videoCategory || '知识科普派'}</span>
+                <span className="poster-school-tag">{submission.videoCategory || (submission.workType === 'graphic' ? '图文创作' : '视频创作')}</span>
                 <span className="poster-id-tag">No. {submission.id}</span>
               </div>
               <h4 className="poster-proposal-title">“{submission.videoTitle || '我的理财与投资提案'}”</h4>
