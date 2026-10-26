@@ -3992,7 +3992,8 @@
   margin: 0 0 6px 0;
 }
 
-.graphic-text-body {
+.graphic-text-body,
+.admin-graphic-body {
   font-size: 13px;
   color: #5A5040;
   line-height: 1.6;
@@ -4000,6 +4001,183 @@
   word-break: break-word;
 }
 
+/* ========================================================
+   SELECTION FLOW CARD (Landing Page)
+   ======================================================== */
+.selection-flow-card {
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(226, 218, 203, 0.9);
+  padding: 22px 18px 20px;
+  box-shadow: 0 4px 20px rgba(45, 36, 20, 0.05);
+  margin-top: 14px;
+  margin-bottom: 22px;
+}
 
+.flow-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
 
+.flow-card-title {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: #2D261A;
+  letter-spacing: 1px;
+  margin: 0;
+}
 
+.flow-card-header .sparkle-gold {
+  color: #B58226;
+  font-size: 13px;
+}
+
+.flow-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.flow-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 14px;
+  background: #FAF7F2;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(226, 218, 203, 0.7);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.flow-step-item:hover {
+  border-color: rgba(197, 154, 63, 0.5);
+  transform: translateY(-1px);
+}
+
+.flow-step-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 52px;
+}
+
+.flow-step-num {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 800;
+  color: #9E6F1A;
+  line-height: 1;
+}
+
+.flow-step-tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8C5E13;
+  background: #F4E8D0;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.flow-step-content {
+  flex: 1;
+}
+
+.flow-step-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #2D261A;
+  margin-bottom: 4px;
+  letter-spacing: 0.3px;
+}
+
+.flow-step-desc {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #665D4F;
+  margin: 0;
+  letter-spacing: 0.1px;
+}
+
+/* ========================================================
+   TIMELINE DETAIL NOTES (Step 4 Success)
+   ======================================================== */
+.timeline-detail-notes {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed #E6DEC8;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.timeline-note-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: #FAF8F5;
+  border: 1px solid #ECE4D8;
+  font-size: 12.5px;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.timeline-note-item.passed {
+  background: #F6FAF6;
+  border-color: #D4ECD5;
+}
+
+.timeline-note-item.current {
+  background: #FFFDF8;
+  border-color: rgba(197, 154, 63, 0.45);
+  box-shadow: 0 2px 8px rgba(158, 111, 26, 0.08);
+}
+
+.timeline-note-item.upcoming {
+  opacity: 0.82;
+}
+
+.timeline-note-item .note-dot {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+.timeline-note-item.passed .note-dot {
+  background: #2E7D32;
+  color: #FFFFFF;
+}
+
+.timeline-note-item.current .note-dot {
+  background: #9E6F1A;
+  color: #FFFFFF;
+}
+
+.timeline-note-item.upcoming .note-dot {
+  background: #D9D2C5;
+  color: #6B6252;
+}
+
+.timeline-note-item .note-text {
+  flex: 1;
+  color: #4A4234;
+}
+
+.timeline-note-item .note-text strong {
+  color: #2D261A;
+  margin-right: 2px;
+}
