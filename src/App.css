@@ -215,6 +215,32 @@
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
 }
 
+.step-brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 11px;
+  background: linear-gradient(135deg, rgba(232, 188, 91, 0.22) 0%, rgba(158, 111, 26, 0.38) 100%);
+  border: 1px solid rgba(244, 213, 146, 0.55);
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 10px rgba(197, 154, 63, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+.step-brand-pill .brand-text {
+  font-family: var(--font-serif);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #FBF4E6;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.step-brand-pill .sparkle-gold {
+  color: #F4D592;
+  font-size: 10px;
+}
+
 .step-count-pill {
   font-size: 11px;
   color: #E8BC5B;
@@ -4000,6 +4026,45 @@
   word-break: break-word;
 }
 
+/* Floating Example Badge for Account Positioning */
+.category-floating-badge {
+  margin-top: 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: linear-gradient(135deg, #FFFDF8 0%, #FAF3E6 100%);
+  border: 1px solid rgba(197, 154, 63, 0.45);
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 8px rgba(158, 111, 26, 0.08);
+  font-size: 12px;
+  line-height: 1.4;
+  animation: floatBadgeIn 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
 
+@keyframes floatBadgeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
+.category-floating-badge .floating-badge-icon {
+  font-size: 13px;
+  line-height: 1;
+}
 
+.category-floating-badge .floating-badge-tag {
+  font-weight: 700;
+  color: #8C5E13;
+  white-space: nowrap;
+}
+
+.category-floating-badge .floating-badge-desc {
+  color: #4A4031;
+  font-weight: 500;
+}

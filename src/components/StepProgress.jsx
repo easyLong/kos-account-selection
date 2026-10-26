@@ -13,7 +13,11 @@ export default function StepProgress({ currentStep, onBackHome }) {
       <div className="step-header-text">
         <div className="title-row">
           <div className="title-left">
-            <h2 className="step-main-title">【星火计划】报名</h2>
+            <div className="step-brand-pill">
+              <span className="sparkle-gold">✦</span>
+              <span className="brand-text">星火计划</span>
+              <span className="sparkle-gold">✦</span>
+            </div>
             <span className="step-count-pill">第 {currentStep}/3 步</span>
           </div>
           {onBackHome && (

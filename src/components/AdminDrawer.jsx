@@ -204,11 +204,11 @@ export default function AdminDrawer({ isOpen, onClose }) {
               className="admin-select"
             >
               <option value="ALL">全部账号定位</option>
-              <option value="知识科普派（例：基金小知识）">知识科普派（例：基金小知识）</option>
-              <option value="专家派（例：拆解半导体）">专家派（例：拆解半导体）</option>
-              <option value="生活体验派（例：打工人的投资日记）">生活体验派（例：打工人的投资日记）</option>
-              <option value="特定人群派（例：宝妈理财）">特定人群派（例：宝妈理财）</option>
-              <option value="其它（跨界融合 / 自主选择）">其它（跨界融合 / 自主选择）</option>
+              <option value="知识科普派">知识科普派</option>
+              <option value="专家派">专家派</option>
+              <option value="生活体验派">生活体验派</option>
+              <option value="特定人群派">特定人群派</option>
+              <option value="其它">其它</option>
             </select>
 
             {/* Status Filter */}
