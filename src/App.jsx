@@ -6,6 +6,7 @@ import Step2Survey from './components/Step2Survey';
 import Step3Proposal from './components/Step3Proposal';
 import Step4Success from './components/Step4Success';
 import DeviceShell from './components/DeviceShell';
+import QuestionnaireAdminPage from './components/QuestionnaireAdminPage';
 
 const DRAFT_STORAGE_KEY = 'kos_h5_registration_draft_v1';
 
@@ -46,6 +47,24 @@ export default function App() {
     } catch (e) {
       return false;
     }
+  });
+
+  const [currentPage, setCurrentPage] = useState(() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (
+        path.startsWith('/admin') || 
+        path.startsWith('/questions') || 
+        p.get('page') === 'questions' || 
+        p.get('admin') === 'questions' || 
+        hash === '#questions'
+      ) {
+        return 'questions';
+      }
+    } catch (e) {}
+    return 'app';
   });
 
   // Restore draft on mount
@@ -134,6 +153,23 @@ export default function App() {
     setStep(0);
   };
 
+  if (currentPage === 'questions') {
+    return (
+      <QuestionnaireAdminPage 
+        onBackToApp={() => {
+          try {
+            window.history.pushState({}, '', '/');
+          } catch (e) {}
+          setCurrentPage('app');
+        }}
+        onOpenCandidates={() => {
+          setCurrentPage('app');
+          setIsAdminOpen(true);
+        }}
+      />
+    );
+  }
+
   return (
     <DeviceShell 
       currentStep={step} 
@@ -141,6 +177,12 @@ export default function App() {
       isAdminOpen={isAdminOpen}
       onOpenAdmin={() => setIsAdminOpen(true)}
       onCloseAdmin={() => setIsAdminOpen(false)}
+      onOpenQuestionsAdmin={() => {
+        try {
+          window.history.pushState({}, '', '/questions');
+        } catch (e) {}
+        setCurrentPage('questions');
+      }}
     >
       <div className="h5-main-wrapper">
         {/* Step 0: Landing Page matching mockup 1 */}

@@ -191,12 +191,15 @@ async function initDatabase() {
   }
 }
 
-async function getSurveyQuestions() {
+async function getSurveyQuestions(includeAll = false) {
   initStorage();
   let list = [];
   if (dbAvailable && dbPool) {
     try {
-      const [rows] = await dbPool.query('SELECT * FROM htf_kos_survey_questions WHERE status = 1 ORDER BY sortOrder ASC, id ASC');
+      const sql = includeAll 
+        ? 'SELECT * FROM htf_kos_survey_questions ORDER BY sortOrder ASC, id ASC'
+        : 'SELECT * FROM htf_kos_survey_questions WHERE status = 1 ORDER BY sortOrder ASC, id ASC';
+      const [rows] = await dbPool.query(sql);
       list = rows || [];
     } catch (e) {
       console.warn('[Database] Fetch survey questions failed:', e.message);
@@ -206,7 +209,8 @@ async function getSurveyQuestions() {
   if (!list.length) {
     try {
       if (fs.existsSync(QUESTIONS_FILE)) {
-        list = JSON.parse(fs.readFileSync(QUESTIONS_FILE, 'utf-8'));
+        const fileList = JSON.parse(fs.readFileSync(QUESTIONS_FILE, 'utf-8'));
+        list = includeAll ? fileList : fileList.filter(q => q.status !== 0);
       }
     } catch (e) {}
   }
@@ -717,7 +721,8 @@ export function createApiMiddleware() {
 
         // 8. Dynamic Survey Questions API
         if (pathname === '/api/survey/questions' && req.method === 'GET') {
-          getSurveyQuestions().then(result => {
+          const includeAll = url.searchParams.get('all') === '1' || url.searchParams.get('admin') === '1';
+          getSurveyQuestions(includeAll).then(result => {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({ code: 0, data: result }));
           }).catch(err => {
