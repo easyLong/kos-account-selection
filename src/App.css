@@ -824,6 +824,20 @@
   color: #8C8474;
 }
 
+.q-warm-hint {
+  font-size: 11.5px;
+  color: #8C8474;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.1px;
+}
+
+.q-warm-hint .sparkle-tiny {
+  color: #C59A3F;
+  font-size: 10px;
+}
+
 .q-main-title {
   font-size: 15.5px;
   font-weight: 600;

@@ -162,9 +162,10 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
         {/* Module Context Hint */}
         <div className="q-card-top-info">
           <span className="q-badge-num">Q{String(currentIdx + 1).padStart(2, '0')}</span>
-          {currentQ.type !== 'scale' && (
-            <span className="q-badge-type">开放简答 · 核心加分</span>
-          )}
+          <span className="q-warm-hint">
+            <span className="sparkle-tiny">✦</span>
+            <span>请如实填写，帮助我们更好的认识你</span>
+          </span>
         </div>
 
         {/* Question Statement */}
