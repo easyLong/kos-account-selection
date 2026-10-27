@@ -1022,6 +1022,18 @@
   background: #F4ECCF;
 }
 
+.btn-survey-next.btn-next-answered {
+  background: linear-gradient(135deg, #C59A3F 0%, #A87823 100%);
+  color: #FFFFFF;
+  border-color: #A87823;
+  box-shadow: 0 3px 10px rgba(168, 120, 35, 0.22);
+}
+
+.btn-survey-next.btn-next-answered:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
 .btn-survey-submit {
   flex: 1;
   display: flex;

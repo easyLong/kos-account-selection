@@ -120,6 +120,10 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
   };
 
   const handleNextQuestion = () => {
+    if (!isQuestionAnswered(currentQ)) {
+      triggerShakeAndToast(`请先完成当前第 Q${String(currentIdx + 1).padStart(2, '0')} 题再继续`);
+      return;
+    }
     if (currentIdx < totalCount - 1) {
       setAnimDirection('forward');
       setCurrentIdx(prev => prev + 1);
@@ -171,9 +175,7 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
 
   const progressPercent = Math.round((answeredCount / totalCount) * 100);
   const isLastQuestion = currentIdx === totalCount - 1;
-  const isCurrentAnswered = currentQ.type === 'scale' 
-    ? answers[currentQ.id] !== undefined 
-    : Boolean(answers[currentQ.id]?.trim());
+  const isCurrentAnswered = isQuestionAnswered(currentQ);
 
   return (
     <div className="native-survey-wrapper animate-fade-in">
@@ -288,7 +290,7 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
         ) : (
           <button 
             type="button" 
-            className="btn-survey-next" 
+            className={`btn-survey-next ${isCurrentAnswered ? 'btn-next-answered' : ''}`}
             onClick={handleNextQuestion}
           >
             <span>下一题 ›</span>
