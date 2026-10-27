@@ -28,6 +28,9 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState(() => formData.surveyAnswers || {});
   const [animDirection, setAnimDirection] = useState('forward');
+  const [shakeCard, setShakeCard] = useState(false);
+  const [toastTip, setToastTip] = useState(null);
+  const [unansweredModal, setUnansweredModal] = useState(null);
   const cardRef = useRef(null);
 
   // Fetch dynamic questions from database/API
@@ -68,6 +71,24 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
   const totalScore = scaleScore + subjectiveScore;
   const absRating = calculateABSRating(scaleScore, subjectiveScore);
 
+  // Check whether a question is answered
+  const isQuestionAnswered = (q) => {
+    if (!q) return false;
+    const val = answers[q.id];
+    if (q.type === 'scale') {
+      return val !== undefined && val !== null && val !== '';
+    } else {
+      return typeof val === 'string' && val.trim().length > 0;
+    }
+  };
+
+  const triggerShakeAndToast = (msg) => {
+    setShakeCard(true);
+    setToastTip(msg);
+    setTimeout(() => setShakeCard(false), 450);
+    setTimeout(() => setToastTip(null), 2500);
+  };
+
   // Handle scale option tap: auto-advance
   const handleSelectOption = (val) => {
     const nextAnswers = { ...answers, [currentQ.id]: val };
@@ -99,14 +120,37 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
   };
 
   const handleNextQuestion = () => {
+    if (!isQuestionAnswered(currentQ)) {
+      triggerShakeAndToast(`请先完成当前第 Q${String(currentIdx + 1).padStart(2, '0')} 题再继续`);
+      return;
+    }
     if (currentIdx < totalCount - 1) {
       setAnimDirection('forward');
       setCurrentIdx(prev => prev + 1);
     }
   };
 
-  // Complete survey and advance to Step 3
+  // Complete survey: validate all questions, jump if unanswered
   const handleCompleteSurvey = () => {
+    const unanswered = [];
+    flatQuestions.forEach((q, idx) => {
+      if (!isQuestionAnswered(q)) {
+        unanswered.push({
+          idx,
+          id: q.id,
+          displayNum: `Q${String(idx + 1).padStart(2, '0')}`,
+          moduleName: (q.moduleName || '问卷测评').split('·')[0],
+          type: q.type,
+          text: q.text
+        });
+      }
+    });
+
+    if (unanswered.length > 0) {
+      setUnansweredModal(unanswered);
+      return;
+    }
+
     const finalData = {
       surveyCompleted: true,
       surveyAnswers: answers,
@@ -118,6 +162,15 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
     };
     onChange(finalData);
     onNext();
+  };
+
+  const jumpToQuestion = (targetIdx) => {
+    setUnansweredModal(null);
+    setAnimDirection(targetIdx > currentIdx ? 'forward' : 'backward');
+    setCurrentIdx(targetIdx);
+    setTimeout(() => {
+      triggerShakeAndToast(`已为您定位至未答题目 (Q${String(targetIdx + 1).padStart(2, '0')})`);
+    }, 120);
   };
 
   const progressPercent = Math.round((answeredCount / totalCount) * 100);
@@ -157,7 +210,7 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
       <div 
         ref={cardRef} 
         key={currentQ.id} 
-        className={`native-question-card animate-card-${animDirection}`}
+        className={`native-question-card animate-card-${animDirection} ${shakeCard ? 'shake-card' : ''}`}
       >
         {/* Module Context Hint */}
         <div className="q-card-top-info">
@@ -246,6 +299,76 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
           </button>
         )}
       </div>
+
+      {/* Floating Gentle Toast Hint */}
+      {toastTip && (
+        <div className="survey-toast-tip animate-fade-in">
+          <span className="toast-icon">💡</span>
+          <span className="toast-text">{toastTip}</span>
+        </div>
+      )}
+
+      {/* Unanswered Check Modal */}
+      {unansweredModal && (
+        <div className="modal-backdrop animate-fade-in" onClick={() => setUnansweredModal(null)}>
+          <div className="modal-dialog survey-unanswered-dialog" onClick={e => e.stopPropagation()}>
+            <div className="unanswered-modal-header">
+              <div className="unanswered-icon-wrap">
+                <span className="unanswered-icon">📝</span>
+              </div>
+              <div className="unanswered-header-text">
+                <h4 className="unanswered-modal-title">
+                  还有 <strong>{unansweredModal.length}</strong> 道题目尚未作答
+                </h4>
+                <p className="unanswered-modal-sub">
+                  请补齐以下题目后再提交，助我们全面了解你的特长与风格
+                </p>
+              </div>
+              <button 
+                type="button" 
+                className="modal-close-btn" 
+                onClick={() => setUnansweredModal(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="unanswered-pills-list">
+              <span className="pills-label">未答题目清单 (点击可直达对应题目)：</span>
+              <div className="pills-grid">
+                {unansweredModal.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="unanswered-pill-btn"
+                    onClick={() => jumpToQuestion(item.idx)}
+                  >
+                    <span className="pill-q-num">{item.displayNum}</span>
+                    <span className="pill-q-module">{item.moduleName}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="unanswered-modal-actions">
+              <button
+                type="button"
+                className="btn-modal-ghost"
+                onClick={() => setUnansweredModal(null)}
+              >
+                稍后检查
+              </button>
+              <button
+                type="button"
+                className="btn-modal-primary"
+                onClick={() => jumpToQuestion(unansweredModal[0].idx)}
+              >
+                <span>立即前往补答 ({unansweredModal[0].displayNum}) ›</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
