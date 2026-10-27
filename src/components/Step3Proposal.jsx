@@ -9,34 +9,89 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
 
   // ==========================================
   // Video Upload Handler (Max 2 mins / 500MB)
+  // Direct OSS Upload for 100x Speedup with Server Fallback
   // ==========================================
-  const startUploadVideo = (file, durationText) => {
+  const startUploadVideo = async (file, durationText) => {
     setIsUploading(true);
     setUploadProgress(5);
 
-    const formDataPayload = new FormData();
-    formDataPayload.append('file', file);
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
 
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/upload?type=video');
+    const fallbackServerUpload = () => {
+      const formDataPayload = new FormData();
+      formDataPayload.append('file', file);
 
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.min(99, Math.round((event.loaded / event.total) * 100));
-        setUploadProgress(percent);
-      }
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/upload?type=video');
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.min(99, Math.round((event.loaded / event.total) * 100));
+          setUploadProgress(percent);
+        }
+      };
+
+      xhr.onload = () => {
+        setIsUploading(false);
+        if (xhr.status === 200) {
+          try {
+            const res = JSON.parse(xhr.responseText);
+            if (res.code === 0) {
+              onChange({
+                workType: 'video',
+                videoUrl: res.url,
+                videoName: file.name,
+                videoSize: sizeMb,
+                videoDuration: durationText || '2分钟内'
+              });
+              setUploadProgress(100);
+              if (errors.work) setErrors(prev => ({ ...prev, work: null }));
+            } else {
+              alert('上传失败: ' + (res.message || '未知错误'));
+              setUploadProgress(0);
+            }
+          } catch (err) {
+            alert('解析上传响应失败');
+            setUploadProgress(0);
+          }
+        } else {
+          alert('上传失败，状态码: ' + xhr.status);
+          setUploadProgress(0);
+        }
+      };
+
+      xhr.onerror = () => {
+        setIsUploading(false);
+        setUploadProgress(0);
+        alert('网络连接错误，文件上传失败，请重试');
+      };
+
+      xhr.send(formDataPayload);
     };
 
-    xhr.onload = () => {
-      setIsUploading(false);
-      if (xhr.status === 200) {
-        try {
-          const res = JSON.parse(xhr.responseText);
-          if (res.code === 0) {
-            const sizeMb = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+    // 1. High-speed direct OSS upload (bypasses server 1Mbps bandwidth for 100x faster uploads)
+    try {
+      const sigRes = await fetch(`/api/oss/signature?type=video&filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'video/mp4')}`);
+      const sigData = await sigRes.json();
+      if (sigData.code === 0 && sigData.data?.uploadUrl) {
+        const { uploadUrl, publicUrl } = sigData.data;
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.min(99, Math.round((event.loaded / event.total) * 100));
+            setUploadProgress(percent);
+          }
+        };
+
+        xhr.onload = () => {
+          setIsUploading(false);
+          if (xhr.status === 200 || xhr.status === 204) {
             onChange({
               workType: 'video',
-              videoUrl: res.url,
+              videoUrl: publicUrl,
               videoName: file.name,
               videoSize: sizeMb,
               videoDuration: durationText || '2分钟内'
@@ -44,26 +99,25 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
             setUploadProgress(100);
             if (errors.work) setErrors(prev => ({ ...prev, work: null }));
           } else {
-            alert('上传失败: ' + (res.message || '未知错误'));
-            setUploadProgress(0);
+            console.warn('Direct OSS upload status', xhr.status, ', fallback to server upload');
+            fallbackServerUpload();
           }
-        } catch (err) {
-          alert('解析上传响应失败');
-          setUploadProgress(0);
-        }
-      } else {
-        alert('上传失败，状态码: ' + xhr.status);
-        setUploadProgress(0);
+        };
+
+        xhr.onerror = () => {
+          console.warn('Direct OSS upload network error, fallback to server upload');
+          fallbackServerUpload();
+        };
+
+        xhr.send(file);
+        return;
       }
-    };
+    } catch (e) {
+      console.warn('Direct OSS signature failed, fallback to server upload:', e);
+    }
 
-    xhr.onerror = () => {
-      setIsUploading(false);
-      setUploadProgress(0);
-      alert('网络连接错误，文件上传失败，请重试');
-    };
-
-    xhr.send(formDataPayload);
+    // 2. Server upload fallback
+    fallbackServerUpload();
   };
 
   const handleVideoFileChange = (e) => {

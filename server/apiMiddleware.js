@@ -593,6 +593,51 @@ export function createApiMiddleware() {
           }
         }
 
+        // 1.1 Direct OSS Upload Signature (Bypasses ECS 1Mbps bandwidth for 100x faster uploads)
+        if (pathname === '/api/oss/signature' && req.method === 'GET') {
+          (async () => {
+            try {
+              const oss = await getOssClient();
+              if (!oss) {
+                res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ code: 400, message: 'OSS not configured' }));
+                return;
+              }
+              const uploadType = url.searchParams.get('type') || 'video';
+              const filename = url.searchParams.get('filename') || 'upload.mp4';
+              const ext = path.extname(filename) || (uploadType === 'avatar' ? '.jpg' : '.mp4');
+              const subDir = uploadType === 'avatar' ? 'avatars' : (uploadType === 'graphic' ? 'graphics' : 'videos');
+              const prefix = uploadType === 'avatar' ? 'avatar_' : (uploadType === 'graphic' ? 'graphic_' : 'video_');
+              const savedFilename = `${prefix}${Date.now()}_${Math.random().toString(36).substring(2, 7)}${ext}`;
+              const objectKey = `kos/${subDir}/${savedFilename}`;
+              const contentType = url.searchParams.get('contentType') || (uploadType === 'avatar' ? 'image/jpeg' : 'video/mp4');
+
+              const uploadUrl = oss.signatureUrl(objectKey, {
+                method: 'PUT',
+                'Content-Type': contentType,
+                expires: 3600
+              }).replace(/^http:\/\//, 'https://');
+
+              const publicUrl = oss.generateObjectUrl(objectKey).replace(/^http:\/\//, 'https://');
+
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({
+                code: 0,
+                data: {
+                  uploadUrl,
+                  publicUrl,
+                  objectKey,
+                  filename: savedFilename
+                }
+              }));
+            } catch (err) {
+              res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 500, message: err.message }));
+            }
+          })();
+          return;
+        }
+
         // 2. System info & IP
         if (pathname === '/api/system/info' && req.method === 'GET') {
           const ip = getLocalIpAddress();
