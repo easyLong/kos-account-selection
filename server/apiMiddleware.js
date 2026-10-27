@@ -695,6 +695,52 @@ export function createApiMiddleware() {
           return;
         }
 
+        // 6.1 Delete single application
+        if (pathname.startsWith('/api/applications/') && req.method === 'DELETE') {
+          (async () => {
+            const id = decodeURIComponent(pathname.replace('/api/applications/', '')).trim();
+            if (dbAvailable && dbPool) {
+              try {
+                await dbPool.query('DELETE FROM htf_kos_applications WHERE id = ?', [id]);
+              } catch (e) {
+                console.warn('MySQL delete application failed:', e.message);
+              }
+            }
+            try {
+              let list = [];
+              if (fs.existsSync(DATA_FILE)) {
+                list = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
+              }
+              list = list.filter(item => item.id !== id);
+              fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), 'utf-8');
+            } catch (e) {}
+
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 0, message: '删除成功' }));
+          })();
+          return;
+        }
+
+        // 6.2 Clear all test applications (reset sequential ID to XH-01)
+        if (pathname === '/api/applications' && req.method === 'DELETE') {
+          (async () => {
+            if (dbAvailable && dbPool) {
+              try {
+                await dbPool.query('DELETE FROM htf_kos_applications');
+              } catch (e) {
+                console.warn('MySQL delete all applications failed:', e.message);
+              }
+            }
+            try {
+              fs.writeFileSync(DATA_FILE, '[]', 'utf-8');
+            } catch (e) {}
+
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 0, message: '已清空所有测试数据，编号将从 XH-01 重新开始' }));
+          })();
+          return;
+        }
+
         // 7. Mock Wenjuanxing Webhook sync
         if (pathname === '/api/webhook/wenjuanxing' && req.method === 'POST') {
           parseJsonBody(async (err, data) => {
