@@ -164,41 +164,6 @@ export default function DeviceShell({
             </div>
           </div>
         </div>
-
-        {/* Admin Quick Action Card */}
-        <div className="sidebar-admin-portal-card">
-          <div className="portal-header">
-            <span className="portal-badge">内部管理平台</span>
-            <h4 className="portal-title">题库配置与数据评审</h4>
-          </div>
-          <div className="portal-btn-group">
-            <button 
-              type="button" 
-              className="btn-portal-entry btn-portal-highlight"
-              onClick={onOpenQuestionsAdmin}
-            >
-              <span className="portal-icon">📝</span>
-              <div className="portal-btn-text">
-                <strong>动态问卷题库管理 (MySQL)</strong>
-                <small>直接修改 27 道题内容、排序与启用状态</small>
-              </div>
-              <span className="portal-arrow">›</span>
-            </button>
-
-            <button 
-              type="button" 
-              className="btn-portal-entry"
-              onClick={handleOpenAdmin}
-            >
-              <span className="portal-icon">👥</span>
-              <div className="portal-btn-text">
-                <strong>候选人报名评审后台</strong>
-                <small>查看报名记录、短视频初筛与导出 CSV</small>
-              </div>
-              <span className="portal-arrow">›</span>
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Admin Review Drawer */}
