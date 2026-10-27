@@ -8,7 +8,7 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
   const [isUploading, setIsUploading] = useState(false);
 
   // ==========================================
-  // Video Upload Handler (Max 2 mins / 500MB)
+  // Video Upload Handler (No duration limit, Max 500MB)
   // Direct OSS Upload for 100x Speedup with Server Fallback
   // ==========================================
   const startUploadVideo = async (file, durationText) => {
@@ -16,6 +16,7 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
     setUploadProgress(5);
 
     const sizeMb = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+    const mimeType = file.type || (/\.mov$/i.test(file.name) ? 'video/quicktime' : 'video/mp4');
 
     const fallbackServerUpload = () => {
       const formDataPayload = new FormData();
@@ -42,7 +43,7 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
                 videoUrl: res.url,
                 videoName: file.name,
                 videoSize: sizeMb,
-                videoDuration: durationText || '2分钟内'
+                videoDuration: durationText || '已就绪'
               });
               setUploadProgress(100);
               if (errors.work) setErrors(prev => ({ ...prev, work: null }));
@@ -71,13 +72,13 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
 
     // 1. High-speed direct OSS upload (bypasses server 1Mbps bandwidth for 100x faster uploads)
     try {
-      const sigRes = await fetch(`/api/oss/signature?type=video&filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type || 'video/mp4')}`);
+      const sigRes = await fetch(`/api/oss/signature?type=video&filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(mimeType)}`);
       const sigData = await sigRes.json();
       if (sigData.code === 0 && sigData.data?.uploadUrl) {
         const { uploadUrl, publicUrl } = sigData.data;
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', uploadUrl);
-        xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
+        xhr.setRequestHeader('Content-Type', mimeType);
 
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
@@ -94,7 +95,7 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
               videoUrl: publicUrl,
               videoName: file.name,
               videoSize: sizeMb,
-              videoDuration: durationText || '2分钟内'
+              videoDuration: durationText || '已就绪'
             });
             setUploadProgress(100);
             if (errors.work) setErrors(prev => ({ ...prev, work: null }));
@@ -124,8 +125,13 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('video/')) {
-      alert('请上传 MP4 或 MOV 格式的视频文件');
+    // Robust video check for iOS / Android / Desktop:
+    // On iOS Safari / WeChat, file.type can be empty string or video/quicktime
+    const isVideo = (file.type && file.type.startsWith('video/')) || 
+                    /\.(mp4|mov|m4v|3gp|avi|mkv|webm)$/i.test(file.name) ||
+                    file.type === '';
+    if (!isVideo) {
+      alert('请上传视频格式文件 (MP4 / MOV 等)');
       return;
     }
 
@@ -134,32 +140,33 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
       return;
     }
 
-    // Inspect video duration (must be within 2 minutes)
+    // Start upload immediately without hanging or blocking on duration metadata
+    startUploadVideo(file);
+
+    // Non-blocking duration detection for display metadata
     try {
       const tempVideo = document.createElement('video');
       tempVideo.preload = 'metadata';
+      tempVideo.muted = true;
+      tempVideo.playsInline = true;
+      tempVideo.setAttribute('playsinline', '');
+      tempVideo.setAttribute('webkit-playsinline', 'true');
       const blobUrl = URL.createObjectURL(file);
       tempVideo.src = blobUrl;
       tempVideo.onloadedmetadata = () => {
         URL.revokeObjectURL(blobUrl);
         const duration = tempVideo.duration;
-        if (duration && duration > 130) {
-          const minutes = Math.floor(duration / 60);
-          const seconds = Math.round(duration % 60);
-          alert(`视频时长限制在 2 分钟以内，您选择的视频时长约为 ${minutes} 分 ${seconds} 秒，请剪辑后重新上传`);
-          if (videoInputRef.current) videoInputRef.current.value = '';
-          return;
+        if (duration && !isNaN(duration)) {
+          const durationText = duration >= 60 
+            ? `${Math.floor(duration / 60)}分${Math.round(duration % 60)}秒`
+            : `${Math.round(duration)} 秒`;
+          onChange({ videoDuration: durationText });
         }
-        const durationText = duration ? `${Math.round(duration)} 秒` : '2分钟内';
-        startUploadVideo(file, durationText);
       };
       tempVideo.onerror = () => {
         URL.revokeObjectURL(blobUrl);
-        startUploadVideo(file);
       };
-    } catch (e) {
-      startUploadVideo(file);
-    }
+    } catch (e) {}
   };
 
   const handleRemoveVideo = (e) => {
@@ -181,7 +188,7 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
     const newErrors = {};
 
     if (!formData.videoUrl) {
-      newErrors.work = '请上传自我出镜短视频（时长 2 分钟以内）';
+      newErrors.work = '请上传自我出镜短视频';
     }
 
     if (!formData.videoTitle?.trim()) {
@@ -218,13 +225,12 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
         <div className="form-group">
           <label className="form-label">
             上传短视频作品<span className="required-star">*</span>
-            <span className="form-label-hint">（时长 2 分钟以内）</span>
           </label>
 
           <input 
             type="file" 
             ref={videoInputRef} 
-            accept="video/mp4,video/quicktime,video/*" 
+            accept="video/*" 
             onChange={handleVideoFileChange} 
             style={{ display: 'none' }} 
           />
@@ -278,7 +284,7 @@ export default function Step3Proposal({ formData, onChange, onSubmit, onPrev, is
 
                 <div className="upload-text-compact">
                   <h4 className="upload-main-title">上传出镜短视频<span className="required-star">*</span></h4>
-                  <p className="upload-sub-title">MP4 / MOV · 时长限制 2 分钟以内 · 支持最大 500MB</p>
+                  <p className="upload-sub-title">MP4 / MOV 等常见格式 · 支持最大 500MB</p>
                 </div>
 
                 <span className="upload-action-pill">点击上传 ›</span>
