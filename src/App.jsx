@@ -29,7 +29,9 @@ const initialFormData = {
   videoDuration: '',
   videoTitle: '',
   videoCategory: '',
-  videoIntro: ''
+  videoIntro: '',
+  personalIntro: '',
+  targetAccountStyle: ''
 };
 
 export default function App() {

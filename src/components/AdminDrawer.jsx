@@ -428,6 +428,12 @@ export default function AdminDrawer({ isOpen, onClose }) {
                       <span className="text-gold font-semibold">{selectedCandidate.videoCategory}</span>
                     </div>
                   )}
+                  {selectedCandidate.personalIntro && (
+                    <div className="info-row">
+                      <strong>一句话介绍：</strong>
+                      <span className="font-semibold text-title">“{selectedCandidate.personalIntro}”</span>
+                    </div>
+                  )}
                   {selectedCandidate.targetAccountStyle && (
                     <div className="info-row">
                       <strong>账号风格：</strong>

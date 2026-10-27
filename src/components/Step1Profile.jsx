@@ -18,6 +18,10 @@ export default function Step1Profile({ formData, onChange, onNext }) {
       newErrors.position = '请填写当前岗位';
     }
 
+    if (!formData.personalIntro?.trim()) {
+      newErrors.personalIntro = '请填写一句话介绍自己';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -122,6 +126,25 @@ export default function Step1Profile({ formData, onChange, onNext }) {
             />
             {errors.position && <div className="form-error-msg">{errors.position}</div>}
           </div>
+        </div>
+
+        {/* 一句话介绍自己 (必填) */}
+        <div className="form-group" style={{ marginTop: '16px' }}>
+          <label className="form-label" htmlFor="input-personal-intro">
+            一句话介绍自己<span className="required-star">*</span>
+          </label>
+          <input 
+            id="input-personal-intro"
+            type="text" 
+            className={`form-input ${errors.personalIntro ? 'error' : ''}`}
+            placeholder="用一句话介绍你的特长、创作风格或个人亮点"
+            value={formData.personalIntro || ''}
+            onChange={(e) => {
+              onChange({ personalIntro: e.target.value });
+              if (errors.personalIntro) setErrors(prev => ({ ...prev, personalIntro: null }));
+            }}
+          />
+          {errors.personalIntro && <div className="form-error-msg">{errors.personalIntro}</div>}
         </div>
 
         {/* 账号风格 (选填) */}

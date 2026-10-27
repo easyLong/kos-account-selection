@@ -153,11 +153,12 @@ async function initDatabase() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
-    // Ensure columns for graphic works and account style exist on legacy table
+    // Ensure columns for graphic works, account style and personal intro exist on legacy table
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN workType VARCHAR(32) DEFAULT 'video'`); } catch (e) {}
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN graphicImages LONGTEXT`); } catch (e) {}
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN graphicContent LONGTEXT`); } catch (e) {}
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN targetAccountStyle VARCHAR(150)`); } catch (e) {}
+    try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN personalIntro TEXT`); } catch (e) {}
 
     conn.release();
     dbAvailable = true;
@@ -262,15 +263,15 @@ async function saveApplication(appData) {
 
       const sql = `
         INSERT INTO htf_kos_applications (
-          id, name, gender, department, position, accountName, jobNo, mobile, avatarUrl,
+          id, name, gender, department, position, personalIntro, accountName, jobNo, mobile, avatarUrl,
           workType, graphicImages, graphicContent,
           surveyCompleted, surveyTime, surveyScore, surveyScaleScore, surveySubjectiveScore, surveyRating, surveyAnswers,
           videoTitle, videoCategory, videoIntro, targetAccountStyle, accountPersona, specialtyTalent,
           videoUrl, videoSize, videoDuration, status, submittedAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           name=VALUES(name), gender=VALUES(gender), department=VALUES(department),
-          position=VALUES(position), accountName=VALUES(accountName), jobNo=VALUES(jobNo), avatarUrl=VALUES(avatarUrl),
+          position=VALUES(position), personalIntro=VALUES(personalIntro), accountName=VALUES(accountName), jobNo=VALUES(jobNo), avatarUrl=VALUES(avatarUrl),
           workType=VALUES(workType), graphicImages=VALUES(graphicImages), graphicContent=VALUES(graphicContent),
           surveyCompleted=VALUES(surveyCompleted), surveyTime=VALUES(surveyTime),
           surveyScore=VALUES(surveyScore), surveyScaleScore=VALUES(surveyScaleScore), surveySubjectiveScore=VALUES(surveySubjectiveScore),
@@ -286,6 +287,7 @@ async function saveApplication(appData) {
         appData.gender || '',
         appData.department || '',
         appData.position || '',
+        appData.personalIntro || '',
         appData.accountName || appData.videoCategory || '',
         appData.jobNo || '',
         appData.mobile || '',
