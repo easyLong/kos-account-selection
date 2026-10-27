@@ -6,44 +6,65 @@ import {
 } from '../data/questionnaireData';
 
 // Flatten all questions with their parent module info
-const FLAT_QUESTIONS = [];
-SURVEY_MODULES.forEach((m, mIdx) => {
-  m.questions.forEach((q) => {
-    FLAT_QUESTIONS.push({
-      ...q,
-      moduleIndex: mIdx + 1,
-      moduleTotal: SURVEY_MODULES.length,
-      moduleId: m.id,
-      moduleName: m.name,
-      moduleDesc: m.desc
+function flattenModules(modules) {
+  const result = [];
+  (modules || []).forEach((m, mIdx) => {
+    (m.questions || []).forEach((q) => {
+      result.push({
+        ...q,
+        moduleIndex: mIdx + 1,
+        moduleTotal: (modules || []).length,
+        moduleId: m.id,
+        moduleName: m.name,
+        moduleDesc: m.desc
+      });
     });
   });
-});
+  return result;
+}
 
 export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
+  const [flatQuestions, setFlatQuestions] = useState(() => flattenModules(SURVEY_MODULES));
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState(() => formData.surveyAnswers || {});
   const [animDirection, setAnimDirection] = useState('forward');
   const cardRef = useRef(null);
 
-  const currentQ = FLAT_QUESTIONS[currentIdx] || FLAT_QUESTIONS[0];
-  const totalCount = FLAT_QUESTIONS.length;
+  // Fetch dynamic questions from database/API
+  useEffect(() => {
+    fetch('/api/survey/questions')
+      .then(r => r.json())
+      .then(res => {
+        if (res.code === 0 && res.data?.modules?.length > 0) {
+          setFlatQuestions(flattenModules(res.data.modules));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
-  // Calculate answered count
+  const currentQ = flatQuestions[currentIdx] || flatQuestions[0] || {};
+  const totalCount = flatQuestions.length || 27;
+
+  // Calculate answered count dynamically
   let answeredCount = 0;
   let scaleScore = 0;
-  for (let i = 1; i <= 25; i++) {
-    if (answers[i]) {
-      answeredCount++;
-      scaleScore += Number(answers[i]);
-    }
-  }
-  if (answers[26]?.trim()) answeredCount++;
-  if (answers[27]?.trim()) answeredCount++;
+  let subjectiveScore = 0;
 
-  const textScore1 = (answers[26]?.trim().length || 0) > 10 ? 8 : 4;
-  const textScore2 = (answers[27]?.trim().length || 0) > 10 ? 8 : 4;
-  const subjectiveScore = textScore1 + textScore2;
+  flatQuestions.forEach(q => {
+    const val = answers[q.id];
+    if (q.type === 'scale') {
+      if (val !== undefined && val !== null && val !== '') {
+        answeredCount++;
+        scaleScore += Number(val);
+      }
+    } else {
+      if (typeof val === 'string' && val.trim()) {
+        answeredCount++;
+        subjectiveScore += val.trim().length > 10 ? 8 : 4;
+      }
+    }
+  });
+
   const totalScore = scaleScore + subjectiveScore;
   const absRating = calculateABSRating(scaleScore, subjectiveScore);
 
@@ -111,8 +132,10 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
       <div className="survey-meta-strip">
         <div className="survey-module-badge">
           <span className="sparkle">✦</span>
-          <span>{currentQ.moduleName.split('·')[0]}</span>
-          <span className="module-title-sub">· {currentQ.moduleName.split('·')[1]}</span>
+          <span>{(currentQ.moduleName || '问卷测评').split('·')[0]}</span>
+          {(currentQ.moduleName || '').includes('·') && (
+            <span className="module-title-sub">· {(currentQ.moduleName || '').split('·')[1]}</span>
+          )}
         </div>
 
         <div className="survey-strip-right">

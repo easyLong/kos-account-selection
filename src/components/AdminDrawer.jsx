@@ -21,6 +21,55 @@ export default function AdminDrawer({ isOpen, onClose }) {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [showFullSurvey, setShowFullSurvey] = useState(false);
 
+  // Tab & Questionnaire state
+  const [adminTab, setAdminTab] = useState('candidates'); // 'candidates' | 'questions'
+  const [questionsList, setQuestionsList] = useState([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [editingQId, setEditingQId] = useState(null);
+  const [editDraft, setEditDraft] = useState({ text: '', title: '', placeholder: '' });
+  const [savingQId, setSavingQId] = useState(null);
+
+  const fetchQuestions = async () => {
+    setLoadingQuestions(true);
+    try {
+      const res = await fetch('/api/survey/questions');
+      const data = await res.json();
+      if (data.code === 0 && data.data?.questions) {
+        setQuestionsList(data.data.questions);
+      }
+    } catch (e) {
+      console.error('Fetch questions error', e);
+    }
+    setLoadingQuestions(false);
+  };
+
+  const handleSaveQuestion = async (qId) => {
+    setSavingQId(qId);
+    try {
+      const payload = {
+        id: qId,
+        text: editDraft.text,
+        title: editDraft.title,
+        placeholder: editDraft.placeholder
+      };
+      const res = await fetch('/api/survey/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.code === 0) {
+        setQuestionsList(prev => prev.map(item => item.id === qId ? { ...item, ...payload } : item));
+        setEditingQId(null);
+      } else {
+        alert('保存失败: ' + (data.message || '未知错误'));
+      }
+    } catch (e) {
+      alert('保存异常: ' + e.message);
+    }
+    setSavingQId(null);
+  };
+
   const fetchApplications = async () => {
     setLoading(true);
     try {
@@ -42,6 +91,7 @@ export default function AdminDrawer({ isOpen, onClose }) {
   useEffect(() => {
     if (isOpen) {
       fetchApplications();
+      fetchQuestions();
     }
   }, [isOpen]);
 
@@ -161,15 +211,145 @@ export default function AdminDrawer({ isOpen, onClose }) {
         {/* Top Header */}
         <div className="admin-header">
           <div className="admin-title-wrap">
-            <span className="admin-badge">内部通道</span>
-            <h3 className="admin-title">【星火计划】· 评审审核后台</h3>
+            <span className="admin-badge">内部管理</span>
+            <h3 className="admin-title">【星火计划】· 评审与题库管理后台</h3>
           </div>
+
+          <div className="admin-tab-switcher">
+            <button 
+              className={`btn-tab-switch ${adminTab === 'candidates' ? 'active' : ''}`}
+              onClick={() => setAdminTab('candidates')}
+            >
+              👥 候选人报名评审 ({candidates.length}人)
+            </button>
+            <button 
+              className={`btn-tab-switch ${adminTab === 'questions' ? 'active' : ''}`}
+              onClick={() => {
+                setAdminTab('questions');
+                if (questionsList.length === 0) fetchQuestions();
+              }}
+            >
+              📝 问卷题库管理 ({questionsList.length || 27}题)
+            </button>
+          </div>
+
           <div className="admin-header-actions">
             <button className="modal-close-btn" onClick={onClose} title="关闭">✕</button>
           </div>
         </div>
 
-        {/* Toolbar: Search, Filters, Stats */}
+        {/* Tab 2: Questionnaire Management Panel */}
+        {adminTab === 'questions' ? (
+          <div className="admin-questions-panel animate-fade-in">
+            <div className="questions-panel-header">
+              <div className="questions-panel-info">
+                <span className="db-pill">MySQL 数据表：htf_kos_survey_questions</span>
+                <span className="desc-pill">共 {questionsList.length || 27} 道题目 · 支持直接在线修改保存，或在 MySQL 数据库中直接变更</span>
+              </div>
+              <button 
+                className="btn-refresh" 
+                onClick={fetchQuestions}
+                disabled={loadingQuestions}
+              >
+                {loadingQuestions ? '刷新中...' : '⟳ 刷新题库'}
+              </button>
+            </div>
+
+            <div className="questions-scroll-list">
+              {questionsList.map(q => {
+                const isEditing = editingQId === q.id;
+                return (
+                  <div key={q.id} className={`question-edit-card ${isEditing ? 'editing' : ''}`}>
+                    <div className="q-card-head">
+                      <div className="q-card-meta">
+                        <span className="q-num-badge">第 {q.id} 题</span>
+                        <span className="q-module-badge">{q.moduleName}</span>
+                        <span className={`q-type-badge ${q.type}`}>
+                          {q.type === 'scale' ? '5点量表题 (1~5分)' : '主观简答题 (满分10分)'}
+                        </span>
+                      </div>
+                      {!isEditing && (
+                        <button 
+                          className="btn-edit-q"
+                          onClick={() => {
+                            setEditingQId(q.id);
+                            setEditDraft({
+                              text: q.text || '',
+                              title: q.title || '',
+                              placeholder: q.placeholder || ''
+                            });
+                          }}
+                        >
+                          ✎ 修改题目
+                        </button>
+                      )}
+                    </div>
+
+                    {isEditing ? (
+                      <div className="q-edit-form">
+                        {q.type === 'text' && (
+                          <div className="form-group-sm">
+                            <label className="sm-label">题目标题：</label>
+                            <input 
+                              type="text" 
+                              className="admin-edit-input"
+                              value={editDraft.title}
+                              onChange={e => setEditDraft(prev => ({ ...prev, title: e.target.value }))}
+                            />
+                          </div>
+                        )}
+                        <div className="form-group-sm">
+                          <label className="sm-label">题目内容：</label>
+                          <textarea 
+                            rows={3} 
+                            className="admin-edit-textarea"
+                            value={editDraft.text}
+                            onChange={e => setEditDraft(prev => ({ ...prev, text: e.target.value }))}
+                          />
+                        </div>
+                        {q.type === 'text' && (
+                          <div className="form-group-sm">
+                            <label className="sm-label">输入提示占位符：</label>
+                            <input 
+                              type="text" 
+                              className="admin-edit-input"
+                              value={editDraft.placeholder}
+                              onChange={e => setEditDraft(prev => ({ ...prev, placeholder: e.target.value }))}
+                            />
+                          </div>
+                        )}
+                        <div className="q-edit-actions">
+                          <button 
+                            className="btn-save-q"
+                            onClick={() => handleSaveQuestion(q.id)}
+                            disabled={savingQId === q.id}
+                          >
+                            {savingQId === q.id ? '正在保存...' : '✓ 保存到数据库'}
+                          </button>
+                          <button 
+                            className="btn-cancel-q"
+                            onClick={() => setEditingQId(null)}
+                            disabled={savingQId === q.id}
+                          >
+                            取消
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="q-view-body">
+                        {q.title && <div className="q-title-bold">{q.title}</div>}
+                        <p className="q-text-content">{q.text}</p>
+                        {q.placeholder && <div className="q-placeholder-hint">提示：{q.placeholder}</div>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Toolbar: Search, Filters, Stats */}
         <div className="admin-toolbar">
           <div className="admin-stats-summary">
             <span>总报名：<strong>{candidates.length}</strong> 人</span>
@@ -524,6 +704,8 @@ export default function AdminDrawer({ isOpen, onClose }) {
             )}
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

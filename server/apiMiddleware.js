@@ -13,6 +13,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const DATA_FILE = path.resolve(process.cwd(), 'data', 'submissions.json');
+const QUESTIONS_FILE = path.resolve(process.cwd(), 'data', 'survey_questions.json');
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'videos');
 const AVATAR_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'avatars');
 const GRAPHIC_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'graphics');
@@ -35,6 +36,9 @@ function initStorage() {
 
   if (!fs.existsSync(DATA_FILE)) {
     fs.writeFileSync(DATA_FILE, '[]', 'utf-8');
+  }
+  if (!fs.existsSync(QUESTIONS_FILE)) {
+    fs.writeFileSync(QUESTIONS_FILE, '[]', 'utf-8');
   }
 }
 
@@ -160,6 +164,24 @@ async function initDatabase() {
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN targetAccountStyle VARCHAR(150)`); } catch (e) {}
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN personalIntro TEXT`); } catch (e) {}
 
+    // Dynamic questionnaire questions table
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS htf_kos_survey_questions (
+        id INT PRIMARY KEY,
+        moduleId VARCHAR(32) NOT NULL,
+        moduleName VARCHAR(100) NOT NULL,
+        moduleDesc TEXT,
+        type VARCHAR(32) DEFAULT 'scale',
+        title VARCHAR(255),
+        text TEXT NOT NULL,
+        placeholder TEXT,
+        sortOrder INT DEFAULT 0,
+        status TINYINT DEFAULT 1,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
     conn.release();
     dbAvailable = true;
   } catch (err) {
@@ -167,6 +189,115 @@ async function initDatabase() {
     console.log('[Storage] Automatically using local high-reliability JSON storage (submissions.json)');
     dbAvailable = false;
   }
+}
+
+async function getSurveyQuestions() {
+  initStorage();
+  let list = [];
+  if (dbAvailable && dbPool) {
+    try {
+      const [rows] = await dbPool.query('SELECT * FROM htf_kos_survey_questions WHERE status = 1 ORDER BY sortOrder ASC, id ASC');
+      list = rows || [];
+    } catch (e) {
+      console.warn('[Database] Fetch survey questions failed:', e.message);
+    }
+  }
+
+  if (!list.length) {
+    try {
+      if (fs.existsSync(QUESTIONS_FILE)) {
+        list = JSON.parse(fs.readFileSync(QUESTIONS_FILE, 'utf-8'));
+      }
+    } catch (e) {}
+  }
+
+  // Format into modules list
+  const moduleMap = new Map();
+  for (const q of list) {
+    const mId = q.moduleId || 'm1';
+    if (!moduleMap.has(mId)) {
+      moduleMap.set(mId, {
+        id: mId,
+        name: q.moduleName || '',
+        desc: q.moduleDesc || '',
+        questions: []
+      });
+    }
+    moduleMap.get(mId).questions.push({
+      id: q.id,
+      type: q.type || 'scale',
+      title: q.title || '',
+      text: q.text || '',
+      placeholder: q.placeholder || '',
+      sortOrder: q.sortOrder || q.id
+    });
+  }
+
+  return {
+    rawList: list,
+    questions: list,
+    modules: Array.from(moduleMap.values())
+  };
+}
+
+async function saveSurveyQuestion(q) {
+  initStorage();
+  const id = parseInt(q.id, 10);
+  if (isNaN(id)) throw new Error('Invalid question ID');
+
+  if (dbAvailable && dbPool) {
+    const sql = `
+      INSERT INTO htf_kos_survey_questions (
+        id, moduleId, moduleName, moduleDesc, type, title, text, placeholder, sortOrder, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        moduleId=VALUES(moduleId), moduleName=VALUES(moduleName), moduleDesc=VALUES(moduleDesc),
+        type=VALUES(type), title=VALUES(title), text=VALUES(text),
+        placeholder=VALUES(placeholder), sortOrder=VALUES(sortOrder), status=VALUES(status),
+        updatedAt=CURRENT_TIMESTAMP
+    `;
+    await dbPool.query(sql, [
+      id,
+      q.moduleId || 'm1',
+      q.moduleName || '',
+      q.moduleDesc || '',
+      q.type || 'scale',
+      q.title || '',
+      q.text || '',
+      q.placeholder || '',
+      q.sortOrder || id,
+      q.status !== undefined ? (q.status ? 1 : 0) : 1
+    ]);
+  }
+
+  // Always keep local JSON in sync
+  let list = [];
+  try {
+    list = JSON.parse(fs.readFileSync(QUESTIONS_FILE, 'utf-8'));
+  } catch (e) {}
+  const idx = list.findIndex(item => item.id === id);
+  const updatedItem = {
+    id,
+    moduleId: q.moduleId || (list[idx]?.moduleId || 'm1'),
+    moduleName: q.moduleName || (list[idx]?.moduleName || ''),
+    moduleDesc: q.moduleDesc || (list[idx]?.moduleDesc || ''),
+    type: q.type || (list[idx]?.type || 'scale'),
+    title: q.title !== undefined ? q.title : (list[idx]?.title || ''),
+    text: q.text !== undefined ? q.text : (list[idx]?.text || ''),
+    placeholder: q.placeholder !== undefined ? q.placeholder : (list[idx]?.placeholder || ''),
+    sortOrder: q.sortOrder !== undefined ? q.sortOrder : (list[idx]?.sortOrder || id),
+    status: q.status !== undefined ? (q.status ? 1 : 0) : (list[idx]?.status ?? 1),
+    updatedAt: new Date().toISOString()
+  };
+  if (idx >= 0) {
+    list[idx] = updatedItem;
+  } else {
+    list.push(updatedItem);
+  }
+  list.sort((a, b) => (a.sortOrder || a.id) - (b.sortOrder || b.id));
+  fs.writeFileSync(QUESTIONS_FILE, JSON.stringify(list, null, 2), 'utf-8');
+
+  return updatedItem;
 }
 
 async function getStoredApplications() {
@@ -580,6 +711,59 @@ export function createApiMiddleware() {
             }
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({ code: 0, message: '问卷状态已同步', matched: !!target }));
+          });
+          return;
+        }
+
+        // 8. Dynamic Survey Questions API
+        if (pathname === '/api/survey/questions' && req.method === 'GET') {
+          getSurveyQuestions().then(result => {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 0, data: result }));
+          }).catch(err => {
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 500, message: err.message }));
+          });
+          return;
+        }
+
+        if (pathname === '/api/survey/questions' && req.method === 'POST') {
+          parseJsonBody(async (err, data) => {
+            if (err) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 400, message: 'Invalid JSON body' }));
+              return;
+            }
+            try {
+              const updated = await saveSurveyQuestion(data);
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 0, message: '题目修改成功', data: updated }));
+            } catch (saveErr) {
+              res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 500, message: saveErr.message }));
+            }
+          });
+          return;
+        }
+
+        if (pathname === '/api/survey/questions/batch' && req.method === 'POST') {
+          parseJsonBody(async (err, data) => {
+            if (err || !Array.isArray(data?.questions)) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 400, message: 'Invalid questions payload' }));
+              return;
+            }
+            try {
+              for (const q of data.questions) {
+                await saveSurveyQuestion(q);
+              }
+              const fresh = await getSurveyQuestions();
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 0, message: '批量更新题库成功', data: fresh }));
+            } catch (batchErr) {
+              res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 500, message: batchErr.message }));
+            }
           });
           return;
         }
