@@ -120,10 +120,6 @@ export default function Step2Survey({ formData, onChange, onNext, onPrev }) {
   };
 
   const handleNextQuestion = () => {
-    if (!isQuestionAnswered(currentQ)) {
-      triggerShakeAndToast(`请先完成当前第 Q${String(currentIdx + 1).padStart(2, '0')} 题再继续`);
-      return;
-    }
     if (currentIdx < totalCount - 1) {
       setAnimDirection('forward');
       setCurrentIdx(prev => prev + 1);

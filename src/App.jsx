@@ -22,7 +22,7 @@ const initialFormData = {
   graphicImages: [], // array of { url, name, size }
   graphicContent: '',
   surveyCompleted: false,
-  surveyScore: 92,
+  surveyScore: 0,
   surveyTime: '',
   videoUrl: '',
   videoName: '',
