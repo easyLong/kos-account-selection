@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SURVEY_MODULES, SCALE_OPTIONS } from '../data/questionnaireData';
+import { AdminOverviewReport, AdminDetailsReport } from './AdminReports';
 
 // Flatten all 27 questions for detailed inspection
 const ALL_SURVEY_QUESTIONS = [];
@@ -22,7 +23,7 @@ export default function AdminDrawer({ isOpen, onClose }) {
   const [showFullSurvey, setShowFullSurvey] = useState(false);
 
   // Tab & Questionnaire state
-  const [adminTab, setAdminTab] = useState('candidates'); // 'candidates' | 'questions'
+  const [adminTab, setAdminTab] = useState('overview'); // 'overview' | 'details' | 'candidates' | 'questions'
   const [questionsList, setQuestionsList] = useState([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [editingQId, setEditingQId] = useState(null);
@@ -143,6 +144,31 @@ export default function AdminDrawer({ isOpen, onClose }) {
     }
   };
 
+  const handleUpdateCandidate = async (candidateId, updates) => {
+    try {
+      const res = await fetch(`/api/applications/${encodeURIComponent(candidateId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      const data = await res.json();
+      if (data.code === 0) {
+        setCandidates(prev => prev.map(c => c.id === candidateId ? { ...c, ...updates, ...(data.data || {}) } : c));
+        if (selectedCandidate?.id === candidateId) {
+          setSelectedCandidate(prev => ({ ...prev, ...updates, ...(data.data || {}) }));
+        }
+      } else {
+        alert('更新失败: ' + (data.message || '未知错误'));
+      }
+    } catch (e) {
+      alert('更新异常: ' + e.message);
+    }
+  };
+
+  const handleExportDailyExcel = () => {
+    window.open('/api/reports/export', '_blank');
+  };
+
   // Export full table to CSV (Opens in Excel with UTF-8 BOM)
   const handleExportCSV = () => {
     if (!candidates || candidates.length === 0) {
@@ -217,10 +243,22 @@ export default function AdminDrawer({ isOpen, onClose }) {
 
           <div className="admin-tab-switcher">
             <button 
+              className={`btn-tab-switch ${adminTab === 'overview' ? 'active' : ''}`}
+              onClick={() => setAdminTab('overview')}
+            >
+              📊 报名总览
+            </button>
+            <button 
+              className={`btn-tab-switch ${adminTab === 'details' ? 'active' : ''}`}
+              onClick={() => setAdminTab('details')}
+            >
+              📑 测评与作品明细
+            </button>
+            <button 
               className={`btn-tab-switch ${adminTab === 'candidates' ? 'active' : ''}`}
               onClick={() => setAdminTab('candidates')}
             >
-              👥 候选人报名评审 ({candidates.length}人)
+              👥 候选人单人评审 ({candidates.length}人)
             </button>
             <button 
               className={`btn-tab-switch ${adminTab === 'questions' ? 'active' : ''}`}
@@ -234,12 +272,50 @@ export default function AdminDrawer({ isOpen, onClose }) {
           </div>
 
           <div className="admin-header-actions">
+            <button 
+              className="btn-excel-export" 
+              onClick={handleExportDailyExcel}
+              title="下载标准每日 Excel 报表（包含报名总览与测评明细双 Sheet）"
+            >
+              📥 导出每日 Excel 报表
+            </button>
+            <button 
+              className="btn-refresh-top" 
+              onClick={() => { fetchApplications(); fetchQuestions(); }}
+              title="刷新数据"
+            >
+              ⟳ 刷新
+            </button>
             <button className="modal-close-btn" onClick={onClose} title="关闭">✕</button>
           </div>
         </div>
 
-        {/* Tab 2: Questionnaire Management Panel */}
-        {adminTab === 'questions' ? (
+        {/* Tab 1: Overview Report */}
+        {adminTab === 'overview' && (
+          <AdminOverviewReport 
+            candidates={candidates} 
+            onUpdateCandidate={handleUpdateCandidate}
+            onSelectCandidate={(c) => {
+              setSelectedCandidate(c);
+              setAdminTab('candidates');
+            }}
+          />
+        )}
+
+        {/* Tab 2: Assessment & Works Details */}
+        {adminTab === 'details' && (
+          <AdminDetailsReport 
+            candidates={candidates} 
+            onUpdateCandidate={handleUpdateCandidate}
+            onSelectCandidate={(c) => {
+              setSelectedCandidate(c);
+              setAdminTab('candidates');
+            }}
+          />
+        )}
+
+        {/* Tab 3: Questionnaire Management Panel */}
+        {adminTab === 'questions' && (
           <div className="admin-questions-panel animate-fade-in">
             <div className="questions-panel-header">
               <div className="questions-panel-info">
@@ -347,7 +423,10 @@ export default function AdminDrawer({ isOpen, onClose }) {
               })}
             </div>
           </div>
-        ) : (
+        )}
+
+        {/* Tab 4: Single Candidate Reviewer */}
+        {adminTab === 'candidates' && (
           <>
             {/* Toolbar: Search, Filters, Stats */}
         <div className="admin-toolbar">

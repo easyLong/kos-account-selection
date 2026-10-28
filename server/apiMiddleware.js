@@ -3,6 +3,7 @@ import path from 'path';
 import os from 'os';
 import busboy from 'busboy';
 import dotenv from 'dotenv';
+import XLSX from 'xlsx';
 
 // Load .env from server directory
 const envPath = path.resolve(process.cwd(), 'server', '.env');
@@ -14,6 +15,7 @@ if (fs.existsSync(envPath)) {
 
 const DATA_FILE = path.resolve(process.cwd(), 'data', 'submissions.json');
 const QUESTIONS_FILE = path.resolve(process.cwd(), 'data', 'survey_questions.json');
+const REPORT_TEMPLATE_FILE = path.resolve(process.cwd(), 'server', 'templates', 'report_template.xlsx');
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'videos');
 const AVATAR_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'avatars');
 const GRAPHIC_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'graphics');
@@ -163,6 +165,10 @@ async function initDatabase() {
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN graphicContent LONGTEXT`); } catch (e) {}
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN targetAccountStyle VARCHAR(150)`); } catch (e) {}
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN personalIntro TEXT`); } catch (e) {}
+    try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN q26Score INT DEFAULT 0`); } catch (e) {}
+    try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN q27Score INT DEFAULT 0`); } catch (e) {}
+    try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN reviewComments TEXT`); } catch (e) {}
+    try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN reviewerRemark TEXT`); } catch (e) {}
 
     // Dynamic questionnaire questions table
     await conn.query(`
@@ -304,6 +310,125 @@ async function saveSurveyQuestion(q) {
   return updatedItem;
 }
 
+// Generate Standard Excel Report (matching 星火计划_每日报名与问卷评分模板 - 向量.xlsx)
+function generateReportExcelBuffer(candidates) {
+  if (!fs.existsSync(REPORT_TEMPLATE_FILE)) {
+    throw new Error('Report template file not found: ' + REPORT_TEMPLATE_FILE);
+  }
+  const wb = XLSX.readFile(REPORT_TEMPLATE_FILE);
+  const wsOverview = wb.Sheets['报名总览'];
+  const wsDetails = wb.Sheets['测评与作品明细'];
+
+  function calcM(ans, s, e) {
+    let sum = 0;
+    for (let i = s; i <= e; i++) {
+      const v = ans ? Number(ans[i] || ans[String(i)] || 0) : 0;
+      sum += isNaN(v) ? 0 : v;
+    }
+    return sum;
+  }
+
+  function getRating(scale, text) {
+    const total = scale + text;
+    if (total >= 112 && scale >= 102 && text >= 10) return 'S级·标杆IP';
+    if (total >= 88 && scale >= 80 && text >= 4) return 'A级·主力IP';
+    if (total >= 65 && scale >= 60) return 'B级·储备IP';
+    return '暂不推荐·幕后支持';
+  }
+
+  // Clear sample rows 4 to 150 in both sheets
+  for (let r = 4; r <= 150; r++) {
+    for (let c = 0; c < 15; c++) {
+      delete wsOverview[XLSX.utils.encode_col(c) + r];
+    }
+    for (let c = 0; c < 25; c++) {
+      delete wsDetails[XLSX.utils.encode_col(c) + r];
+    }
+  }
+
+  (candidates || []).forEach((c, idx) => {
+    const r = 4 + idx;
+    const subDate = (c.submittedAt || '').split(' ')[0] || new Date().toISOString().slice(0, 10);
+    const ans = c.surveyAnswers || {};
+    const m1 = calcM(ans, 1, 5);
+    const m2 = calcM(ans, 6, 10);
+    const m3 = calcM(ans, 11, 14);
+    const m4 = calcM(ans, 15, 18);
+    const m5 = calcM(ans, 19, 21);
+    const m6 = calcM(ans, 22, 25);
+    const scaleTotal = m1 + m2 + m3 + m4 + m5 + m6;
+    const q26Text = ans['26'] || c.specialtyTalent || '';
+    const q27Text = ans['27'] || c.accountPersona || '';
+    const q26Score = Number(c.q26Score || 0);
+    const q27Score = Number(c.q27Score || 0);
+    const textTotal = q26Score + q27Score;
+    const totalScore = scaleTotal + textTotal;
+    const rating = getRating(scaleTotal, textTotal);
+
+    // 报名总览 (15 cols)
+    const overviewCols = [
+      { v: idx + 1, t: 'n' },
+      { v: subDate, t: 's' },
+      { v: c.id || '', t: 's' },
+      { v: c.submittedAt || '', t: 's' },
+      { v: c.surveyTime || c.submittedAt || '', t: 's' },
+      { v: c.status || '待初筛', t: 's' },
+      { v: c.name || '', t: 's' },
+      { v: c.gender || '男', t: 's' },
+      { v: c.department || '', t: 's' },
+      { v: c.position || '', t: 's' },
+      { v: c.personalIntro || '', t: 's' },
+      { v: c.targetAccountStyle || c.accountPersona || '', t: 's' },
+      { v: totalScore, t: 'n' },
+      { v: rating, t: 's' },
+      { v: c.reviewComments || '', t: 's' }
+    ];
+
+    overviewCols.forEach((cell, colIdx) => {
+      wsOverview[XLSX.utils.encode_col(colIdx) + r] = cell;
+    });
+
+    // 测评与作品明细 (25 cols)
+    const detailsCols = [
+      { v: idx + 1, t: 'n' },
+      { v: subDate, t: 's' },
+      { v: c.id || '', t: 's' },
+      { v: c.name || '', t: 's' },
+      { v: m1, t: 'n' },
+      { v: m2, t: 'n' },
+      { v: m3, t: 'n' },
+      { v: m4, t: 'n' },
+      { v: m5, t: 'n' },
+      { v: m6, t: 'n' },
+      { v: scaleTotal, t: 'n' },
+      { v: q26Text, t: 's' },
+      { v: q26Score, t: 'n' },
+      { v: q27Text, t: 's' },
+      { v: q27Score, t: 'n' },
+      { v: textTotal, t: 'n' },
+      { v: totalScore, t: 'n' },
+      { v: rating, t: 's' },
+      { v: c.videoTitle || '', t: 's' },
+      { v: c.videoName || (c.videoUrl ? c.videoUrl.split('/').pop() : ''), t: 's' },
+      { v: c.videoDuration || '', t: 's' },
+      { v: c.videoSize || '', t: 's' },
+      { v: c.videoUrl || '', t: 's' },
+      { v: c.videoIntro || '', t: 's' },
+      { v: c.reviewerRemark || '', t: 's' }
+    ];
+
+    detailsCols.forEach((cell, colIdx) => {
+      wsDetails[XLSX.utils.encode_col(colIdx) + r] = cell;
+    });
+  });
+
+  const maxR = Math.max(4 + (candidates || []).length - 1, 4);
+  wsOverview['!ref'] = 'A1:O' + maxR;
+  wsDetails['!ref'] = 'A1:Y' + maxR;
+
+  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+}
+
 async function getStoredApplications() {
   initStorage();
   if (dbAvailable && dbPool) {
@@ -328,7 +453,11 @@ async function getStoredApplications() {
           graphicImages: parsedGraphicImages || [],
           graphicContent: r.graphicContent || '',
           surveyCompleted: !!r.surveyCompleted,
-          surveyAnswers: parsedAnswers
+          surveyAnswers: parsedAnswers,
+          q26Score: r.q26Score !== undefined && r.q26Score !== null ? Number(r.q26Score) : 0,
+          q27Score: r.q27Score !== undefined && r.q27Score !== null ? Number(r.q27Score) : 0,
+          reviewComments: r.reviewComments || '',
+          reviewerRemark: r.reviewerRemark || ''
         };
       });
     } catch (e) {
@@ -402,8 +531,9 @@ async function saveApplication(appData) {
           workType, graphicImages, graphicContent,
           surveyCompleted, surveyTime, surveyScore, surveyScaleScore, surveySubjectiveScore, surveyRating, surveyAnswers,
           videoTitle, videoCategory, videoIntro, targetAccountStyle, accountPersona, specialtyTalent,
-          videoUrl, videoSize, videoDuration, status, submittedAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          videoUrl, videoSize, videoDuration, status, submittedAt,
+          q26Score, q27Score, reviewComments, reviewerRemark
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           name=VALUES(name), gender=VALUES(gender), department=VALUES(department),
           position=VALUES(position), personalIntro=VALUES(personalIntro), accountName=VALUES(accountName), jobNo=VALUES(jobNo), avatarUrl=VALUES(avatarUrl),
@@ -414,7 +544,8 @@ async function saveApplication(appData) {
           videoTitle=VALUES(videoTitle), videoCategory=VALUES(videoCategory),
           videoIntro=VALUES(videoIntro), targetAccountStyle=VALUES(targetAccountStyle), accountPersona=VALUES(accountPersona), specialtyTalent=VALUES(specialtyTalent),
           videoUrl=VALUES(videoUrl), videoSize=VALUES(videoSize), videoDuration=VALUES(videoDuration),
-          status=VALUES(status), updatedAt=CURRENT_TIMESTAMP
+          status=VALUES(status), q26Score=VALUES(q26Score), q27Score=VALUES(q27Score),
+          reviewComments=VALUES(reviewComments), reviewerRemark=VALUES(reviewerRemark), updatedAt=CURRENT_TIMESTAMP
       `;
       await dbPool.query(sql, [
         appData.id,
@@ -447,7 +578,11 @@ async function saveApplication(appData) {
         appData.videoSize || '',
         appData.videoDuration || '',
         appData.status || '待初筛',
-        appData.submittedAt || ''
+        appData.submittedAt || '',
+        Number(appData.q26Score || 0),
+        Number(appData.q27Score || 0),
+        appData.reviewComments || '',
+        appData.reviewerRemark || ''
       ]);
     } catch (e) {
       console.warn('[Database] Save to MySQL failed:', e.message);
@@ -782,6 +917,82 @@ export function createApiMiddleware() {
 
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({ code: 0, message: '已清空所有测试数据，编号将从 XH-01 重新开始' }));
+          })();
+          return;
+        }
+
+        // 6.3 Update candidate review / status / subjective score
+        if (pathname.startsWith('/api/applications/') && (req.method === 'PATCH' || req.method === 'PUT')) {
+          parseJsonBody(async (err, updates) => {
+            if (err) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 400, message: 'Invalid JSON body' }));
+              return;
+            }
+            const id = decodeURIComponent(pathname.replace('/api/applications/', '')).trim();
+            try {
+              const list = await getStoredApplications();
+              const target = list.find(item => item.id === id);
+              if (!target) {
+                res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ code: 404, message: '未找到候选人记录' }));
+                return;
+              }
+
+              // Update fields
+              if (updates.status !== undefined) target.status = updates.status;
+              if (updates.reviewComments !== undefined) target.reviewComments = updates.reviewComments;
+              if (updates.reviewerRemark !== undefined) target.reviewerRemark = updates.reviewerRemark;
+              if (updates.q26Score !== undefined) target.q26Score = Number(updates.q26Score);
+              if (updates.q27Score !== undefined) target.q27Score = Number(updates.q27Score);
+
+              // Recalculate total score & rating
+              const q26Score = Number(target.q26Score || 0);
+              const q27Score = Number(target.q27Score || 0);
+              const textTotal = q26Score + q27Score;
+              target.surveySubjectiveScore = textTotal;
+              target.surveyScore = Number(target.surveyScaleScore || 0) + textTotal;
+
+              const total = target.surveyScore;
+              const scale = Number(target.surveyScaleScore || 0);
+              if (total >= 112 && scale >= 102 && textTotal >= 10) target.surveyRating = 'S级·标杆IP';
+              else if (total >= 88 && scale >= 80 && textTotal >= 4) target.surveyRating = 'A级·主力IP';
+              else if (total >= 65 && scale >= 60) target.surveyRating = 'B级·储备IP';
+              else target.surveyRating = '暂不推荐·幕后支持';
+
+              const saved = await saveApplication(target);
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 0, message: '评审信息更新成功', data: saved }));
+            } catch (saveErr) {
+              console.error('Update review error:', saveErr);
+              res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 500, message: saveErr.message }));
+            }
+          });
+          return;
+        }
+
+        // 6.4 Export Standard Daily Excel Report
+        if (pathname === '/api/reports/export' && req.method === 'GET') {
+          (async () => {
+            try {
+              const list = await getStoredApplications();
+              const buffer = generateReportExcelBuffer(list);
+              const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+              const filename = `星火计划_报名导出_${dateStr}.xlsx`;
+              const encodedFilename = encodeURIComponent(filename);
+
+              res.writeHead(200, {
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition': `attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`,
+                'Content-Length': buffer.length
+              });
+              res.end(buffer);
+            } catch (err) {
+              console.error('Report export error:', err);
+              res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 500, message: '生成报表失败: ' + err.message }));
+            }
           })();
           return;
         }
