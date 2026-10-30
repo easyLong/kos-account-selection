@@ -233,32 +233,6 @@
   animation: pulseGlow 3s infinite;
 }
 
-.btn-vote-showcase-entrance {
-  margin-top: 10px;
-  max-width: 380px;
-  width: 100%;
-  padding: 13px 20px;
-  border-radius: var(--radius-xl);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(197, 154, 63, 0.45);
-  color: #E8C766;
-  font-size: 14.5px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  backdrop-filter: blur(8px);
-  transition: all 0.2s ease;
-}
-
-.btn-vote-showcase-entrance:hover {
-  background: rgba(197, 154, 63, 0.2);
-  border-color: #E8C766;
-  transform: translateY(-1px);
-}
-
 .landing-quick-hint {
   margin-top: 12px;
   font-size: 12.5px;

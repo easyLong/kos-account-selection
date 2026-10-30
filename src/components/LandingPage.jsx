@@ -1,4 +1,6 @@
-export default function LandingPage({ onStart }) {
+import React from 'react';
+
+export default function LandingPage({ onStart, onOpenAdmin }) {
   return (
     <div className="landing-page animate-fade-in">
       {/* Hero Media Section matching mockup 1 */}
@@ -60,6 +62,7 @@ export default function LandingPage({ onStart }) {
           <div className="landing-quick-hint">
             <span>⚡ 全程仅需 3 步 · 约 3 分钟即可完成</span>
           </div>
+
         </div>
       </div>
     </div>
