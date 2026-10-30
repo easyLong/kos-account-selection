@@ -252,10 +252,6 @@
   .prog{position:absolute;left:0;bottom:0;height:4px;background:rgba(255,255,255,.2);width:100%;z-index:9}
   .prog i{display:block;height:100%;width:0;background:var(--gold-l)}
 
-  .arrows{position:absolute;right:14px;top:40%;transform:translateY(-50%);z-index:8;display:flex;flex-direction:column;gap:12px}
-  .arrows div{width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
-  .arrows div[disabled]{opacity:.25;cursor:not-allowed}
-
   .big-heart{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.2);font-size:120px;opacity:0;pointer-events:none;z-index:15;color:#ff4d6a}
   @keyframes burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
   .burst{animation:burst .7s ease-out}
@@ -431,12 +427,6 @@
           <div class="btn-circle" id="btnLike">♡</div>
           <span class="ctrl-label" id="pLikeText">投票</span>
         </div>
-      </div>
-
-      <!-- 上下滑动切换箭头 -->
-      <div class="arrows">
-        <div id="btnPrev">▲</div>
-        <div id="btnNext">▼</div>
       </div>
 
       <!-- 点赞大爱心炸裂动画 -->
@@ -855,11 +845,6 @@ function renderPlayerCard(idx, animDir, autoPlay){
   }
 
   $('pIdx').textContent = pad(idx + 1) + ' / ' + pad(WORKS.length || CFG.total);
-  if($('pBudget')) $('pBudget').textContent = '♡ 剩余 ' + Math.max(0, CFG.budget - likedIds.length) + ' 票';
-
-  // 双向无缝循环，箭头按钮永不禁用
-  $('btnPrev').removeAttribute('disabled');
-  $('btnNext').removeAttribute('disabled');
   $('progBar').style.width = '0%';
   updatePills();
 
@@ -1025,8 +1010,6 @@ function closePlayer(){
 }
 
 $('pClose').onclick = closePlayer;
-$('btnPrev').onclick = function(e){ e.stopPropagation(); switchCard(-1); };
-$('btnNext').onclick = function(e){ e.stopPropagation(); switchCard(1); };
 
 /* 声音切换 */
 var isMuted = false;
