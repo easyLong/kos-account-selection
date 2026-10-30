@@ -199,41 +199,33 @@
     </div>
     
     <div class="rules">
-      共 <b id="eTotal">0</b> 个参选作品，每位员工最多投 <b id="eBudget">5</b> 票<br>
-      · <b>在列表直接点 ♡ 即可投票</b>，无需必须点进播放器<br>
-      · <b>点击视频画面即可开始播放</b>，播放绝不自动连贯切台<br>
-      · 每人最多投 5 票，随时可取消重投，全部确认后提交
+      共 <b id="eTotal">0</b> 个作品，每人最多投 <b id="eBudget">5</b> 票<br>
+      · 上下滑动浏览，点击视频画面播放<br>
+      · 点击 ♡ 直接投出你的票，随时可取消重投
     </div>
 
-    <!-- 登录去重卡片 (姓名+工号登录去重) -->
+    <!-- 登录卡片 -->
     <div class="login-card">
-      <div class="login-title">
-        <span>👤 员工投票人认证</span>
-      </div>
-
       <div id="loginFormArea">
         <div class="form-row">
-          <label>员工姓名：</label>
-          <input type="text" id="loginName" placeholder="例如：张三" maxlength="20">
+          <label>姓名：</label>
+          <input type="text" id="loginName" placeholder="输入姓名" maxlength="20">
         </div>
         <div class="form-row">
-          <label>员工工号：</label>
-          <input type="text" id="loginJobNo" placeholder="例如：10882" maxlength="32">
+          <label>工号：</label>
+          <input type="text" id="loginJobNo" placeholder="输入工号" maxlength="32">
         </div>
       </div>
 
       <div id="loggedInArea" class="hide">
         <div class="login-status-badge">
-          <span>已就绪：<strong id="loggedInfoTxt">--</strong></span>
-          <span class="sw-btn" id="btnSwitchAccount">切换工号</span>
+          <span>当前工号：<strong id="loggedInfoTxt">--</strong></span>
+          <span class="sw-btn" id="btnSwitchAccount">切换</span>
         </div>
       </div>
 
-      <button class="btn" id="btnStart" style="margin-top:8px">进入作品展示集</button>
-      <div style="font-size:11px;color:var(--sub);text-align:center;margin-top:8px">一人一号实名认证 · 系统自动去重</div>
+      <button class="btn" id="btnStart" style="margin-top:8px">开始投票</button>
     </div>
-
-    <div class="footnote">汇添富基金 · 自媒体创作者选拔项目组</div>
   </section>
 
   <!-- ============ 2. 作品展播列表页 (支持直接点赞 + 真实视频有效画面) ============ -->
@@ -258,11 +250,8 @@
     <!-- 作品展示容器 (支持直接点赞，有效视频封面) -->
     <div class="grid" id="grid"></div>
 
-    <div style="padding:0 20px;margin-top:10px">
+    <div style="padding:0 20px;margin:12px 0 20px">
       <button class="btn" id="btnSubmit">确认并提交我的票数</button>
-    </div>
-    <div style="text-align:center;font-size:11.5px;color:var(--sub);margin:14px 0 10px">
-      可在列表中直接点赞 · 每人限投 5 票 · 提交后生效锁定
     </div>
   </section>
 
@@ -331,8 +320,7 @@
   <!-- ============ 4. 投票成功结束页 ============ -->
   <section id="end" class="hide">
     <div class="hero kv">
-      <div class="big">感谢参与！</div>
-      <p class="sub" style="margin-top:10px">您的每一票，都在为优秀的星火创作者赋能</p>
+      <div class="big">感谢参与</div>
     </div>
     <div class="stat">
       <div><div class="v" id="sVote">0</div><div class="k">投出票数</div></div>
@@ -340,8 +328,7 @@
       <div><div class="v" id="sTotal">0</div><div class="k">参选总数</div></div>
     </div>
     <div class="tip">
-      您的投票已安全提交并存入数据库。<br>
-      评审工作完成后，最终入围名单将由星火计划选拔项目组正式公布。
+      您的投票已提交成功。
     </div>
     <div style="padding:0 24px;display:flex;flex-direction:column;gap:10px">
       <button class="btn" id="btnEndViewLeaderboard">🏆 查看当前投票排行榜</button>
