@@ -205,7 +205,7 @@
     
     <div class="rules">
       共 <b id="eTotal">0</b> 个作品，每人最多投 <b id="eBudget">5</b> 票<br>
-      · 上下滑动浏览，点击视频画面播放<br>
+      · 点进视频直接开播，上下滑动畅享自动连播<br>
       · 点击 ♡ 直接投出你的票，随时可取消重投
     </div>
 
@@ -282,6 +282,7 @@
           controlsList="nodownload nofullscreen noremoteplayback"
           disablePictureInPicture="true"
           preload="auto"
+          loop
         ></video>
 
         <!-- 缓冲加载动画 -->
@@ -679,20 +680,16 @@ async function executeToggleVote(candidateId){
   }
 }
 
-/* ===== 核心需求1 & 3：沉浸流全屏播放器 =====
-   1）不需要及时播放，点了再播；
-   2）播放绝不自动连贯切台，播放完毕停留在当前视频；
-   3）播放器封面使用有效真实画面 (poster)
-*/
+/* ===== 核心：沉浸流全屏播放器 (点击进去直接播放 + 滑动也直接播放) ===== */
 function openPlayer(idx){
   if(WORKS.length === 0) return;
   cur = idx;
   go(null);
   show($('player'));
-  renderPlayerCard(cur, 0);
+  renderPlayerCard(cur, 0, true); // 点击进去，直接播放！
 }
 
-function renderPlayerCard(idx, animDir){
+function renderPlayerCard(idx, animDir, autoPlay){
   var w = WORKS[idx];
   if(!w) return;
 
@@ -708,7 +705,7 @@ function renderPlayerCard(idx, animDir){
   isPlaying = false;
   hide_($('videoBuffering'));
   
-  // 核心需求3：播放的画面是真实有效画面 (利用 poster 预载首帧图片，绝不黑屏)
+  // 核心：利用 poster 预载首帧真实有效画面
   if(w.coverUrl){
     videoEl.poster = w.coverUrl;
   }
@@ -717,14 +714,7 @@ function renderPlayerCard(idx, animDir){
     videoEl.load();
   }
 
-  // 2. 核心需求1：不需要及时播放，点了再播！居中醒目播放按钮
-  show($('playCenterBtn'));
-  $('playCenterBtn').querySelector('.play-icon-circle').textContent = '▶';
-  $('playCenterBtn').querySelector('.play-hint-text').textContent = '点击播放视频';
-  hide_($('playpause'));
-  $('progBar').style.width = '0%';
-
-  // 3. 填充文字介绍
+  // 2. 填充文字介绍与状态
   renderPlayerLikeState(w.id);
   $('pName').textContent = w.name;
   $('pDept').textContent = (w.department || '') + ' · ' + (w.position || '');
@@ -735,8 +725,18 @@ function renderPlayerCard(idx, animDir){
 
   $('btnPrev').setAttribute('disabled', idx === 0 ? '1' : '');
   $('btnNext').setAttribute('disabled', idx === CFG.total - 1 ? '1' : '');
-
+  $('progBar').style.width = '0%';
   updatePills();
+
+  // 3. 核心体验升级：点击进去直接播放，滑动也直接播放！
+  if(autoPlay !== false){
+    hide_($('playCenterBtn'));
+    doPlayVideo();
+  } else {
+    show($('playCenterBtn'));
+    $('playCenterBtn').querySelector('.play-icon-circle').textContent = '▶';
+    $('playCenterBtn').querySelector('.play-hint-text').textContent = '点击播放视频';
+  }
 }
 
 function renderPlayerLikeState(candId){
@@ -781,6 +781,7 @@ videoEl.addEventListener('waiting', function(){
 
 videoEl.addEventListener('playing', function(){
   hide_($('videoBuffering'));
+  hide_($('playCenterBtn'));
 });
 
 videoEl.addEventListener('canplay', function(){
@@ -794,15 +795,10 @@ videoEl.addEventListener('timeupdate', function(){
   }
 });
 
-/* 核心需求1：播放不能连贯！视频播放完毕后，绝不自动跳到下一个视频，停在当前画面展示重播 */
 videoEl.addEventListener('ended', function(){
-  isPlaying = false;
-  show($('playCenterBtn'));
-  $('playCenterBtn').querySelector('.play-icon-circle').textContent = '↺';
-  $('playCenterBtn').querySelector('.play-hint-text').textContent = '重新播放';
-  $('progBar').style.width = '100%';
-  hide_($('videoBuffering'));
-  // 坚决不自动调用 switchCard(1)，保持当前视频不连贯切台！
+  // 如果没有 loop 或播放结束，重置并循环播放
+  videoEl.currentTime = 0;
+  videoEl.play().catch(function(){});
 });
 
 videoEl.addEventListener('error', function(err){
@@ -813,31 +809,44 @@ videoEl.addEventListener('error', function(err){
   console.warn('Video element error:', err);
 });
 
-/* 核心：播放 / 暂停切换 (点了再播 + 移动端自动降级静音兜底) */
+/* 核心：直接开播函数 (带移动端静音策略自动降级，确保 100% 自动播放成功) */
+function doPlayVideo(){
+  if(!videoEl.src) return;
+  show($('videoBuffering'));
+  var playPromise = videoEl.play();
+  if(playPromise !== undefined){
+    playPromise.then(function(){
+      hide_($('videoBuffering'));
+      hide_($('playCenterBtn'));
+      isPlaying = true;
+    }).catch(function(err){
+      console.warn('Playback with audio rejected, falling back to muted autoplay:', err);
+      hide_($('videoBuffering'));
+      // 移动端 Safari / 微信策略限制有声自动播放：静音后立即自动起播
+      videoEl.muted = true;
+      isMuted = true;
+      $('btnSound').textContent = '🔇';
+      videoEl.play().then(function(){
+        hide_($('videoBuffering'));
+        hide_($('playCenterBtn'));
+        isPlaying = true;
+        toast('已自动静音播放，点击右侧🔊开启声音');
+      }).catch(function(err2){
+        console.error('Autoplay completely blocked:', err2);
+        show($('playCenterBtn'));
+        $('playCenterBtn').querySelector('.play-icon-circle').textContent = '▶';
+        $('playCenterBtn').querySelector('.play-hint-text').textContent = '轻触屏幕即可播放';
+      });
+    });
+  }
+}
+
+/* 核心：播放 / 暂停切换 (轻触屏幕切换) */
 function toggleVideoPlay(){
   if(!videoEl.src) return;
 
   if(videoEl.paused){
-    show($('videoBuffering'));
-    var playPromise = videoEl.play();
-    if(playPromise !== undefined){
-      playPromise.then(function(){
-        hide_($('videoBuffering'));
-      }).catch(function(err){
-        console.warn('Direct play with audio rejected by mobile policy, falling back to muted play:', err);
-        hide_($('videoBuffering'));
-        // 移动端 Safari / 微信策略限制有声自动播放：静音后再次播放
-        videoEl.muted = true;
-        isMuted = true;
-        $('btnSound').textContent = '🔇';
-        videoEl.play().then(function(){
-          toast('已静音流畅播放，点击右下角🔊可开启声音');
-        }).catch(function(err2){
-          console.error('Playback completely failed:', err2);
-          toast('点击播放失败，请再次点击重试');
-        });
-      });
-    }
+    doPlayVideo();
   } else {
     videoEl.pause();
   }
@@ -858,7 +867,7 @@ function safeTogglePlay(e){
 
 $('playCenterBtn').onclick = safeTogglePlay;
 
-/* 上下滑动切换卡片 (切换后依然处于暂停有效画面，绝不自动开播) */
+/* 上下滑动切换卡片 (核心体验：滑动也直接开播！) */
 function switchCard(dir){
   if(dir === 1 && cur >= CFG.total - 1){
     toast('已经是最后一个作品了');
@@ -870,7 +879,7 @@ function switchCard(dir){
   }
 
   cur += dir;
-  renderPlayerCard(cur, dir);
+  renderPlayerCard(cur, dir, true); // 滑动也直接开播！
 }
 
 function closePlayer(){
