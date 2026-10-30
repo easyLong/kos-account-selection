@@ -580,7 +580,7 @@ export function AdminDetailsReport({ candidates, onUpdateCandidate, onSelectCand
         <div className="modal-backdrop animate-fade-in" onClick={() => setPreviewVideo(null)}>
           <div className="report-video-modal" onClick={e => e.stopPropagation()}>
             <div className="video-modal-header">
-              <span className="video-modal-title">🎬 视频提案预览：{previewVideo.title}</span>
+              <span className="video-modal-title">{previewVideo.title || '视频播放'}</span>
               <button className="modal-close-btn" onClick={() => setPreviewVideo(null)}>✕</button>
             </div>
             <div className="video-modal-body">
