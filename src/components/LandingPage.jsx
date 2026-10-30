@@ -69,6 +69,28 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
           <div className="landing-quick-hint">
             <span>⚡ 全程仅需 3 步 · 约 3 分钟即可完成</span>
           </div>
+          {onOpenAdmin && (
+            <div style={{ textAlign: 'center', marginTop: '8px' }}>
+              <button
+                type="button"
+                id="btn-open-admin-portal"
+                className="btn-admin-portal-entrance"
+                onClick={onOpenAdmin}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'rgba(212, 175, 55, 0.75)',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '3px'
+                }}
+              >
+                ⚙️ 管理员评审与统计后台
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

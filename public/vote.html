@@ -310,23 +310,23 @@
       · 点击 ♡ 直接投出你的票，随时可取消重投
     </div>
 
-    <!-- 登录卡片 -->
+    <!-- 登录卡片 (输入框常驻显示，支持回车直登与一键清空换号) -->
     <div class="login-card">
-      <div id="loginFormArea">
-        <div class="form-row">
-          <label>姓名：</label>
-          <input type="text" id="loginName" placeholder="输入姓名" maxlength="20">
-        </div>
-        <div class="form-row">
-          <label>工号：</label>
-          <input type="text" id="loginJobNo" placeholder="输入工号" maxlength="32">
+      <div id="loggedInArea" class="hide" style="margin-bottom:12px">
+        <div class="login-status-badge" style="margin-bottom:0">
+          <span>已记住：<strong id="loggedInfoTxt">--</strong></span>
+          <span class="sw-btn" id="btnSwitchAccount" style="color:var(--gold);font-weight:700;cursor:pointer">清空换号</span>
         </div>
       </div>
 
-      <div id="loggedInArea" class="hide">
-        <div class="login-status-badge">
-          <span>当前工号：<strong id="loggedInfoTxt">--</strong></span>
-          <span class="sw-btn" id="btnSwitchAccount">切换</span>
+      <div id="loginFormArea">
+        <div class="form-row">
+          <label>姓名：</label>
+          <input type="text" id="loginName" placeholder="输入姓名 (如：张三)" maxlength="20" autocomplete="name">
+        </div>
+        <div class="form-row">
+          <label>工号：</label>
+          <input type="text" id="loginJobNo" placeholder="输入工号 (如：10001)" maxlength="32" autocomplete="off">
         </div>
       </div>
 
@@ -530,7 +530,7 @@ function toast(msg, btnText, btnAction){
   toastTimer = setTimeout(function(){ hide_($('toast')); }, 3200);
 }
 
-/* ===== 1. 登录会话恢复 ===== */
+/* ===== 1. 登录会话恢复与双向输入支持 ===== */
 function initVoterSession(){
   try {
     var raw = localStorage.getItem('xh_voter_session');
@@ -540,9 +540,8 @@ function initVoterSession(){
         $('loginName').value = voter.name;
         $('loginJobNo').value = voter.jobNo;
         $('loggedInfoTxt').textContent = voter.name + ' (' + voter.jobNo + ')';
-        hide_($('loginFormArea'));
         show($('loggedInArea'));
-        $('btnStart').textContent = '以当前身份进入';
+        $('btnStart').textContent = '进入作品集 (已就绪)';
       }
     }
   } catch(e){}
@@ -551,10 +550,30 @@ function initVoterSession(){
 $('btnSwitchAccount').onclick = function(){
   voter = null;
   localStorage.removeItem('xh_voter_session');
+  $('loginName').value = '';
+  $('loginJobNo').value = '';
   hide_($('loggedInArea'));
-  show($('loginFormArea'));
-  $('btnStart').textContent = '进入作品展示集';
+  $('btnStart').textContent = '开始投票';
+  $('loginName').focus();
 };
+
+// 快捷体验：姓名/工号输入框按回车直接提交登录
+$('loginName').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    if($('loginJobNo').value.trim()){
+      doLogin();
+    } else {
+      $('loginJobNo').focus();
+    }
+  }
+});
+$('loginJobNo').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    doLogin();
+  }
+});
 
 /* ===== 2. 获取后台视频候选人数据 (带有效画面封面 coverUrl) ===== */
 async function loadWorks(){
@@ -584,6 +603,14 @@ async function doLogin(){
 
   if(!name || !jobNo){
     toast('请完整输入您的姓名与工号进行验证');
+    if(!name) $('loginName').focus();
+    else $('loginJobNo').focus();
+    return;
+  }
+
+  // 本地离线文件打开防御提示
+  if(window.location.protocol === 'file:'){
+    toast('提示：当前为直接打开本地文件，请在浏览器中访问 http:// 服务网址');
     return;
   }
 
@@ -609,16 +636,19 @@ async function doLogin(){
 
       if(voter.submitted){
         toast('您之前已提交过投票，当前为只读浏览模式');
+      } else {
+        toast('欢迎您，' + voter.name + '！您有 5 票推荐预算');
       }
     } else {
-      toast(json.message || '登录验证失败');
+      toast(json.message || '登录验证失败，请重试');
     }
   } catch(e){
-    toast('网络连接异常: ' + e.message);
+    console.error('Login error:', e);
+    toast('网络连接异常: ' + (e.message || '请确认服务正在运行'));
   } finally {
     isLoginInProgress = false;
     $('btnStart').disabled = false;
-    $('btnStart').textContent = '进入作品展示集';
+    $('btnStart').textContent = voter ? '进入作品展示集' : '开始投票';
   }
 }
 
@@ -873,6 +903,7 @@ function renderPlayerLikeState(candId){
     btnLike.textContent = '♡';
     btnLike.className = 'btn-circle';
     $('pLikeText').textContent = '投票';
+  }
 }
 
 /* 核心：原生视频播放事件绑定，确保 UI 与播放器状态绝不同步错误 */
@@ -1260,11 +1291,16 @@ $('btnExportExcel').onclick = function(){
   window.open('/api/vote/export', '_blank');
 };
 
-/* ===== 页面初始化 ===== */
-window.addEventListener('DOMContentLoaded', async function(){
+/* ===== 页面初始化 (防时序漏发，保证即刻执行) ===== */
+async function initApp(){
   initVoterSession();
   await loadWorks();
-});
+}
+if(document.readyState === 'loading'){
+  window.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 </script>
 </body>
 </html>
