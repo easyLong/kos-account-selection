@@ -163,26 +163,6 @@ export default function DeviceShell({
               </button>
             </div>
           </div>
-
-          {/* Quick Access Actions */}
-          <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <button
-              type="button"
-              className="btn-copy"
-              style={{ width: '100%', textAlign: 'center', background: 'rgba(212,175,55,0.12)', borderColor: 'rgba(212,175,55,0.4)', color: '#FFD700' }}
-              onClick={handleOpenAdmin}
-            >
-              ⚙️ 打开评审与统计后台 (Admin)
-            </button>
-            <button
-              type="button"
-              className="btn-copy"
-              style={{ width: '100%', textAlign: 'center' }}
-              onClick={() => window.open('/vote.html', '_blank')}
-            >
-              🎬 打开视频展播投票页 (vote.html)
-            </button>
-          </div>
         </div>
       </div>
 

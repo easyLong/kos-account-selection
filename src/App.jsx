@@ -189,7 +189,6 @@ export default function App() {
         {step === 0 && (
           <LandingPage 
             onStart={handleStart} 
-            onOpenAdmin={() => setIsAdminOpen(true)}
           />
         )}
 

@@ -1,6 +1,4 @@
-import React from 'react';
-
-export default function LandingPage({ onStart, onOpenAdmin }) {
+export default function LandingPage({ onStart }) {
   return (
     <div className="landing-page animate-fade-in">
       {/* Hero Media Section matching mockup 1 */}
@@ -59,38 +57,9 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
           >
             <span>立即报名</span>
           </button>
-          <button
-            id="btn-open-vote-showcase"
-            className="btn-vote-showcase-entrance"
-            onClick={() => window.open('/vote.html', '_self')}
-          >
-            <span>🎬 员工视频展播与投票专区 ›</span>
-          </button>
           <div className="landing-quick-hint">
             <span>⚡ 全程仅需 3 步 · 约 3 分钟即可完成</span>
           </div>
-          {onOpenAdmin && (
-            <div style={{ textAlign: 'center', marginTop: '8px' }}>
-              <button
-                type="button"
-                id="btn-open-admin-portal"
-                className="btn-admin-portal-entrance"
-                onClick={onOpenAdmin}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'rgba(212, 175, 55, 0.75)',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '3px'
-                }}
-              >
-                ⚙️ 管理员评审与统计后台
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>
