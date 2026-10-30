@@ -74,10 +74,10 @@
   
   .card-cand-id{position:absolute;bottom:8px;left:8px;font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:4px;font-family:monospace}
 
-  /* 核心需求2：不需要点进去才能点赞！直接在封面右上角设置独立点击点赞心形按钮 */
+  /* 核心需求：红星是投票！直接在封面右上角设置红星点击按钮 */
   .card-heart-action{position:absolute;top:8px;right:8px;z-index:5;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:18px;color:#999;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer;transition:transform .15s,color .15s,background .15s}
   .card-heart-action:active{transform:scale(.85)}
-  .card-heart-action.liked{color:#ff4d6a;background:#fff;font-size:20px}
+  .card-heart-action.liked{color:#e53935;background:#fff;font-size:21px;box-shadow:0 2px 12px rgba(229,57,53,.35)}
   
   .card-meta{padding:10px;flex:1;display:flex;flex-direction:column;justify-content:space-between}
   .card-title-name{display:flex;justify-content:space-between;align-items:baseline}
@@ -86,10 +86,10 @@
   .card-dp{font-size:11px;color:var(--sub);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .card-vt{font-size:12px;color:#4a2c10;font-weight:600;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-  /* 核心需求2：卡片底部直观一键投票按钮 */
+  /* 核心需求：卡片底部红星投票按钮 */
   .btn-card-vote{margin-top:8px;width:100%;padding:7px 0;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid #ebd092;background:#fdf7ea;color:#855513;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .15s}
   .btn-card-vote:active{transform:scale(.97)}
-  .btn-card-vote.liked{background:linear-gradient(135deg,#ff4d6a,#ea3856);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(255,77,106,.3)}
+  .btn-card-vote.liked{background:linear-gradient(135deg,#e53935,#c62828);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(229,57,53,.35)}
 
   /* 单列大卡片视图 (Feed Mode) */
   .feed-mode{display:flex;flex-direction:column;gap:16px;padding:12px}
@@ -246,13 +246,13 @@
   .ctrl .ctrl-item{display:flex;flex-direction:column;align-items:center;gap:4px}
   .ctrl .btn-circle{width:50px;height:50px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;user-select:none;backdrop-filter:blur(4px);transition:transform .15s}
   .ctrl .btn-circle:active{transform:scale(.9)}
-  .ctrl .btn-circle.liked{color:#ff4d6a;border-color:rgba(255,77,106,.6);background:rgba(255,77,106,.25);font-size:24px}
+  .ctrl .btn-circle.liked{color:#e53935;border-color:rgba(229,57,53,.8);background:rgba(229,57,53,.3);font-size:26px;box-shadow:0 0 16px rgba(229,57,53,.6)}
   .ctrl .ctrl-label{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.9)}
 
   .prog{position:absolute;left:0;bottom:0;height:4px;background:rgba(255,255,255,.2);width:100%;z-index:9}
   .prog i{display:block;height:100%;width:0;background:var(--gold-l)}
 
-  .big-heart{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.2);font-size:120px;opacity:0;pointer-events:none;z-index:15;color:#ff4d6a}
+  .big-heart{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.2);font-size:130px;opacity:0;pointer-events:none;z-index:15;color:#e53935;filter:drop-shadow(0 0 25px rgba(229,57,53,.75))}
   @keyframes burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
   .burst{animation:burst .7s ease-out}
 
@@ -307,7 +307,7 @@
     <div class="rules">
       共 <b id="eTotal">0</b> 个作品，每人最多投 <b id="eBudget">5</b> 票<br>
       · 点进视频直接开播，上下滑动畅享自动连播<br>
-      · 点击 ♡ 直接投出你的票，随时可取消重投
+      · 点击 ★ 直接投出你的红星票，随时可取消重投
     </div>
 
     <!-- 登录卡片 (输入框常驻显示，支持回车直登与一键清空换号) -->
@@ -339,7 +339,7 @@
     <div class="topbar">
       <span class="title" id="gTitle">全部作品 (0)</span>
       <span class="pill user" id="pillUser">工号: --</span>
-      <span class="pill" id="pillBudget">剩余 ♡ 5 / 5</span>
+      <span class="pill" id="pillBudget">剩余 ★ 5 / 5</span>
     </div>
 
     <div class="gallery-actions">
@@ -372,7 +372,7 @@
       <div class="float-meta-badge">
         <span id="pIdx">01 / 03</span>
         <span class="meta-sep">·</span>
-        <span id="pBudget">♡ 剩余 5 票</span>
+        <span id="pBudget">★ 剩余 5 票</span>
       </div>
     </div>
 
@@ -417,20 +417,16 @@
         <div class="vii hide" id="pIntro"></div>
       </div>
 
-      <!-- 右侧悬浮操作栏 -->
+      <!-- 右侧悬浮操作栏 (纯净通透，仅保留红星投票) -->
       <div class="ctrl">
         <div class="ctrl-item">
-          <div class="btn-circle" id="btnSound">🔊</div>
-          <span class="ctrl-label">声音</span>
-        </div>
-        <div class="ctrl-item">
-          <div class="btn-circle" id="btnLike">♡</div>
-          <span class="ctrl-label" id="pLikeText">投票</span>
+          <div class="btn-circle" id="btnLike">☆</div>
+          <span class="ctrl-label" id="pLikeText">投红星</span>
         </div>
       </div>
 
-      <!-- 点赞大爱心炸裂动画 -->
-      <div class="big-heart" id="bigHeart">♥</div>
+      <!-- 点赞红星炸裂动画 -->
+      <div class="big-heart" id="bigHeart">★</div>
       <!-- 底部播放进度条 -->
       <div class="prog"><i id="progBar"></i></div>
     </div>
@@ -659,10 +655,10 @@ function updatePills(){
   var left = Math.max(0, CFG.budget - likedIds.length);
   var el = $('pillBudget');
   if(el){
-    el.textContent = '剩余 ♡ ' + left + ' / ' + CFG.budget;
+    el.textContent = '剩余 ★ ' + left + ' / ' + CFG.budget;
     el.className = 'pill' + (left === 0 ? ' out' : (left === 1 ? ' warn' : ''));
   }
-  if($('pBudget')) $('pBudget').textContent = '♡ 剩余 ' + left;
+  if($('pBudget')) $('pBudget').textContent = '★ 剩余 ' + left;
   if($('pillUser') && voter) $('pillUser').textContent = voter.name + ' (' + voter.jobNo + ')';
 }
 
@@ -692,21 +688,21 @@ function renderGallery(){
         '<div class="cover-overlay"></div>' +
         '<div class="card-play-icon">▶</div>' +
         '<span class="card-cand-id">' + (w.id || pad(idx + 1)) + '</span>' +
-        /* 需求2：视频不需要点击去才能点赞！直接在右上角放置可点击心形按钮 */
-        '<div class="card-heart-action ' + (isLiked ? 'liked' : '') + '" onclick="onDirectVoteClick(event, \'' + w.id + '\')" title="直接投TA一票">' +
-          (isLiked ? '♥' : '♡') +
+        /* 核心需求：红星是投票！直接在右上角放置红星点击按钮 */
+        '<div class="card-heart-action ' + (isLiked ? 'liked' : '') + '" onclick="onDirectVoteClick(event, \'' + w.id + '\')" title="投 TA 红星">' +
+          (isLiked ? '★' : '☆') +
         '</div>' +
       '</div>' +
       '<div class="card-meta">' +
         '<div class="card-title-name">' +
           '<div class="card-nm">' + (w.name || '参选人') + '</div>' +
-          '<div class="card-votes-pill">' + (w.votesCount || 0) + ' 票</div>' +
+          '<div class="card-votes-pill">★ ' + (w.votesCount || 0) + ' 票</div>' +
         '</div>' +
         '<div class="card-dp">' + (w.department || '汇添富') + ' · ' + (w.position || '创作者') + '</div>' +
         '<div class="card-vt">🎬 ' + (w.videoTitle || '自媒体短视频') + '</div>' +
-        /* 需求2：卡片底部也提供直观的直接点赞推荐按钮 */
+        /* 卡片底部直观红星投票按钮 */
         '<button class="btn-card-vote ' + (isLiked ? 'liked' : '') + '" onclick="onDirectVoteClick(event, \'' + w.id + '\')">' +
-          (isLiked ? '♥ 已投推荐票' : '♡ 投 TA 一票') +
+          (isLiked ? '★ 已投红星票' : '☆ 投 TA 一票') +
         '</button>' +
       '</div>';
 
@@ -793,14 +789,14 @@ async function executeToggleVote(candidateId){
       }
 
       if(json.data.liked){
-        // 炸裂红心动画
+        // 炸裂红星动画
         var b = $('bigHeart');
         b.className = 'big-heart';
         void b.offsetWidth;
         b.className = 'big-heart burst';
-        toast('已成功为 ' + candName + ' 投出推荐票 ♥ (剩余 ' + (CFG.budget - likedIds.length) + ' 票)');
+        toast('已成功为 ' + candName + ' 投出红星票 ★ (剩余 ' + (CFG.budget - likedIds.length) + ' 票)');
       } else {
-        toast('已取消对 ' + candName + ' 的推荐票 (剩余 ' + (CFG.budget - likedIds.length) + ' 票)');
+        toast('已取消对 ' + candName + ' 的红星票 (剩余 ' + (CFG.budget - likedIds.length) + ' 票)');
       }
     } else {
       toast(json.message || '操作失败');
@@ -892,17 +888,17 @@ function renderPlayerCard(idx, animDir, autoPlay){
 function renderPlayerLikeState(candId){
   var w = WORKS[cur];
   var isLiked = likedIds.indexOf(candId) > -1;
-  $('pNo').textContent = '作品 ' + (w.id || pad(cur + 1)) + (isLiked ? ' · 已投推荐票 ♥' : '');
+  $('pNo').textContent = '作品 ' + (w.id || pad(cur + 1)) + (isLiked ? ' · 已投红星 ★' : '');
   
   var btnLike = $('btnLike');
   if(isLiked){
-    btnLike.textContent = '♥';
+    btnLike.textContent = '★';
     btnLike.className = 'btn-circle liked';
-    $('pLikeText').textContent = '已推荐';
+    $('pLikeText').textContent = '已投红星';
   } else {
-    btnLike.textContent = '♡';
+    btnLike.textContent = '☆';
     btnLike.className = 'btn-circle';
-    $('pLikeText').textContent = '投票';
+    $('pLikeText').textContent = '投红星';
   }
 }
 
@@ -974,13 +970,10 @@ function doPlayVideo(){
       hide_($('videoBuffering'));
       // 移动端 Safari / 微信策略限制有声自动播放：静音后立即自动起播
       videoEl.muted = true;
-      isMuted = true;
-      $('btnSound').textContent = '🔇';
       videoEl.play().then(function(){
         hide_($('videoBuffering'));
         hide_($('playCenterBtn'));
         isPlaying = true;
-        toast('已自动静音播放，点击右侧🔊开启声音');
       }).catch(function(err2){
         console.error('Autoplay completely blocked:', err2);
         show($('playCenterBtn'));
@@ -1012,6 +1005,9 @@ function safeTogglePlay(e){
   var now = Date.now();
   if(now - lastActionTs < 350) return; // 拦截 350ms 内重复 click/touchend 事件
   lastActionTs = now;
+  if(videoEl.muted){
+    videoEl.muted = false; // 用户首次触控，自动解除可能的静音状态
+  }
   toggleVideoPlay();
 }
 
@@ -1041,16 +1037,6 @@ function closePlayer(){
 }
 
 $('pClose').onclick = closePlayer;
-
-/* 声音切换 */
-var isMuted = false;
-$('btnSound').onclick = function(e){
-  e.stopPropagation();
-  isMuted = !isMuted;
-  videoEl.muted = isMuted;
-  $('btnSound').textContent = isMuted ? '🔇' : '🔊';
-  toast(isMuted ? '已开启静音' : '已开启声音');
-};
 
 /* 播放器内点赞按钮绑定 */
 $('btnLike').onclick = function(e){
