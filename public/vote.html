@@ -123,6 +123,11 @@
   .play-center-btn .play-hint-text{margin-top:10px;font-size:13px;font-weight:700;color:#fff;background:rgba(0,0,0,.65);padding:4px 14px;border-radius:12px;letter-spacing:1px}
   .play-center-btn:active{transform:translate(-50%,-50%) scale(.95)}
   
+  /* 视频缓冲与加载提示 */
+  .video-buffering{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:13;display:flex;flex-direction:column;align-items:center;gap:10px;background:rgba(0,0,0,.75);padding:14px 22px;border-radius:14px;color:#fff;font-size:12.5px;backdrop-filter:blur(6px);pointer-events:none}
+  .buffer-spinner{width:32px;height:32px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--gold-l);border-radius:50%;animation:vspin .8s linear infinite}
+  @keyframes vspin{to{transform:rotate(360deg)}}
+
   .playpause{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:54px;opacity:.9;z-index:14;pointer-events:none}
 
   .info{position:absolute;left:16px;bottom:36px;z-index:8;max-width:75%;text-shadow:0 2px 6px rgba(0,0,0,.9)}
@@ -265,14 +270,25 @@
 
     <div id="stage">
       <div class="slide" id="slide">
-        <!-- 核心视频播放标签 (默认配置 poster 真实有效画面，不自动播放) -->
+        <!-- 核心视频播放标签 (标准 H.264 MP4 流，配置 WeChat X5 / iOS 极速无黑屏行内播放) -->
         <video 
           id="videoEl" 
-          playsinline 
-          webkit-playsinline 
+          playsinline="true" 
+          webkit-playsinline="true" 
+          x5-playsinline="true" 
           x5-video-player-type="h5-page"
-          preload="metadata"
+          x5-video-player-fullscreen="false"
+          x5-video-orientation="portrait"
+          controlsList="nodownload nofullscreen noremoteplayback"
+          disablePictureInPicture="true"
+          preload="auto"
         ></video>
+
+        <!-- 缓冲加载动画 -->
+        <div class="video-buffering hide" id="videoBuffering">
+          <div class="buffer-spinner"></div>
+          <span>正在加载视频...</span>
+        </div>
 
         <!-- 需求1：不需要及时播放，点了再播！居中醒目播放按钮 -->
         <div class="play-center-btn" id="playCenterBtn">
@@ -674,10 +690,14 @@ function renderPlayerCard(idx, animDir){
   var s = $('slide');
   s.className = 'slide' + (animDir === 1 ? ' anim-up' : (animDir === -1 ? ' anim-down' : ''));
 
-  // 1. 核心需求1：绝不自动连贯播放！切台时必须先暂停并归零
-  videoEl.pause();
-  videoEl.currentTime = 0;
+  // 1. 彻底暂停并停止上一段视频的后台网络缓冲，释放移动端内存
+  try {
+    videoEl.pause();
+    videoEl.removeAttribute('src');
+    videoEl.load();
+  } catch(e){}
   isPlaying = false;
+  hide_($('videoBuffering'));
   
   // 核心需求3：播放的画面是真实有效画面 (利用 poster 预载首帧图片，绝不黑屏)
   if(w.coverUrl){
@@ -685,9 +705,10 @@ function renderPlayerCard(idx, animDir){
   }
   if(w.videoUrl){
     videoEl.src = w.videoUrl;
+    videoEl.load();
   }
 
-  // 2. 居中显示大播放按钮
+  // 2. 核心需求1：不需要及时播放，点了再播！居中醒目播放按钮
   show($('playCenterBtn'));
   $('playCenterBtn').querySelector('.play-icon-circle').textContent = '▶';
   $('playCenterBtn').querySelector('.play-hint-text').textContent = '点击播放视频';
@@ -726,41 +747,35 @@ function renderPlayerLikeState(candId){
   }
 }
 
-/* 播放 / 暂停切换 (点了再播) */
-function toggleVideoPlay(){
-  if(!videoEl.src) return;
+/* 核心：原生视频播放事件绑定，确保 UI 与播放器状态绝不同步错误 */
+videoEl.addEventListener('play', function(){
+  isPlaying = true;
+  hide_($('playCenterBtn'));
+  hide_($('videoBuffering'));
+});
 
-  if(videoEl.paused){
-    videoEl.play().then(function(){
-      isPlaying = true;
-      hide_($('playCenterBtn'));
-      hide_($('playpause'));
-    }).catch(function(err){
-      console.warn('Video play error:', err);
-      toast('点击播放失败，请重试');
-    });
-  } else {
-    videoEl.pause();
-    isPlaying = false;
-    show($('playCenterBtn'));
+videoEl.addEventListener('pause', function(){
+  isPlaying = false;
+  show($('playCenterBtn'));
+  hide_($('videoBuffering'));
+  if(videoEl.duration && videoEl.currentTime < videoEl.duration - 0.3){
     $('playCenterBtn').querySelector('.play-icon-circle').textContent = '▶';
     $('playCenterBtn').querySelector('.play-hint-text').textContent = '点击继续播放';
   }
-}
+});
 
-$('playCenterBtn').onclick = function(e){
-  e.stopPropagation();
-  toggleVideoPlay();
-};
+videoEl.addEventListener('waiting', function(){
+  if(!videoEl.paused){
+    show($('videoBuffering'));
+  }
+});
 
-/* 核心需求1：播放不能连贯！视频播放完毕后，绝不自动跳到下一个视频，停在当前画面展示重播 */
-videoEl.addEventListener('ended', function(){
-  isPlaying = false;
-  show($('playCenterBtn'));
-  $('playCenterBtn').querySelector('.play-icon-circle').textContent = '↺';
-  $('playCenterBtn').querySelector('.play-hint-text').textContent = '重新播放';
-  $('progBar').style.width = '100%';
-  // 坚决不自动调用 switchCard(1)，保持当前视频不连贯切台！
+videoEl.addEventListener('playing', function(){
+  hide_($('videoBuffering'));
+});
+
+videoEl.addEventListener('canplay', function(){
+  hide_($('videoBuffering'));
 });
 
 videoEl.addEventListener('timeupdate', function(){
@@ -769,6 +784,70 @@ videoEl.addEventListener('timeupdate', function(){
     $('progBar').style.width = pct + '%';
   }
 });
+
+/* 核心需求1：播放不能连贯！视频播放完毕后，绝不自动跳到下一个视频，停在当前画面展示重播 */
+videoEl.addEventListener('ended', function(){
+  isPlaying = false;
+  show($('playCenterBtn'));
+  $('playCenterBtn').querySelector('.play-icon-circle').textContent = '↺';
+  $('playCenterBtn').querySelector('.play-hint-text').textContent = '重新播放';
+  $('progBar').style.width = '100%';
+  hide_($('videoBuffering'));
+  // 坚决不自动调用 switchCard(1)，保持当前视频不连贯切台！
+});
+
+videoEl.addEventListener('error', function(err){
+  hide_($('videoBuffering'));
+  show($('playCenterBtn'));
+  $('playCenterBtn').querySelector('.play-icon-circle').textContent = '⚠';
+  $('playCenterBtn').querySelector('.play-hint-text').textContent = '加载失败，点击重试';
+  console.warn('Video element error:', err);
+});
+
+/* 核心：播放 / 暂停切换 (点了再播 + 移动端自动降级静音兜底) */
+function toggleVideoPlay(){
+  if(!videoEl.src) return;
+
+  if(videoEl.paused){
+    show($('videoBuffering'));
+    var playPromise = videoEl.play();
+    if(playPromise !== undefined){
+      playPromise.then(function(){
+        hide_($('videoBuffering'));
+      }).catch(function(err){
+        console.warn('Direct play with audio rejected by mobile policy, falling back to muted play:', err);
+        hide_($('videoBuffering'));
+        // 移动端 Safari / 微信策略限制有声自动播放：静音后再次播放
+        videoEl.muted = true;
+        isMuted = true;
+        $('btnSound').textContent = '🔇';
+        videoEl.play().then(function(){
+          toast('已静音流畅播放，点击右下角🔊可开启声音');
+        }).catch(function(err2){
+          console.error('Playback completely failed:', err2);
+          toast('点击播放失败，请再次点击重试');
+        });
+      });
+    }
+  } else {
+    videoEl.pause();
+  }
+}
+
+// 统一防重触碰调度
+var lastActionTs = 0;
+function safeTogglePlay(e){
+  if(e){
+    e.stopPropagation();
+    if(e.cancelable && e.type === 'touchend') e.preventDefault();
+  }
+  var now = Date.now();
+  if(now - lastActionTs < 350) return; // 拦截 350ms 内重复 click/touchend 事件
+  lastActionTs = now;
+  toggleVideoPlay();
+}
+
+$('playCenterBtn').onclick = safeTogglePlay;
 
 /* 上下滑动切换卡片 (切换后依然处于暂停有效画面，绝不自动开播) */
 function switchCard(dir){
@@ -787,6 +866,8 @@ function switchCard(dir){
 
 function closePlayer(){
   videoEl.pause();
+  videoEl.removeAttribute('src');
+  videoEl.load();
   hide_($('player'));
   go('gallery');
   renderGallery();
@@ -803,6 +884,7 @@ $('btnSound').onclick = function(e){
   isMuted = !isMuted;
   videoEl.muted = isMuted;
   $('btnSound').textContent = isMuted ? '🔇' : '🔊';
+  toast(isMuted ? '已开启静音' : '已开启声音');
 };
 
 /* 播放器内点赞按钮绑定 */
@@ -813,21 +895,25 @@ $('btnLike').onclick = function(e){
   }
 };
 
-/* ===== 播放器内手势控制 ===== */
-var sx = 0, sy = 0, st = 0, moved = 0, lastTap = 0, tapTimer = null;
+/* ===== 播放器内手势控制 (精准区分滑动翻页与点播，彻底消除卡顿重触) ===== */
+var sx = 0, sy = 0, st = 0, moved = false, lastTapTs = 0;
 var stage = $('stage');
 
 stage.addEventListener('touchstart', function(e){
+  if(e.touches.length !== 1) return;
   sx = e.touches[0].clientX;
   sy = e.touches[0].clientY;
   st = Date.now();
-  moved = 0;
+  moved = false;
 }, { passive: true });
 
 stage.addEventListener('touchmove', function(e){
+  if(e.touches.length !== 1) return;
   var dx = e.touches[0].clientX - sx;
   var dy = e.touches[0].clientY - sy;
-  if(Math.abs(dy) > 8) moved = 1;
+  if(Math.abs(dy) > 10 || Math.abs(dx) > 10) {
+    moved = true;
+  }
 }, { passive: true });
 
 stage.addEventListener('touchend', function(e){
@@ -835,28 +921,33 @@ stage.addEventListener('touchend', function(e){
   var dx = e.changedTouches[0].clientX - sx;
   var dt = Date.now() - st;
 
-  // 垂直滑动翻页检测 (> 50px)
-  if(Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)){
+  // 1. 垂直滑动手势检测 (> 45px 且垂直位移明显大于水平位移)
+  if(Math.abs(dy) > 45 && Math.abs(dy) > Math.abs(dx) * 1.2){
     switchCard(dy < 0 ? 1 : -1);
     return;
   }
 
-  // 点击检测
-  if(!moved && dt < 300){
-    if(Date.now() - lastTap < 280){
-      // 双击：点赞
-      clearTimeout(tapTimer);
-      lastTap = 0;
-      if(WORKS[cur]) executeToggleVote(WORKS[cur].id);
-    } else {
-      // 单击：播放或暂停 (核心需求1)
-      lastTap = Date.now();
-      tapTimer = setTimeout(function(){
-        toggleVideoPlay();
-      }, 260);
-    }
+  // 2. 如果滑过了，直接忽略点按
+  if(moved || dt > 400) return;
+
+  // 3. 点击的如果不是背景视频舞台（例如点中了右侧点赞、声音、箭头、关闭按钮、大播放按钮），交由按钮自身处理
+  var target = e.target;
+  if(target && target.closest('.ctrl, .arrows, .pbar, .info, .play-center-btn, .mask, #toast')){
+    return;
   }
-}, { passive: true });
+
+  // 4. 双击点赞检测 (两次轻触间隔 < 280ms)
+  var now = Date.now();
+  if(now - lastTapTs < 280){
+    lastTapTs = 0;
+    if(WORKS[cur]) executeToggleVote(WORKS[cur].id);
+    return;
+  }
+  lastTapTs = now;
+
+  // 5. 单击播放或暂停 (核心需求1)
+  safeTogglePlay(e);
+}, { passive: false });
 
 stage.addEventListener('wheel', function(e){
   if(Math.abs(e.deltaY) < 10) return;
