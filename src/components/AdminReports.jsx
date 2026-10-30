@@ -34,6 +34,8 @@ export function AdminOverviewReport({ candidates, onUpdateCandidate, onSelectCan
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [filterRating, setFilterRating] = useState('ALL');
   const [editingComments, setEditingComments] = useState({});
+  const [editingVideoScores, setEditingVideoScores] = useState({});
+  const [editingVideoReviews, setEditingVideoReviews] = useState({});
 
   // KPIs
   const stats = useMemo(() => {
@@ -88,6 +90,20 @@ export function AdminOverviewReport({ candidates, onUpdateCandidate, onSelectCan
     const newVal = editingComments[cId];
     if (newVal !== undefined && newVal !== oldVal) {
       onUpdateCandidate(cId, { reviewComments: newVal });
+    }
+  };
+
+  const handleVideoScoreBlur = (cId, oldVal) => {
+    const newVal = editingVideoScores[cId];
+    if (newVal !== undefined && newVal !== oldVal) {
+      onUpdateCandidate(cId, { videoScore: newVal === '' ? null : Number(newVal) });
+    }
+  };
+
+  const handleVideoReviewBlur = (cId, oldVal) => {
+    const newVal = editingVideoReviews[cId];
+    if (newVal !== undefined && newVal !== oldVal) {
+      onUpdateCandidate(cId, { videoReview: newVal });
     }
   };
 
@@ -201,13 +217,15 @@ export function AdminOverviewReport({ candidates, onUpdateCandidate, onSelectCan
                 <th style={{ width: '80px', textAlign: 'center' }}>总分</th>
                 <th style={{ width: '125px', textAlign: 'center' }}>系统定级</th>
                 <th style={{ minWidth: '160px' }}>评审意见</th>
+                <th style={{ width: '85px', textAlign: 'center' }}>视频打分</th>
+                <th style={{ minWidth: '160px' }}>视频评价</th>
                 <th style={{ width: '75px', textAlign: 'center' }}>详情</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="16" className="empty-row">暂无符合条件的报名数据</td>
+                  <td colSpan="18" className="empty-row">暂无符合条件的报名数据</td>
                 </tr>
               ) : (
                 filtered.map((c, idx) => {
@@ -279,6 +297,29 @@ export function AdminOverviewReport({ candidates, onUpdateCandidate, onSelectCan
                         />
                       </td>
                       <td style={{ textAlign: 'center' }}>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          className="inline-input-cell"
+                          style={{ width: '65px', textAlign: 'center', fontWeight: 'bold', color: '#D97706' }}
+                          placeholder="未打分"
+                          value={editingVideoScores[c.id] !== undefined ? editingVideoScores[c.id] : (c.videoScore !== null && c.videoScore !== undefined ? c.videoScore : '')}
+                          onChange={e => setEditingVideoScores({ ...editingVideoScores, [c.id]: e.target.value })}
+                          onBlur={() => handleVideoScoreBlur(c.id, c.videoScore)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          className="inline-input-cell"
+                          placeholder="录入视频表现评价..."
+                          value={editingVideoReviews[c.id] !== undefined ? editingVideoReviews[c.id] : (c.videoReview || '')}
+                          onChange={e => setEditingVideoReviews({ ...editingVideoReviews, [c.id]: e.target.value })}
+                          onBlur={() => handleVideoReviewBlur(c.id, c.videoReview || '')}
+                        />
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
                         <button
                           type="button"
                           className="btn-inspect-sm"
@@ -307,6 +348,8 @@ export function AdminDetailsReport({ candidates, onUpdateCandidate, onSelectCand
   const [previewVideo, setPreviewVideo] = useState(null);
   const [editingScores, setEditingScores] = useState({});
   const [editingRemarks, setEditingRemarks] = useState({});
+  const [editingVideoScores, setEditingVideoScores] = useState({});
+  const [editingVideoReviews, setEditingVideoReviews] = useState({});
 
   const filtered = useMemo(() => {
     return candidates.filter(c => {
@@ -345,6 +388,20 @@ export function AdminDetailsReport({ candidates, onUpdateCandidate, onSelectCand
     const newVal = editingRemarks[cId];
     if (newVal !== undefined && newVal !== oldVal) {
       onUpdateCandidate(cId, { reviewerRemark: newVal });
+    }
+  };
+
+  const handleVideoScoreBlur = (cId, oldVal) => {
+    const newVal = editingVideoScores[cId];
+    if (newVal !== undefined && newVal !== oldVal) {
+      onUpdateCandidate(cId, { videoScore: newVal === '' ? null : Number(newVal) });
+    }
+  };
+
+  const handleVideoReviewBlur = (cId, oldVal) => {
+    const newVal = editingVideoReviews[cId];
+    if (newVal !== undefined && newVal !== oldVal) {
+      onUpdateCandidate(cId, { videoReview: newVal });
     }
   };
 
@@ -388,7 +445,7 @@ export function AdminDetailsReport({ candidates, onUpdateCandidate, onSelectCand
                 <th colSpan="7" className="th-group-hdr hdr-scale">量表测评 (自评满分 125)</th>
                 <th colSpan="5" className="th-group-hdr hdr-subjective">简答评分 (后台评分满分 20)</th>
                 <th colSpan="2" className="th-group-hdr hdr-grade">综合定级 (满分 145)</th>
-                <th colSpan="6" className="th-group-hdr hdr-works">作品信息与构思</th>
+                <th colSpan="8" className="th-group-hdr hdr-works">作品信息与构思</th>
                 <th className="th-group-hdr hdr-review">备注</th>
               </tr>
               <tr className="th-main-row">
@@ -420,13 +477,15 @@ export function AdminDetailsReport({ candidates, onUpdateCandidate, onSelectCand
                 <th style={{ width: '65px' }}>大小</th>
                 <th style={{ width: '80px', textAlign: 'center' }}>视频预览</th>
                 <th style={{ minWidth: '150px' }}>作品构思</th>
+                <th style={{ width: '85px', textAlign: 'center' }}>视频打分</th>
+                <th style={{ minWidth: '160px' }}>视频评价</th>
                 <th style={{ minWidth: '140px' }}>评分人/备注</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="25" className="empty-row">暂无符合条件的测评数据</td>
+                  <td colSpan="27" className="empty-row">暂无符合条件的测评数据</td>
                 </tr>
               ) : (
                 filtered.map((c, idx) => {
@@ -555,6 +614,30 @@ export function AdminDetailsReport({ candidates, onUpdateCandidate, onSelectCand
                       </td>
                       <td className="cell-ellipsis" title={c.videoIntro || ''}>
                         {c.videoIntro || '-'}
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          className="score-number-input"
+                          style={{ width: '60px', color: '#D97706', fontWeight: 'bold' }}
+                          placeholder="打分"
+                          value={editingVideoScores[c.id] !== undefined ? editingVideoScores[c.id] : (c.videoScore !== null && c.videoScore !== undefined ? c.videoScore : '')}
+                          onChange={e => setEditingVideoScores({ ...editingVideoScores, [c.id]: e.target.value })}
+                          onBlur={() => handleVideoScoreBlur(c.id, c.videoScore)}
+                          title="视频打分 (0~100分)"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          className="inline-input-cell"
+                          placeholder="视频表现评价..."
+                          value={editingVideoReviews[c.id] !== undefined ? editingVideoReviews[c.id] : (c.videoReview || '')}
+                          onChange={e => setEditingVideoReviews({ ...editingVideoReviews, [c.id]: e.target.value })}
+                          onBlur={() => handleVideoReviewBlur(c.id, c.videoReview || '')}
+                        />
                       </td>
                       <td>
                         <input

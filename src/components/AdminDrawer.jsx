@@ -21,6 +21,8 @@ export default function AdminDrawer({ isOpen, onClose }) {
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [showFullSurvey, setShowFullSurvey] = useState(false);
+  const [editingVideoScores, setEditingVideoScores] = useState({});
+  const [editingVideoReviews, setEditingVideoReviews] = useState({});
 
   // Tab & Questionnaire state
   const [adminTab, setAdminTab] = useState('overview'); // 'overview' | 'details' | 'candidates' | 'questions'
@@ -683,6 +685,112 @@ export default function AdminDrawer({ isOpen, onClose }) {
                   ) : (
                     <div className="no-video-tip">候选人未上传视频</div>
                   )}
+                </div>
+
+                {/* Dedicated Video Scoring & Review Panel */}
+                <div className="detail-info-block" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.35)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <h5 className="section-title" style={{ margin: 0, color: '#FFD700', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px' }}>
+                      <span>🎯 视频打分与评价</span>
+                    </h5>
+                    <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                      ⚡ 失去焦点自动持久化保存
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '16px', alignItems: 'start' }}>
+                    {/* Video Score Input */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: '#D1D5DB', marginBottom: '6px', fontWeight: 'bold' }}>
+                        视频打分 (0-100分)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        placeholder="输入分数"
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(212, 175, 55, 0.5)',
+                          background: 'rgba(0, 0, 0, 0.4)',
+                          color: '#FFD700',
+                          fontSize: '18px',
+                          fontWeight: 'bold',
+                          textAlign: 'center',
+                          outline: 'none'
+                        }}
+                        value={editingVideoScores[selectedCandidate.id] !== undefined ? editingVideoScores[selectedCandidate.id] : (selectedCandidate.videoScore !== null && selectedCandidate.videoScore !== undefined ? selectedCandidate.videoScore : '')}
+                        onChange={e => setEditingVideoScores({ ...editingVideoScores, [selectedCandidate.id]: e.target.value })}
+                        onBlur={() => {
+                          const val = editingVideoScores[selectedCandidate.id];
+                          if (val !== undefined) {
+                            handleUpdateCandidate(selectedCandidate.id, {
+                              videoScore: val === '' ? null : Number(val)
+                            });
+                          }
+                        }}
+                      />
+                      {/* Fast Score Presets */}
+                      <div style={{ display: 'flex', gap: '4px', marginTop: '6px', justifyContent: 'center' }}>
+                        {[95, 90, 85, 75].map(preset => (
+                          <button
+                            key={preset}
+                            type="button"
+                            style={{
+                              background: 'rgba(255,255,255,0.08)',
+                              border: '1px solid rgba(255,255,255,0.15)',
+                              color: '#D4AF37',
+                              fontSize: '11px',
+                              borderRadius: '4px',
+                              padding: '2px 6px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                              setEditingVideoScores(prev => ({ ...prev, [selectedCandidate.id]: preset }));
+                              handleUpdateCandidate(selectedCandidate.id, { videoScore: preset });
+                            }}
+                          >
+                            {preset}分
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Video Review Textarea */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: '#D1D5DB', marginBottom: '6px', fontWeight: 'bold' }}>
+                        视频表现评价 / 评审评语
+                      </label>
+                      <textarea
+                        rows="3"
+                        placeholder="输入对作品视频的综合评价（如：镜头感、专业表达度、语音语调、亲和力、人设契合度等）..."
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          background: 'rgba(0, 0, 0, 0.4)',
+                          color: '#F9FAFB',
+                          fontSize: '13.5px',
+                          lineHeight: '1.5',
+                          resize: 'vertical',
+                          outline: 'none'
+                        }}
+                        value={editingVideoReviews[selectedCandidate.id] !== undefined ? editingVideoReviews[selectedCandidate.id] : (selectedCandidate.videoReview || '')}
+                        onChange={e => setEditingVideoReviews({ ...editingVideoReviews, [selectedCandidate.id]: e.target.value })}
+                        onBlur={() => {
+                          const val = editingVideoReviews[selectedCandidate.id];
+                          if (val !== undefined) {
+                            handleUpdateCandidate(selectedCandidate.id, {
+                              videoReview: val
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Proposal Text Details */}

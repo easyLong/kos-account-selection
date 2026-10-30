@@ -180,6 +180,8 @@ async function initDatabase() {
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN q27Score INT DEFAULT 0`); } catch (e) {}
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN reviewComments TEXT`); } catch (e) {}
     try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN reviewerRemark TEXT`); } catch (e) {}
+    try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN videoScore INT DEFAULT NULL`); } catch (e) {}
+    try { await conn.query(`ALTER TABLE htf_kos_applications ADD COLUMN videoReview TEXT`); } catch (e) {}
 
     // Dynamic questionnaire questions table
     await conn.query(`
@@ -419,14 +421,16 @@ function generateReportExcelBuffer(candidates) {
       { v: c.targetAccountStyle || c.accountPersona || '', t: 's' },
       { v: totalScore, t: 'n' },
       { v: rating, t: 's' },
-      { v: c.reviewComments || '', t: 's' }
+      { v: c.reviewComments || '', t: 's' },
+      { v: c.videoScore !== null && c.videoScore !== undefined ? c.videoScore : '', t: typeof c.videoScore === 'number' ? 'n' : 's' },
+      { v: c.videoReview || '', t: 's' }
     ];
 
     overviewCols.forEach((cell, colIdx) => {
       wsOverview[XLSX.utils.encode_col(colIdx) + r] = cell;
     });
 
-    // 测评与作品明细 (25 cols)
+    // 测评与作品明细 (27 cols)
     const detailsCols = [
       { v: idx + 1, t: 'n' },
       { v: subDate, t: 's' },
@@ -452,6 +456,8 @@ function generateReportExcelBuffer(candidates) {
       { v: c.videoSize || '', t: 's' },
       { v: c.videoUrl || '', t: 's' },
       { v: c.videoIntro || '', t: 's' },
+      { v: c.videoScore !== null && c.videoScore !== undefined ? c.videoScore : '', t: typeof c.videoScore === 'number' ? 'n' : 's' },
+      { v: c.videoReview || '', t: 's' },
       { v: c.reviewerRemark || '', t: 's' }
     ];
 
@@ -461,8 +467,14 @@ function generateReportExcelBuffer(candidates) {
   });
 
   const maxR = Math.max(4 + (candidates || []).length - 1, 4);
-  wsOverview['!ref'] = 'A1:O' + maxR;
-  wsDetails['!ref'] = 'A1:Y' + maxR;
+  wsOverview['P3'] = { v: '视频打分', t: 's' };
+  wsOverview['Q3'] = { v: '视频评价', t: 's' };
+  wsDetails['Y3'] = { v: '视频打分', t: 's' };
+  wsDetails['Z3'] = { v: '视频评价', t: 's' };
+  wsDetails['AA3'] = { v: '评分人/备注', t: 's' };
+
+  wsOverview['!ref'] = 'A1:Q' + maxR;
+  wsDetails['!ref'] = 'A1:AA' + maxR;
 
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 }
@@ -880,7 +892,9 @@ async function getStoredApplications() {
           q26Score: r.q26Score !== undefined && r.q26Score !== null ? Number(r.q26Score) : 0,
           q27Score: r.q27Score !== undefined && r.q27Score !== null ? Number(r.q27Score) : 0,
           reviewComments: r.reviewComments || '',
-          reviewerRemark: r.reviewerRemark || ''
+          reviewerRemark: r.reviewerRemark || '',
+          videoScore: r.videoScore !== undefined && r.videoScore !== null ? Number(r.videoScore) : null,
+          videoReview: r.videoReview || ''
         };
       });
       appsCache = list;
@@ -961,8 +975,8 @@ async function saveApplication(appData) {
           surveyCompleted, surveyTime, surveyScore, surveyScaleScore, surveySubjectiveScore, surveyRating, surveyAnswers,
           videoTitle, videoCategory, videoIntro, targetAccountStyle, accountPersona, specialtyTalent,
           videoUrl, videoSize, videoDuration, status, submittedAt,
-          q26Score, q27Score, reviewComments, reviewerRemark
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          q26Score, q27Score, reviewComments, reviewerRemark, videoScore, videoReview
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           name=VALUES(name), gender=VALUES(gender), department=VALUES(department),
           position=VALUES(position), personalIntro=VALUES(personalIntro), accountName=VALUES(accountName), jobNo=VALUES(jobNo), avatarUrl=VALUES(avatarUrl),
@@ -974,7 +988,8 @@ async function saveApplication(appData) {
           videoIntro=VALUES(videoIntro), targetAccountStyle=VALUES(targetAccountStyle), accountPersona=VALUES(accountPersona), specialtyTalent=VALUES(specialtyTalent),
           videoUrl=VALUES(videoUrl), videoSize=VALUES(videoSize), videoDuration=VALUES(videoDuration),
           status=VALUES(status), q26Score=VALUES(q26Score), q27Score=VALUES(q27Score),
-          reviewComments=VALUES(reviewComments), reviewerRemark=VALUES(reviewerRemark), updatedAt=CURRENT_TIMESTAMP
+          reviewComments=VALUES(reviewComments), reviewerRemark=VALUES(reviewerRemark),
+          videoScore=VALUES(videoScore), videoReview=VALUES(videoReview), updatedAt=CURRENT_TIMESTAMP
       `;
       await dbPool.query(sql, [
         appData.id,
@@ -1011,7 +1026,9 @@ async function saveApplication(appData) {
         Number(appData.q26Score || 0),
         Number(appData.q27Score || 0),
         appData.reviewComments || '',
-        appData.reviewerRemark || ''
+        appData.reviewerRemark || '',
+        appData.videoScore !== undefined && appData.videoScore !== null && appData.videoScore !== '' ? Number(appData.videoScore) : null,
+        appData.videoReview || ''
       ]);
     } catch (e) {
       console.warn('[Database] Save to MySQL failed:', e.message);
@@ -1376,6 +1393,8 @@ export function createApiMiddleware() {
               if (updates.reviewerRemark !== undefined) target.reviewerRemark = updates.reviewerRemark;
               if (updates.q26Score !== undefined) target.q26Score = Number(updates.q26Score);
               if (updates.q27Score !== undefined) target.q27Score = Number(updates.q27Score);
+              if (updates.videoScore !== undefined) target.videoScore = updates.videoScore === '' || updates.videoScore === null ? null : Number(updates.videoScore);
+              if (updates.videoReview !== undefined) target.videoReview = updates.videoReview;
 
               // Recalculate total score & rating
               const q26Score = Number(target.q26Score || 0);
