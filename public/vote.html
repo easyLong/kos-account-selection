@@ -473,7 +473,9 @@ async function loadWorks(){
 }
 
 /* ===== 3. 员工实名登录 ===== */
+var isLoginInProgress = false;
 async function doLogin(){
+  if(isLoginInProgress) return;
   var name = $('loginName').value.trim();
   var jobNo = $('loginJobNo').value.trim();
 
@@ -482,6 +484,7 @@ async function doLogin(){
     return;
   }
 
+  isLoginInProgress = true;
   $('btnStart').disabled = true;
   $('btnStart').textContent = '正在验证身份...';
 
@@ -509,10 +512,11 @@ async function doLogin(){
     }
   } catch(e){
     toast('网络连接异常: ' + e.message);
+  } finally {
+    isLoginInProgress = false;
+    $('btnStart').disabled = false;
+    $('btnStart').textContent = '进入作品展示集';
   }
-
-  $('btnStart').disabled = false;
-  $('btnStart').textContent = '进入作品展示集';
 }
 
 $('btnStart').onclick = doLogin;
@@ -604,8 +608,10 @@ window.onDirectVoteClick = function(e, candidateId){
   executeToggleVote(candidateId);
 };
 
-/* ===== 核心：执行点赞 / 取消点赞 ===== */
+/* ===== 核心：执行点赞 / 取消点赞 (防高并发重复点击) ===== */
+var isVotingInProgress = false;
 async function executeToggleVote(candidateId){
+  if(isVotingInProgress) return;
   if(!voter || !voter.jobNo){
     toast('您尚未登录，请先在首页输入工号');
     return;
@@ -625,6 +631,7 @@ async function executeToggleVote(candidateId){
     return;
   }
 
+  isVotingInProgress = true;
   try {
     var res = await fetch('/api/vote/toggle', {
       method: 'POST',
@@ -667,6 +674,8 @@ async function executeToggleVote(candidateId){
     }
   } catch(e){
     toast('网络连接失败: ' + e.message);
+  } finally {
+    isVotingInProgress = false;
   }
 }
 

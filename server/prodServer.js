@@ -1,6 +1,7 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import zlib from 'zlib';
 import dotenv from 'dotenv';
 
 // Load .env before reading process.env
@@ -38,15 +39,59 @@ const MIME_TYPES = {
   '.ttf': 'font/ttf'
 };
 
+// ==========================================
+// High-Performance In-Memory Static Asset Cache (with Gzip)
+// ==========================================
+const staticMemoryCache = new Map(); // filePath -> { buffer, gzipBuffer, mtime, size, contentType }
+const COMPRESSIBLE_EXTS = new Set(['.html', '.js', '.css', '.json', '.svg', '.txt']);
+
+function getCachedStaticFile(filePath) {
+  try {
+    const stat = fs.statSync(filePath);
+    const cached = staticMemoryCache.get(filePath);
+
+    if (cached && cached.mtime >= stat.mtimeMs) {
+      return cached;
+    }
+
+    // Only cache files under 5MB in RAM
+    if (stat.size > 5 * 1024 * 1024) {
+      return null;
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const buffer = fs.readFileSync(filePath);
+    let gzipBuffer = null;
+
+    if (COMPRESSIBLE_EXTS.has(ext)) {
+      gzipBuffer = zlib.gzipSync(buffer, { level: 6 });
+    }
+
+    const item = {
+      buffer,
+      gzipBuffer,
+      mtime: stat.mtimeMs,
+      size: stat.size,
+      contentType,
+      etag: `W/"${stat.size.toString(16)}-${stat.mtimeMs.toString(16)}"`
+    };
+
+    staticMemoryCache.set(filePath, item);
+    return item;
+  } catch (e) {
+    return null;
+  }
+}
+
 function serveFile(filePath, req, res) {
   const ext = path.extname(filePath).toLowerCase();
-  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-  const stat = fs.statSync(filePath);
-  const fileSize = stat.size;
   const range = req.headers.range;
 
-  // Support video chunked/range streaming (required for Chrome/Safari/WeChat mobile seeking)
+  // Video range streaming support (videos are primarily hosted on OSS, but local fallback supported)
   if (range && (ext === '.mp4' || ext === '.mov')) {
+    const stat = fs.statSync(filePath);
+    const fileSize = stat.size;
     const parts = range.replace(/bytes=/, '').split('-');
     const start = parseInt(parts[0], 10);
     const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
@@ -57,20 +102,49 @@ function serveFile(filePath, req, res) {
       'Content-Range': `bytes ${start}-${end}/${fileSize}`,
       'Accept-Ranges': 'bytes',
       'Content-Length': chunksize,
-      'Content-Type': contentType,
+      'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
       'Access-Control-Allow-Origin': '*'
     });
     stream.pipe(res);
-  } else {
+    return;
+  }
+
+  // High-concurrency RAM cache serving
+  const cached = getCachedStaticFile(filePath);
+  if (cached) {
+    // ETag check
+    if (req.headers['if-none-match'] === cached.etag) {
+      res.writeHead(304, { 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable' });
+      res.end();
+      return;
+    }
+
+    const acceptEncoding = req.headers['accept-encoding'] || '';
+    const shouldGzip = cached.gzipBuffer && acceptEncoding.includes('gzip');
+
     res.writeHead(200, {
-      'Content-Type': contentType,
-      'Content-Length': fileSize,
+      'Content-Type': cached.contentType,
+      'Content-Encoding': shouldGzip ? 'gzip' : undefined,
+      'Content-Length': shouldGzip ? cached.gzipBuffer.length : cached.buffer.length,
+      'ETag': cached.etag,
       'Accept-Ranges': 'bytes',
       'Access-Control-Allow-Origin': '*',
       'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable'
     });
-    fs.createReadStream(filePath).pipe(res);
+    res.end(shouldGzip ? cached.gzipBuffer : cached.buffer);
+    return;
   }
+
+  // Fallback streaming for large files
+  const stat = fs.statSync(filePath);
+  res.writeHead(200, {
+    'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
+    'Content-Length': stat.size,
+    'Accept-Ranges': 'bytes',
+    'Access-Control-Allow-Origin': '*',
+    'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable'
+  });
+  fs.createReadStream(filePath).pipe(res);
 }
 
 const server = http.createServer((req, res) => {
@@ -114,14 +188,18 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.timeout = 15 * 60 * 1000;
-server.requestTimeout = 15 * 60 * 1000;
+// High concurrency socket & keepalive tuning
+server.keepAliveTimeout = 65000;
+server.headersTimeout = 66000;
+server.maxRequestsPerSocket = 1000;
+server.timeout = 5 * 60 * 1000;
+server.requestTimeout = 5 * 60 * 1000;
 
 server.listen(PORT, HOST, () => {
   console.log(`====================================================`);
-  console.log(`  🚀 KOS 生产环境服务已启动`);
+  console.log(`  🚀 KOS 生产环境服务已启动 (高并发高性能缓存已启用)`);
   console.log(`  ➜ 本地访问: http://127.0.0.1:${PORT}`);
   console.log(`  ➜ 局域网/公网: http://${HOST}:${PORT}`);
-  console.log(`  ➜ 运行模式: 生产环境 (Production)`);
+  console.log(`  ➜ 运行模式: 生产环境 (Production + In-Memory Gzip Cache)`);
   console.log(`====================================================`);
 });

@@ -121,8 +121,11 @@ async function initDatabase() {
       password: process.env.MYSQL_PASSWORD,
       database: process.env.MYSQL_DATABASE,
       waitForConnections: true,
-      connectionLimit: 10,
-      connectTimeout: 4000
+      connectionLimit: 40,
+      queueLimit: 0,
+      connectTimeout: 5000,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 10000
     });
 
     // Test connection
@@ -465,10 +468,33 @@ function generateReportExcelBuffer(candidates) {
 }
 
 // ==========================================
-// Video Showcase & Employee Voting System
+// High-Concurrency In-Memory Micro-Cache System
 // ==========================================
+let worksCache = null;
+let worksCacheTime = 0;
+const WORKS_CACHE_TTL = 3000; // 3 seconds in-memory cache
+
+let leaderboardCache = null;
+let leaderboardCacheTime = 0;
+const LEADERBOARD_CACHE_TTL = 3000; // 3 seconds in-memory cache
+
+let candidateNameMap = {
+  'XH-01': '张振东',
+  'XH-02': '夏萌',
+  'XH-03': '王炫霄'
+};
+
+function invalidateVoteCache() {
+  worksCache = null;
+  leaderboardCache = null;
+}
 
 async function getVoteWorks() {
+  const now = Date.now();
+  if (worksCache && now - worksCacheTime < WORKS_CACHE_TTL) {
+    return worksCache;
+  }
+
   const apps = await getStoredApplications();
   // Filter candidates with valid video URL
   const videoCandidates = apps.filter(c => c.videoUrl && String(c.videoUrl).trim() !== '');
@@ -498,7 +524,10 @@ async function getVoteWorks() {
   // Sort candidates by ID ascending (XH-01, XH-02, ...)
   videoCandidates.sort((a, b) => String(a.id || '').localeCompare(String(b.id || '')));
 
-  return videoCandidates.map((c, idx) => {
+  const result = videoCandidates.map((c, idx) => {
+    // Keep local candidate name map warm for fast toggleVote
+    if (c.id && c.name) candidateNameMap[c.id] = c.name;
+
     // Generate valid first-frame snapshot for video
     const coverUrl = (c.videoUrl && c.videoUrl.includes('aliyuncs.com'))
       ? `${c.videoUrl}?x-oss-process=video/snapshot,t_1000,f_jpg,w_600,m_fast`
@@ -523,6 +552,10 @@ async function getVoteWorks() {
       votesCount: countMap[c.id] || 0
     };
   });
+
+  worksCache = result;
+  worksCacheTime = now;
+  return result;
 }
 
 async function voterLogin(name, jobNo) {
@@ -543,10 +576,13 @@ async function voterLogin(name, jobNo) {
       ON DUPLICATE KEY UPDATE name = VALUES(name)
     `, [trimmedJobNo, trimmedName]);
 
-    const [voterRows] = await dbPool.query('SELECT * FROM htf_kos_voters WHERE jobNo = ?', [trimmedJobNo]);
-    voter = voterRows[0] || { jobNo: trimmedJobNo, name: trimmedName, submitted: 0 };
+    // High performance parallel read
+    const [[voterRows], [voteRows]] = await Promise.all([
+      dbPool.query('SELECT jobNo, name, submitted, submittedAt FROM htf_kos_voters WHERE jobNo = ?', [trimmedJobNo]),
+      dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo])
+    ]);
 
-    const [voteRows] = await dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo]);
+    voter = voterRows[0] || { jobNo: trimmedJobNo, name: trimmedName, submitted: 0 };
     likedIds = (voteRows || []).map(r => r.candidateId);
   } else {
     initStorage();
@@ -586,37 +622,40 @@ async function toggleVote(jobNo, candidateId) {
   }
 
   if (dbAvailable && dbPool) {
-    const [voterRows] = await dbPool.query('SELECT * FROM htf_kos_voters WHERE jobNo = ?', [trimmedJobNo]);
+    // High performance single-round parallel check
+    const [[voterRows], [voteRows]] = await Promise.all([
+      dbPool.query('SELECT name, submitted FROM htf_kos_voters WHERE jobNo = ?', [trimmedJobNo]),
+      dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo])
+    ]);
+
     const voter = voterRows[0];
     if (!voter) throw new Error('投票人未登录，请先输入工号');
     if (voter.submitted) throw new Error('您已确认提交投票，无法再次修改');
 
-    // Check candidate name
-    const [candRows] = await dbPool.query('SELECT name FROM htf_kos_applications WHERE id = ?', [trimmedCandId]);
-    const candName = candRows[0]?.name || trimmedCandId;
+    const candName = candidateNameMap[trimmedCandId] || trimmedCandId;
+    const likedIds = (voteRows || []).map(r => r.candidateId);
+    const isAlreadyLiked = likedIds.includes(trimmedCandId);
 
-    // Check if already voted
-    const [existing] = await dbPool.query('SELECT id FROM htf_kos_votes WHERE voterJobNo = ? AND candidateId = ?', [trimmedJobNo, trimmedCandId]);
-    if (existing && existing.length > 0) {
-      // Unvote
+    if (isAlreadyLiked) {
+      // 1-query Unvote
       await dbPool.query('DELETE FROM htf_kos_votes WHERE voterJobNo = ? AND candidateId = ?', [trimmedJobNo, trimmedCandId]);
-      const [nowRows] = await dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo]);
-      const likedIds = (nowRows || []).map(r => r.candidateId);
-      return { liked: false, likedIds, budgetRemaining: 5 - likedIds.length };
+      const nextLikedIds = likedIds.filter(id => id !== trimmedCandId);
+      invalidateVoteCache();
+      return { liked: false, likedIds: nextLikedIds, budgetRemaining: 5 - nextLikedIds.length };
     } else {
-      // Check budget
-      const [cntRows] = await dbPool.query('SELECT COUNT(*) as cnt FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo]);
-      const currentCount = Number(cntRows[0]?.cnt || 0);
-      if (currentCount >= 5) {
+      // Fast budget check
+      if (likedIds.length >= 5) {
         throw new Error('每人最多投 5 票，已达上限！可取消某位后再投给 TA');
       }
+      // 1-query Vote insert with unique constraint protection
       await dbPool.query(`
-        INSERT INTO htf_kos_votes (voterJobNo, voterName, candidateId, candidateName)
+        INSERT IGNORE INTO htf_kos_votes (voterJobNo, voterName, candidateId, candidateName)
         VALUES (?, ?, ?, ?)
       `, [trimmedJobNo, voter.name, trimmedCandId, candName]);
-      const [nowRows] = await dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo]);
-      const likedIds = (nowRows || []).map(r => r.candidateId);
-      return { liked: true, likedIds, budgetRemaining: 5 - likedIds.length };
+
+      const nextLikedIds = [...likedIds, trimmedCandId];
+      invalidateVoteCache();
+      return { liked: true, likedIds: nextLikedIds, budgetRemaining: 5 - nextLikedIds.length };
     }
   } else {
     // JSON file fallback
@@ -634,6 +673,7 @@ async function toggleVote(jobNo, candidateId) {
       votes.splice(exIdx, 1);
       fs.writeFileSync(VOTES_FILE, JSON.stringify(votes, null, 2), 'utf-8');
       const likedIds = votes.filter(v => v.voterJobNo === trimmedJobNo).map(v => v.candidateId);
+      invalidateVoteCache();
       return { liked: false, likedIds, budgetRemaining: 5 - likedIds.length };
     } else {
       const myCount = votes.filter(v => v.voterJobNo === trimmedJobNo).length;
@@ -647,6 +687,7 @@ async function toggleVote(jobNo, candidateId) {
       });
       fs.writeFileSync(VOTES_FILE, JSON.stringify(votes, null, 2), 'utf-8');
       const likedIds = votes.filter(v => v.voterJobNo === trimmedJobNo).map(v => v.candidateId);
+      invalidateVoteCache();
       return { liked: true, likedIds, budgetRemaining: 5 - likedIds.length };
     }
   }
@@ -662,6 +703,7 @@ async function submitVotes(jobNo) {
     if (!voterRows.length) throw new Error('未找到投票人记录');
     await dbPool.query('UPDATE htf_kos_voters SET submitted = 1, submittedAt = ? WHERE jobNo = ?', [nowStr, trimmedJobNo]);
     const [votes] = await dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo]);
+    invalidateVoteCache();
     return { submitted: true, submittedAt: nowStr, voteCount: votes.length };
   } else {
     initStorage();
@@ -675,11 +717,17 @@ async function submitVotes(jobNo) {
     let votes = [];
     try { votes = JSON.parse(fs.readFileSync(VOTES_FILE, 'utf-8') || '[]'); } catch (e) {}
     const myVotes = votes.filter(v => v.voterJobNo === trimmedJobNo);
+    invalidateVoteCache();
     return { submitted: true, submittedAt: nowStr, voteCount: myVotes.length };
   }
 }
 
 async function getVoteLeaderboard() {
+  const now = Date.now();
+  if (leaderboardCache && now - leaderboardCacheTime < LEADERBOARD_CACHE_TTL) {
+    return leaderboardCache;
+  }
+
   const works = await getVoteWorks();
   let allVotes = [];
   let allVoters = [];
@@ -730,12 +778,15 @@ async function getVoteLeaderboard() {
     c.rank = idx + 1;
   });
 
-  return {
+  const result = {
     totalVotersCount,
     totalVotesCount,
     candidates: rankedCandidates,
     allVotesList: allVotes
   };
+  leaderboardCache = result;
+  leaderboardCacheTime = now;
+  return result;
 }
 
 async function generateVoteExcelBuffer() {
@@ -791,12 +842,22 @@ async function generateVoteExcelBuffer() {
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 }
 
+let appsCache = null;
+let appsCacheTime = 0;
+const APPS_CACHE_TTL = 10000; // 10s in-memory cache
+
 async function getStoredApplications() {
+  const now = Date.now();
+  if (appsCache && now - appsCacheTime < APPS_CACHE_TTL) {
+    return appsCache;
+  }
+
   initStorage();
+  let list = [];
   if (dbAvailable && dbPool) {
     try {
       const [rows] = await dbPool.query('SELECT * FROM htf_kos_applications ORDER BY createdAt DESC');
-      return (rows || []).map(r => {
+      list = (rows || []).map(r => {
         let parsedAnswers = r.surveyAnswers;
         if (typeof parsedAnswers === 'string') {
           try {
@@ -822,6 +883,9 @@ async function getStoredApplications() {
           reviewerRemark: r.reviewerRemark || ''
         };
       });
+      appsCache = list;
+      appsCacheTime = now;
+      return list;
     } catch (e) {
       console.warn('[Database] Query failed, falling back to local file:', e.message);
     }
@@ -829,7 +893,10 @@ async function getStoredApplications() {
 
   try {
     const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-    return JSON.parse(raw);
+    list = JSON.parse(raw);
+    appsCache = list;
+    appsCacheTime = now;
+    return list;
   } catch (e) {
     return [];
   }
@@ -965,6 +1032,8 @@ async function saveApplication(appData) {
     list.unshift(appData);
   }
   fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), 'utf-8');
+  appsCache = null;
+  invalidateVoteCache();
   return list[0] || appData;
 }
 
