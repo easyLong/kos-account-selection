@@ -498,23 +498,31 @@ async function getVoteWorks() {
   // Sort candidates by ID ascending (XH-01, XH-02, ...)
   videoCandidates.sort((a, b) => String(a.id || '').localeCompare(String(b.id || '')));
 
-  return videoCandidates.map((c, idx) => ({
-    id: c.id,
-    displayNo: idx + 1,
-    name: c.name || '未命名',
-    gender: c.gender || '',
-    department: c.department || '汇添富团队',
-    position: c.position || '创作者',
-    avatarUrl: c.avatarUrl || '',
-    videoTitle: c.videoTitle || '自媒体短视频创作提案',
-    videoIntro: c.videoIntro || c.personalIntro || '',
-    videoUrl: c.videoUrl,
-    videoDuration: c.videoDuration || '',
-    videoSize: c.videoSize || '',
-    accountPersona: c.accountPersona || c.targetAccountStyle || '',
-    specialtyTalent: c.specialtyTalent || '',
-    votesCount: countMap[c.id] || 0
-  }));
+  return videoCandidates.map((c, idx) => {
+    // Generate valid first-frame snapshot for video
+    const coverUrl = (c.videoUrl && c.videoUrl.includes('aliyuncs.com'))
+      ? `${c.videoUrl}?x-oss-process=video/snapshot,t_1000,f_jpg,w_600,m_fast`
+      : (c.avatarUrl || '');
+
+    return {
+      id: c.id,
+      displayNo: idx + 1,
+      name: c.name || '未命名',
+      gender: c.gender || '',
+      department: c.department || '汇添富团队',
+      position: c.position || '创作者',
+      avatarUrl: c.avatarUrl || '',
+      coverUrl: coverUrl,
+      videoTitle: c.videoTitle || '自媒体短视频创作提案',
+      videoIntro: c.videoIntro || c.personalIntro || '',
+      videoUrl: c.videoUrl,
+      videoDuration: c.videoDuration || '',
+      videoSize: c.videoSize || '',
+      accountPersona: c.accountPersona || c.targetAccountStyle || '',
+      specialtyTalent: c.specialtyTalent || '',
+      votesCount: countMap[c.id] || 0
+    };
+  });
 }
 
 async function voterLogin(name, jobNo) {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>星火计划 · 员工视频投票</title>
+<title>星火计划 · 员工视频展播与投票</title>
 <style>
   :root{
     --brown:#4a2c10; --gold:#b8860b; --gold-l:#e8c766; --cream:#f6f3ee;
@@ -11,28 +11,28 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{margin:0;background:#e9e4da;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);min-height:100vh}
-  #phone{max-width:430px;margin:0 auto;min-height:100vh;background:var(--cream);position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.15);display:flex;flex-direction:column}
+  #phone{max-width:440px;margin:0 auto;min-height:100vh;background:var(--cream);position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.15);display:flex;flex-direction:column}
   .hide{display:none!important}
 
   /* ---------- 通用组件 ---------- */
   .kv{background:linear-gradient(135deg,#4a2c10 0%,#7a4d18 55%,#b8860b 100%);color:#fff}
-  .btn{display:block;width:100%;padding:14px;border:0;border-radius:12px;background:linear-gradient(135deg,#b8860b,#e8c766);color:#3b2410;font-size:16px;font-weight:700;cursor:pointer;transition:transform .15s,filter .15s}
+  .btn{display:block;width:100%;padding:14px;border:0;border-radius:12px;background:linear-gradient(135deg,#b8860b,#e8c766);color:#3b2410;font-size:15.5px;font-weight:700;cursor:pointer;transition:transform .15s,filter .15s;text-align:center}
   .btn:active{transform:scale(.98);filter:brightness(.95)}
   .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
   .btn.sec{background:linear-gradient(135deg,#2f5d50,#558a79);color:#fff}
   .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
-  /* ---------- 入口页 ---------- */
+  /* ---------- 1. 入口与登录认证页 ---------- */
   #entry{padding:0 0 34px;flex:1;display:flex;flex-direction:column}
-  #entry .hero{padding:54px 24px 36px;text-align:left}
+  #entry .hero{padding:50px 24px 32px;text-align:left}
   #entry .tag{display:inline-block;border:1px solid rgba(255,255,255,.5);border-radius:99px;padding:3px 12px;font-size:12px;letter-spacing:2px}
   #entry h1{margin:16px 0 8px;font-size:25px;line-height:1.35;font-weight:800}
   #entry p.sub{margin:0;opacity:.9;font-size:13.5px;line-height:1.6}
   
-  .rules{margin:18px 22px 14px;padding:16px;background:#fff;border-radius:14px;border:1px solid var(--line);font-size:13px;line-height:1.9}
+  .rules{margin:18px 20px 14px;padding:16px;background:#fff;border-radius:14px;border:1px solid var(--line);font-size:13px;line-height:1.9}
   .rules b{color:var(--gold)}
 
-  .login-card{margin:0 22px 20px;padding:18px;background:#fff;border-radius:14px;border:1px solid var(--line);box-shadow:0 4px 12px rgba(74,44,16,.04)}
+  .login-card{margin:0 20px 20px;padding:18px;background:#fff;border-radius:14px;border:1px solid var(--line);box-shadow:0 4px 12px rgba(74,44,16,.04)}
   .login-title{font-size:14px;font-weight:700;color:var(--brown);margin-bottom:12px;display:flex;align-items:center;gap:6px}
   .form-row{margin-bottom:12px}
   .form-row label{display:block;font-size:12px;color:var(--sub);margin-bottom:5px;font-weight:600}
@@ -43,7 +43,7 @@
 
   #entry .footnote{text-align:center;font-size:11.5px;color:var(--sub);margin-top:16px}
 
-  /* ---------- 顶栏 ---------- */
+  /* ---------- 2. 顶栏导航 ---------- */
   .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(246,243,238,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
   .topbar .title{font-size:14px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pill{font-size:12px;padding:4px 9px;border-radius:99px;background:#fff;border:1px solid var(--line);white-space:nowrap}
@@ -51,34 +51,65 @@
   .pill.warn{border-color:#e0a13c;color:#a86a10;background:#fff7e8}
   .pill.out{border-color:#d99a90;color:#a03c1c;background:#fdeceb}
 
-  /* ---------- 宫格 ---------- */
+  /* ---------- 3. 展播列表 (支持直接点赞 + 真实有效画面) ---------- */
   #gallery{padding-bottom:28px}
-  .gallery-actions{display:flex;gap:8px;padding:12px 12px 2px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
-  .card{position:relative;background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line);cursor:pointer;transition:transform .2s,box-shadow .2s}
-  .card:active{transform:scale(.98)}
-  .cover{aspect-ratio:3/4;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:rgba(255,255,255,.94);letter-spacing:1px;position:relative;background:#2a1f18}
-  .cover .play-badge{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;backdrop-filter:blur(4px);border:1.5px solid rgba(255,255,255,.6);margin-bottom:8px}
-  .card.seen .cover{opacity:.8}
-  .card .meta{padding:8px 10px;background:#fff}
-  .card .nm{font-size:13px;font-weight:700;color:#221a14}
-  .card .dp{font-size:11px;color:var(--sub);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .card .vt{font-size:11.5px;color:var(--gold);font-weight:600;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .heart-badge{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(0,0,0,.2);color:#ff4d6a}
-  .rank-badge{position:absolute;top:8px;left:8px;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:800;background:rgba(0,0,0,.6);color:#fff}
-  .rank-badge.top{background:linear-gradient(135deg,#b8860b,#e8c766);color:#3b2410}
-  .votes-badge{position:absolute;bottom:8px;right:8px;font-size:11px;color:#fff;background:rgba(0,0,0,.6);padding:2px 7px;border-radius:8px}
-  .card.seen .seen-tag{position:absolute;top:8px;left:8px;font-size:10px;color:#fff;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:6px}
+  
+  .gallery-actions{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 2px}
+  .view-switch-btns{display:flex;gap:4px;background:#ebe5d9;padding:3px;border-radius:8px}
+  .view-switch-btn{padding:4px 10px;border-radius:6px;font-size:12px;border:none;background:transparent;color:var(--sub);cursor:pointer;font-weight:600}
+  .view-switch-btn.active{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.1)}
 
-  /* ---------- 沉浸流视频播放器 ---------- */
+  /* 宫格视图 (2列) */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}
+  .card{position:relative;background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.04);display:flex;flex-direction:column}
+  
+  /* 真实视频画面封面 (有效画面) */
+  .card-cover-box{position:relative;width:100%;aspect-ratio:3/4;background:#17140f;overflow:hidden;cursor:pointer}
+  .card-cover-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}
+  .card-cover-box:hover .card-cover-img{transform:scale(1.03)}
+  .cover-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.2) 0%,transparent 40%,rgba(0,0,0,.75) 100%)}
+  
+  .card-play-icon{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.6);border:1.5px solid rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;backdrop-filter:blur(4px);padding-left:3px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  
+  .card-cand-id{position:absolute;bottom:8px;left:8px;font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:4px;font-family:monospace}
+
+  /* 核心需求2：不需要点进去才能点赞！直接在封面右上角设置独立点击点赞心形按钮 */
+  .card-heart-action{position:absolute;top:8px;right:8px;z-index:5;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:18px;color:#999;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer;transition:transform .15s,color .15s,background .15s}
+  .card-heart-action:active{transform:scale(.85)}
+  .card-heart-action.liked{color:#ff4d6a;background:#fff;font-size:20px}
+  
+  .card-meta{padding:10px;flex:1;display:flex;flex-direction:column;justify-content:space-between}
+  .card-title-name{display:flex;justify-content:space-between;align-items:baseline}
+  .card-nm{font-size:13.5px;font-weight:700;color:#221a14}
+  .card-votes-pill{font-size:11px;color:var(--gold);font-weight:700}
+  .card-dp{font-size:11px;color:var(--sub);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card-vt{font-size:12px;color:#4a2c10;font-weight:600;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* 核心需求2：卡片底部直观一键投票按钮 */
+  .btn-card-vote{margin-top:8px;width:100%;padding:7px 0;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid #ebd092;background:#fdf7ea;color:#855513;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .15s}
+  .btn-card-vote:active{transform:scale(.97)}
+  .btn-card-vote.liked{background:linear-gradient(135deg,#ff4d6a,#ea3856);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(255,77,106,.3)}
+
+  /* 单列大卡片视图 (Feed Mode) */
+  .feed-mode{display:flex;flex-direction:column;gap:16px;padding:12px}
+  .feed-mode .card{border-radius:14px}
+  .feed-mode .card-cover-box{aspect-ratio:16/10}
+  .feed-mode .card-play-icon{width:56px;height:56px;font-size:24px}
+  .feed-mode .card-meta{padding:12px 14px}
+  .feed-mode .card-nm{font-size:15px}
+  .feed-mode .card-dp{font-size:12px}
+  .feed-mode .card-vt{font-size:13.5px;margin-top:6px}
+  .feed-mode .btn-card-vote{padding:10px 0;font-size:13.5px;margin-top:10px}
+
+  /* ---------- 4. 沉浸流全屏播放器 (点了再播 + 不连贯自动切) ---------- */
   #player{position:fixed;inset:0;z-index:60;background:#000;color:#fff;display:flex;flex-direction:column}
-  #player .pbar{display:flex;align-items:center;gap:10px;padding:12px 14px;font-size:12.5px;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:10}
-  #player .pbar .x{margin-left:auto;opacity:.9;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:8px;cursor:pointer}
+  #player .pbar{display:flex;align-items:center;gap:10px;padding:12px 14px;font-size:12.5px;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:15}
+  #player .pbar .x{margin-left:auto;opacity:.9;background:rgba(255,255,255,.2);padding:5px 12px;border-radius:8px;cursor:pointer}
   
   #stage{flex:1;position:relative;overflow:hidden;background:#0a0a0a;display:flex;align-items:center;justify-content:center}
   .slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000}
   
-  /* 真实视频标签 */
+  /* 原生全屏视频标签 */
   #videoEl{width:100%;height:100%;object-fit:contain;background:#000}
   
   @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -86,55 +117,50 @@
   .anim-up{animation:up .25s ease-out}
   .anim-down{animation:down .25s ease-out}
   
-  /* 核心需求 1：不自动播放，点了再播 */
-  .play-center-btn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:12;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:opacity .2s,transform .2s}
-  .play-center-btn .play-icon-circle{width:70px;height:70px;border-radius:50%;background:rgba(0,0,0,.65);border:2.5px solid var(--gold-l);display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;padding-left:4px;box-shadow:0 8px 30px rgba(0,0,0,.6);backdrop-filter:blur(4px)}
-  .play-center-btn .play-hint-text{margin-top:10px;font-size:13px;font-weight:700;color:#fff;background:rgba(0,0,0,.6);padding:4px 12px;border-radius:12px;letter-spacing:1px}
+  /* 核心需求1：不需要及时播放，点了再播！居中醒目播放按钮 */
+  .play-center-btn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:14;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:opacity .2s,transform .2s}
+  .play-center-btn .play-icon-circle{width:72px;height:72px;border-radius:50%;background:rgba(0,0,0,.7);border:2.5px solid var(--gold-l);display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;padding-left:4px;box-shadow:0 8px 30px rgba(0,0,0,.7);backdrop-filter:blur(4px)}
+  .play-center-btn .play-hint-text{margin-top:10px;font-size:13px;font-weight:700;color:#fff;background:rgba(0,0,0,.65);padding:4px 14px;border-radius:12px;letter-spacing:1px}
   .play-center-btn:active{transform:translate(-50%,-50%) scale(.95)}
   
-  .playpause{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:54px;opacity:.9;z-index:12;pointer-events:none}
+  .playpause{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:54px;opacity:.9;z-index:14;pointer-events:none}
 
-  .info{position:absolute;left:16px;bottom:36px;z-index:8;max-width:75%;text-shadow:0 2px 6px rgba(0,0,0,.85)}
+  .info{position:absolute;left:16px;bottom:36px;z-index:8;max-width:75%;text-shadow:0 2px 6px rgba(0,0,0,.9)}
   .info .no{font-size:12px;opacity:.85;letter-spacing:1px}
   .info .nmm{font-size:21px;font-weight:800;margin-top:4px}
   .info .dpp{font-size:12px;opacity:.85;margin-top:3px}
   .info .vtt{font-size:13.5px;color:var(--gold-l);font-weight:700;margin-top:5px;line-height:1.4}
-  .info .vii{font-size:11.5px;opacity:.75;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .info .vii{font-size:11.5px;opacity:.8;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
   .ctrl{position:absolute;right:14px;bottom:42px;z-index:8;display:flex;flex-direction:column;align-items:center;gap:18px}
   .ctrl .ctrl-item{display:flex;flex-direction:column;align-items:center;gap:4px}
-  .ctrl .btn-circle{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;user-select:none;backdrop-filter:blur(4px);transition:transform .15s}
+  .ctrl .btn-circle{width:50px;height:50px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;user-select:none;backdrop-filter:blur(4px);transition:transform .15s}
   .ctrl .btn-circle:active{transform:scale(.9)}
-  .ctrl .btn-circle.liked{color:#ff4d6a;border-color:rgba(255,77,106,.5);background:rgba(255,77,106,.2)}
-  .ctrl .ctrl-label{font-size:11px;font-weight:700;color:rgba(255,255,255,.9)}
+  .ctrl .btn-circle.liked{color:#ff4d6a;border-color:rgba(255,77,106,.6);background:rgba(255,77,106,.25);font-size:24px}
+  .ctrl .ctrl-label{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.9)}
 
   .prog{position:absolute;left:0;bottom:0;height:4px;background:rgba(255,255,255,.2);width:100%;z-index:9}
   .prog i{display:block;height:100%;width:0;background:var(--gold-l)}
 
   .arrows{position:absolute;right:14px;top:40%;transform:translateY(-50%);z-index:8;display:flex;flex-direction:column;gap:12px}
-  .arrows div{width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+  .arrows div{width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
   .arrows div[disabled]{opacity:.25;cursor:not-allowed}
 
   .big-heart{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.2);font-size:120px;opacity:0;pointer-events:none;z-index:15;color:#ff4d6a}
   @keyframes burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
   .burst{animation:burst .7s ease-out}
 
-  /* ---------- 引导浮层 ---------- */
-  #guide{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center}
-  #guide .box{margin:0 20px 48px;padding:22px 20px;border-radius:18px;background:#fff;text-align:center;font-size:14.5px;line-height:1.9;color:var(--ink);box-shadow:0 10px 40px rgba(0,0,0,.4)}
-  #guide .box b{color:var(--gold)}
-
-  /* ---------- Toast / Modal ---------- */
-  #toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);z-index:90;background:rgba(23,20,15,.92);color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;display:flex;gap:12px;align-items:center;max-width:90%;box-shadow:0 6px 20px rgba(0,0,0,.3);border:1px solid rgba(197,154,63,.4)}
+  /* ---------- 5. 提示弹层 / 模态框 ---------- */
+  #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:90;background:rgba(23,20,15,.94);color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;display:flex;gap:12px;align-items:center;max-width:90%;box-shadow:0 6px 20px rgba(0,0,0,.35);border:1px solid rgba(197,154,63,.45)}
   #toast button{border:0;background:var(--gold);color:#3b2410;font-weight:700;padding:6px 12px;border-radius:8px;font-size:12px;white-space:nowrap;cursor:pointer}
   
-  .mask{position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:0 24px}
-  .modal{background:#fff;border-radius:18px;padding:24px 20px;width:100%;max-width:380px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+  .mask{position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:0 24px}
+  .modal{background:#fff;border-radius:18px;padding:24px 20px;width:100%;max-width:380px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35)}
   .modal h3{margin:0 0 10px;font-size:18px;color:var(--ink)}
   .modal p{margin:0 0 20px;font-size:13.5px;color:var(--sub);line-height:1.8}
   .modal .row{display:flex;gap:10px}
 
-  /* ---------- 排行榜模态框 ---------- */
+  /* 排行榜模态框 */
   .leaderboard-modal{background:#fff;border-radius:18px;width:100%;max-width:400px;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 50px rgba(0,0,0,.4)}
   .lb-header{padding:16px;background:#24190e;color:#fff;display:flex;justify-content:space-between;align-items:center}
   .lb-header h4{margin:0;font-size:16px;font-weight:700;color:var(--gold-l)}
@@ -150,7 +176,7 @@
   .lb-votes{font-size:15px;font-weight:800;color:var(--gold)}
   .lb-footer{padding:12px 16px;background:#f8f6f1;border-top:1px solid var(--line);display:flex;gap:8px}
 
-  /* ---------- 结束页 ---------- */
+  /* ---------- 6. 结束页 ---------- */
   #end{padding:0 0 34px;flex:1}
   #end .hero{padding:60px 24px 34px;text-align:center}
   #end .big{font-size:38px;font-weight:800;letter-spacing:2px}
@@ -164,7 +190,7 @@
 <body>
 <div id="phone">
 
-  <!-- ============ 1. 入口页 (姓名+工号登录去重) ============ -->
+  <!-- ============ 1. 入口页 (实名去重认证) ============ -->
   <section id="entry">
     <div class="hero kv">
       <span class="tag">汇添富 · 星火计划</span>
@@ -174,12 +200,12 @@
     
     <div class="rules">
       共 <b id="eTotal">0</b> 个参选作品，每位员工最多投 <b id="eBudget">5</b> 票<br>
-      · 上下滑动浏览全部作品，<b>点击视频画面即可开始播放</b><br>
-      · 点击 <b>♡</b> 投出推荐票，再次点击可取消重投<br>
-      · 投票提交后不可撤回，活动截止后公开得票排行
+      · <b>在列表直接点 ♡ 即可投票</b>，无需必须点进播放器<br>
+      · <b>点击视频画面即可开始播放</b>，播放绝不自动连贯切台<br>
+      · 每人最多投 5 票，随时可取消重投，全部确认后提交
     </div>
 
-    <!-- 登录去重卡片 (需求2：姓名+工号 登录验证) -->
+    <!-- 登录去重卡片 (姓名+工号登录去重) -->
     <div class="login-card">
       <div class="login-title">
         <span>👤 员工投票人认证</span>
@@ -210,29 +236,37 @@
     <div class="footnote">汇添富基金 · 自媒体创作者选拔项目组</div>
   </section>
 
-  <!-- ============ 2. 作品列表宫格页 ============ -->
+  <!-- ============ 2. 作品展播列表页 (支持直接点赞 + 真实视频有效画面) ============ -->
   <section id="gallery" class="hide">
     <div class="topbar">
       <span class="title" id="gTitle">全部作品 (0)</span>
       <span class="pill user" id="pillUser">工号: --</span>
       <span class="pill" id="pillBudget">剩余 ♡ 5 / 5</span>
-      <span class="pill" id="pillSeen">已看 0 / 0</span>
     </div>
 
     <div class="gallery-actions">
-      <button class="btn" id="btnGoPlayer" style="padding:10px;font-size:13.5px">▶ 进入上下滑播放流</button>
-      <button class="btn ghost" id="btnOpenLeaderboard" style="padding:10px;font-size:13.5px;width:auto">🏆 实时榜单</button>
+      <div class="view-switch-btns">
+        <button class="view-switch-btn active" id="btnViewGrid">双列宫格</button>
+        <button class="view-switch-btn" id="btnViewFeed">单列大图</button>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn ghost" id="btnOpenLeaderboard" style="padding:6px 10px;font-size:12.5px;width:auto">🏆 实时榜单</button>
+        <button class="btn sec" id="btnGoPlayer" style="padding:6px 12px;font-size:12.5px;width:auto">▶ 上下滑播放</button>
+      </div>
     </div>
 
+    <!-- 作品展示容器 (支持直接点赞，有效视频封面) -->
     <div class="grid" id="grid"></div>
 
-    <div style="padding:0 20px;margin-top:8px">
+    <div style="padding:0 20px;margin-top:10px">
       <button class="btn" id="btnSubmit">确认并提交我的票数</button>
     </div>
-    <div style="text-align:center;font-size:11.5px;color:var(--sub);margin:14px 0 10px">每位员工限投 5 票 · 提交后生效并锁定</div>
+    <div style="text-align:center;font-size:11.5px;color:var(--sub);margin:14px 0 10px">
+      可在列表中直接点赞 · 每人限投 5 票 · 提交后生效锁定
+    </div>
   </section>
 
-  <!-- ============ 3. 沉浸流视频播放器 (核心需求1：不及时播放，点了再播) ============ -->
+  <!-- ============ 3. 沉浸流全屏播放器 (点了再播 + 绝不自动连贯切台) ============ -->
   <div id="player" class="hide">
     <div class="pbar">
       <span id="pIdx">01 / 01</span>
@@ -242,7 +276,7 @@
 
     <div id="stage">
       <div class="slide" id="slide">
-        <!-- 核心视频播放标签 -->
+        <!-- 核心视频播放标签 (默认配置 poster 真实有效画面，不自动播放) -->
         <video 
           id="videoEl" 
           playsinline 
@@ -287,7 +321,7 @@
         <div id="btnNext">▼</div>
       </div>
 
-      <!-- 双击/点赞大爱心炸裂动画 -->
+      <!-- 点赞大爱心炸裂动画 -->
       <div class="big-heart" id="bigHeart">♥</div>
       <!-- 底部播放进度条 -->
       <div class="prog"><i id="progBar"></i></div>
@@ -326,9 +360,7 @@
         <span>参与投票员工：<b id="lbTotalVoters" style="color:var(--gold)">0</b> 人</span>
         <span>累计推荐票数：<b id="lbTotalVotes" style="color:var(--gold)">0</b> 票</span>
       </div>
-      <div class="lb-body" id="lbList">
-        <!-- Ranked candidate rows -->
-      </div>
+      <div class="lb-body" id="lbList"></div>
       <div class="lb-footer">
         <button class="btn ghost" id="btnRefreshLb" style="flex:1;padding:10px;font-size:13px">⟳ 刷新榜单</button>
         <button class="btn" id="btnExportExcel" style="flex:1.8;padding:10px;font-size:13px">📥 导出 Excel 表格</button>
@@ -336,18 +368,7 @@
     </div>
   </div>
 
-  <!-- ============ 6. 首次进入引导层 ============ -->
-  <div id="guide" class="hide">
-    <div class="box">
-      <b>上下滑动</b> 可切换看下一个作品<br>
-      <b>点击视频画面</b> 随时开始/暂停播放<br>
-      点 <b>♡</b> 或 <b>双击屏幕</b> 投出推荐票<br>
-      <span style="color:var(--sub);font-size:12px;margin-top:6px;display:block">（每人最多投 5 票，可取消再投）</span>
-      <button class="btn" style="margin-top:14px;padding:9px;font-size:13.5px">我知道了，开始浏览</button>
-    </div>
-  </div>
-
-  <!-- ============ 7. Toast & 确认提交模态框 ============ -->
+  <!-- ============ 6. Toast & 确认提交模态框 ============ -->
   <div id="toast" class="hide"><span id="toastMsg"></span><button id="toastAct"></button></div>
   <div id="mask" class="mask hide">
     <div class="modal">
@@ -371,12 +392,8 @@ var likedIds = []; // 候选人 ID 列表 (最多 5 个)
 var seenIds = [];
 var cur = 0; // 当前沉浸流卡片索引
 var isPlaying = false;
+var currentViewMode = 'grid'; // 'grid' | 'feed'
 var videoEl = document.getElementById('videoEl');
-
-var PALETTES = [
-  ['#4a2c10','#b8860b'],['#7a4d18','#e8c766'],['#2f5d50','#8fd3b6'],
-  ['#3c4a6b','#9fb6e8'],['#6b3550','#e39ec0'],['#5a4a2a','#d9c08a']
-];
 
 /* ===== DOM 便捷选择器 ===== */
 function $(id){ return document.getElementById(id); }
@@ -407,7 +424,7 @@ function toast(msg, btnText, btnAction){
   toastTimer = setTimeout(function(){ hide_($('toast')); }, 3200);
 }
 
-/* ===== 初始化加载投票人会话 ===== */
+/* ===== 1. 登录会话恢复 ===== */
 function initVoterSession(){
   try {
     var raw = localStorage.getItem('xh_voter_session');
@@ -433,7 +450,7 @@ $('btnSwitchAccount').onclick = function(){
   $('btnStart').textContent = '进入作品展示集';
 };
 
-/* ===== 核心：获取后台真实视频候选人 ===== */
+/* ===== 2. 获取后台视频候选人数据 (带有效画面封面 coverUrl) ===== */
 async function loadWorks(){
   try {
     var res = await fetch('/api/vote/works');
@@ -452,7 +469,7 @@ async function loadWorks(){
   if($('gTitle')) $('gTitle').textContent = '全部参选作品 (' + CFG.total + ')';
 }
 
-/* ===== 登录与认证 ===== */
+/* ===== 3. 员工实名登录 ===== */
 async function doLogin(){
   var name = $('loginName').value.trim();
   var jobNo = $('loginJobNo').value.trim();
@@ -478,15 +495,11 @@ async function doLogin(){
       localStorage.setItem('xh_voter_session', JSON.stringify(voter));
 
       updatePills();
+      go('gallery');
+      renderGallery();
 
       if(voter.submitted){
-        // 已提交过直接去结束页或只读作品
-        go('gallery');
-        renderGallery();
         toast('您之前已提交过投票，当前为只读浏览模式');
-      } else {
-        go('gallery');
-        renderGallery();
       }
     } else {
       toast(json.message || '登录验证失败');
@@ -501,7 +514,7 @@ async function doLogin(){
 
 $('btnStart').onclick = doLogin;
 
-/* ===== 票数 Pill 刷新 ===== */
+/* ===== 4. 刷新顶部票数统计 ===== */
 function updatePills(){
   var left = Math.max(0, CFG.budget - likedIds.length);
   var el = $('pillBudget');
@@ -509,44 +522,53 @@ function updatePills(){
     el.textContent = '剩余 ♡ ' + left + ' / ' + CFG.budget;
     el.className = 'pill' + (left === 0 ? ' out' : (left === 1 ? ' warn' : ''));
   }
-  if($('pillSeen')) $('pillSeen').textContent = '已看 ' + seenIds.length + ' / ' + CFG.total;
   if($('pBudget')) $('pBudget').textContent = '♡ 剩余 ' + left;
   if($('pillUser') && voter) $('pillUser').textContent = voter.name + ' (' + voter.jobNo + ')';
 }
 
-/* ===== 渲染作品宫格 ===== */
+/* ===== 5. 核心：渲染作品列表 (有效画面 + 直接点赞，不需要点进去) ===== */
 function renderGallery(){
   var g = $('grid');
+  g.className = currentViewMode === 'feed' ? 'feed-mode' : 'grid';
   g.innerHTML = '';
 
   if(WORKS.length === 0){
-    g.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 10px;color:var(--sub);font-size:13px">后台暂未找到带有视频链接的参选人，请先在报名系统上传短视频</div>';
+    g.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px 10px;color:var(--sub);font-size:13.5px">暂无带有视频链接的候选人作品</div>';
     return;
   }
 
   WORKS.forEach(function(w, idx){
     var isLiked = likedIds.indexOf(w.id) > -1;
-    var isSeen = seenIds.indexOf(w.id) > -1;
-    var hue = PALETTES[idx % PALETTES.length];
+    var coverImg = w.coverUrl || '/images/kos_hero.jpg';
 
     var card = document.createElement('div');
-    card.className = 'card' + (isSeen ? ' seen' : '');
-    card.innerHTML = 
-      '<div class="cover" style="background:linear-gradient(135deg,' + hue[0] + ',' + hue[1] + ')">' +
-        '<div class="play-badge">▶</div>' +
-        '<span style="font-size:16px;opacity:.9">' + (w.id || pad(idx + 1)) + '</span>' +
-      '</div>' +
-      (isLiked ? '<div class="heart-badge">♥</div>' : '') +
-      (isSeen && !isLiked ? '<div class="seen-tag">已看</div>' : '') +
-      '<div class="meta">' +
-        '<div class="nm">' + (w.name || '参选人') + '</div>' +
-        '<div class="dp">' + (w.department || '') + ' · ' + (w.position || '') + '</div>' +
-        '<div class="vt">' + (w.videoTitle || '自媒体短视频') + '</div>' +
-      '</div>';
+    card.className = 'card';
+    card.setAttribute('data-id', w.id);
 
-    card.onclick = function(){
-      openPlayer(idx);
-    };
+    card.innerHTML = 
+      /* 需求3：展示真实有效画面 (视频第一帧高清海报截图) */
+      '<div class="card-cover-box" onclick="openPlayer(' + idx + ')">' +
+        '<img src="' + coverImg + '" alt="' + w.name + '" class="card-cover-img" loading="lazy" onerror="this.src=\'/images/kos_hero.jpg\'" />' +
+        '<div class="cover-overlay"></div>' +
+        '<div class="card-play-icon">▶</div>' +
+        '<span class="card-cand-id">' + (w.id || pad(idx + 1)) + '</span>' +
+        /* 需求2：视频不需要点击去才能点赞！直接在右上角放置可点击心形按钮 */
+        '<div class="card-heart-action ' + (isLiked ? 'liked' : '') + '" onclick="onDirectVoteClick(event, \'' + w.id + '\')" title="直接投TA一票">' +
+          (isLiked ? '♥' : '♡') +
+        '</div>' +
+      '</div>' +
+      '<div class="card-meta">' +
+        '<div class="card-title-name">' +
+          '<div class="card-nm">' + (w.name || '参选人') + '</div>' +
+          '<div class="card-votes-pill">' + (w.votesCount || 0) + ' 票</div>' +
+        '</div>' +
+        '<div class="card-dp">' + (w.department || '汇添富') + ' · ' + (w.position || '创作者') + '</div>' +
+        '<div class="card-vt">🎬 ' + (w.videoTitle || '自媒体短视频') + '</div>' +
+        /* 需求2：卡片底部也提供直观的直接点赞推荐按钮 */
+        '<button class="btn-card-vote ' + (isLiked ? 'liked' : '') + '" onclick="onDirectVoteClick(event, \'' + w.id + '\')">' +
+          (isLiked ? '♥ 已投推荐票' : '♡ 投 TA 一票') +
+        '</button>' +
+      '</div>';
 
     g.appendChild(card);
   });
@@ -556,19 +578,106 @@ function renderGallery(){
   $('btnSubmit').disabled = !!(voter && voter.submitted);
 }
 
-/* ===== 核心：沉浸流视频播放器 (点了再播) ===== */
+// 视图切换 (双列宫格 / 单列大图)
+$('btnViewGrid').onclick = function(){
+  currentViewMode = 'grid';
+  $('btnViewGrid').classList.add('active');
+  $('btnViewFeed').classList.remove('active');
+  renderGallery();
+};
+$('btnViewFeed').onclick = function(){
+  currentViewMode = 'feed';
+  $('btnViewFeed').classList.add('active');
+  $('btnViewGrid').classList.remove('active');
+  renderGallery();
+};
+
+/* ===== 核心需求2：不需要点进去才能点赞！列表直接点赞函数 ===== */
+window.onDirectVoteClick = function(e, candidateId){
+  if(e){
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  executeToggleVote(candidateId);
+};
+
+/* ===== 核心：执行点赞 / 取消点赞 ===== */
+async function executeToggleVote(candidateId){
+  if(!voter || !voter.jobNo){
+    toast('您尚未登录，请先在首页输入工号');
+    return;
+  }
+  if(voter.submitted){
+    toast('您已确认提交投票，无法再次修改');
+    return;
+  }
+
+  var isCurrentlyLiked = likedIds.indexOf(candidateId) > -1;
+  var targetCand = WORKS.find(function(w){ return w.id === candidateId; });
+  var candName = targetCand ? targetCand.name : candidateId;
+
+  // 本地前置 5 票上限拦截
+  if(!isCurrentlyLiked && likedIds.length >= CFG.budget){
+    toast('您的 5 票推荐已满，可取消其他候选人后再投给 TA！');
+    return;
+  }
+
+  try {
+    var res = await fetch('/api/vote/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jobNo: voter.jobNo,
+        candidateId: candidateId
+      })
+    });
+    var json = await res.json();
+    if(json.code === 0 && json.data){
+      likedIds = json.data.likedIds || [];
+      
+      // 更新该候选人本地投票数
+      if(targetCand){
+        targetCand.votesCount = Math.max(0, (targetCand.votesCount || 0) + (json.data.liked ? 1 : -1));
+      }
+
+      // 局部刷新卡片或全列表刷新
+      renderGallery();
+      updatePills();
+
+      // 如果当前正处于全屏播放器，同步更新播放器里的心形按钮
+      if(!$('player').classList.contains('hide') && WORKS[cur] && WORKS[cur].id === candidateId){
+        renderPlayerLikeState(candidateId);
+      }
+
+      if(json.data.liked){
+        // 炸裂红心动画
+        var b = $('bigHeart');
+        b.className = 'big-heart';
+        void b.offsetWidth;
+        b.className = 'big-heart burst';
+        toast('已成功为 ' + candName + ' 投出推荐票 ♥ (剩余 ' + (CFG.budget - likedIds.length) + ' 票)');
+      } else {
+        toast('已取消对 ' + candName + ' 的推荐票 (剩余 ' + (CFG.budget - likedIds.length) + ' 票)');
+      }
+    } else {
+      toast(json.message || '操作失败');
+    }
+  } catch(e){
+    toast('网络连接失败: ' + e.message);
+  }
+}
+
+/* ===== 核心需求1 & 3：沉浸流全屏播放器 =====
+   1）不需要及时播放，点了再播；
+   2）播放绝不自动连贯切台，播放完毕停留在当前视频；
+   3）播放器封面使用有效真实画面 (poster)
+*/
 function openPlayer(idx){
   if(WORKS.length === 0) return;
   cur = idx;
   go(null);
   show($('player'));
-  markSeen(WORKS[cur].id);
   renderPlayerCard(cur, 0);
-
-  // 检查是否需要引导
-  if(!localStorage.getItem('xh_swipe_guide_shown')){
-    show($('guide'));
-  }
 }
 
 function renderPlayerCard(idx, animDir){
@@ -578,32 +687,46 @@ function renderPlayerCard(idx, animDir){
   var s = $('slide');
   s.className = 'slide' + (animDir === 1 ? ' anim-up' : (animDir === -1 ? ' anim-down' : ''));
 
-  // 1. 停止当前视频播放并重置 (需求1：不需要及时播放，点了再播)
+  // 1. 核心需求1：绝不自动连贯播放！切台时必须先暂停并归零
   videoEl.pause();
   videoEl.currentTime = 0;
   isPlaying = false;
   
+  // 核心需求3：播放的画面是真实有效画面 (利用 poster 预载首帧图片，绝不黑屏)
+  if(w.coverUrl){
+    videoEl.poster = w.coverUrl;
+  }
   if(w.videoUrl){
     videoEl.src = w.videoUrl;
-    videoEl.load();
   }
 
-  // 2. 显示居中大播放按钮，隐藏暂停提示
+  // 2. 居中显示大播放按钮
   show($('playCenterBtn'));
+  $('playCenterBtn').querySelector('.play-icon-circle').textContent = '▶';
+  $('playCenterBtn').querySelector('.play-hint-text').textContent = '点击播放视频';
   hide_($('playpause'));
   $('progBar').style.width = '0%';
 
-  // 3. 填充信息
-  var isLiked = likedIds.indexOf(w.id) > -1;
-  $('pNo').textContent = '编号 ' + (w.id || pad(idx + 1)) + (isLiked ? ' · 已投 ♥' : '');
+  // 3. 填充文字介绍
+  renderPlayerLikeState(w.id);
   $('pName').textContent = w.name;
   $('pDept').textContent = (w.department || '') + ' · ' + (w.position || '');
   $('pTitle').textContent = w.videoTitle || '自媒体短视频创作提案';
   $('pIntro').textContent = w.videoIntro || w.accountPersona || '';
 
   $('pIdx').textContent = pad(idx + 1) + ' / ' + pad(CFG.total);
+
+  $('btnPrev').setAttribute('disabled', idx === 0 ? '1' : '');
+  $('btnNext').setAttribute('disabled', idx === CFG.total - 1 ? '1' : '');
+
+  updatePills();
+}
+
+function renderPlayerLikeState(candId){
+  var w = WORKS[cur];
+  var isLiked = likedIds.indexOf(candId) > -1;
+  $('pNo').textContent = '编号 ' + (w.id || pad(cur + 1)) + (isLiked ? ' · 已投推荐票 ♥' : '');
   
-  // 4. 点赞状态
   var btnLike = $('btnLike');
   if(isLiked){
     btnLike.textContent = '♥';
@@ -613,18 +736,6 @@ function renderPlayerCard(idx, animDir){
     btnLike.textContent = '♡';
     btnLike.className = 'btn-circle';
     $('pLikeText').textContent = '投票';
-  }
-
-  $('btnPrev').setAttribute('disabled', idx === 0 ? '1' : '');
-  $('btnNext').setAttribute('disabled', idx === CFG.total - 1 ? '1' : '');
-
-  updatePills();
-}
-
-function markSeen(candId){
-  if(seenIds.indexOf(candId) < 0){
-    seenIds.push(candId);
-    updatePills();
   }
 }
 
@@ -639,12 +750,14 @@ function toggleVideoPlay(){
       hide_($('playpause'));
     }).catch(function(err){
       console.warn('Video play error:', err);
-      toast('视频播放失败，请点击重试');
+      toast('点击播放失败，请重试');
     });
   } else {
     videoEl.pause();
     isPlaying = false;
     show($('playCenterBtn'));
+    $('playCenterBtn').querySelector('.play-icon-circle').textContent = '▶';
+    $('playCenterBtn').querySelector('.play-hint-text').textContent = '点击继续播放';
   }
 }
 
@@ -653,7 +766,16 @@ $('playCenterBtn').onclick = function(e){
   toggleVideoPlay();
 };
 
-/* 视频原生事件绑定 */
+/* 核心需求1：播放不能连贯！视频播放完毕后，绝不自动跳到下一个视频，停在当前画面展示重播 */
+videoEl.addEventListener('ended', function(){
+  isPlaying = false;
+  show($('playCenterBtn'));
+  $('playCenterBtn').querySelector('.play-icon-circle').textContent = '↺';
+  $('playCenterBtn').querySelector('.play-hint-text').textContent = '重新播放';
+  $('progBar').style.width = '100%';
+  // 坚决不自动调用 switchCard(1)，保持当前视频不连贯切台！
+});
+
 videoEl.addEventListener('timeupdate', function(){
   if(videoEl.duration){
     var pct = (videoEl.currentTime / videoEl.duration) * 100;
@@ -661,18 +783,7 @@ videoEl.addEventListener('timeupdate', function(){
   }
 });
 
-videoEl.addEventListener('ended', function(){
-  isPlaying = false;
-  show($('playCenterBtn'));
-  $('progBar').style.width = '100%';
-});
-
-videoEl.addEventListener('error', function(){
-  console.warn('Video load error');
-  $('playCenterBtn').querySelector('.play-hint-text').textContent = '视频加载中或地址不可用';
-});
-
-/* 上下滑动切换 */
+/* 上下滑动切换卡片 (切换后依然处于暂停有效画面，绝不自动开播) */
 function switchCard(dir){
   if(dir === 1 && cur >= CFG.total - 1){
     toast('已经是最后一个作品了');
@@ -684,7 +795,6 @@ function switchCard(dir){
   }
 
   cur += dir;
-  markSeen(WORKS[cur].id);
   renderPlayerCard(cur, dir);
 }
 
@@ -699,7 +809,7 @@ $('pClose').onclick = closePlayer;
 $('btnPrev').onclick = function(e){ e.stopPropagation(); switchCard(-1); };
 $('btnNext').onclick = function(e){ e.stopPropagation(); switchCard(1); };
 
-/* 静音切换 */
+/* 声音切换 */
 var isMuted = false;
 $('btnSound').onclick = function(e){
   e.stopPropagation();
@@ -708,67 +818,15 @@ $('btnSound').onclick = function(e){
   $('btnSound').textContent = isMuted ? '🔇' : '🔊';
 };
 
-/* ===== 点赞功能 (需求3：最多投5票，后端去重) ===== */
-async function doToggleVote(fromDoubleTap){
-  if(!voter || !voter.jobNo){
-    toast('您尚未登录，请先输入工号');
-    return;
-  }
-  if(voter.submitted){
-    toast('您已确认提交投票，无法再次修改');
-    return;
-  }
-
-  var currentCand = WORKS[cur];
-  if(!currentCand) return;
-
-  var isCurrentlyLiked = likedIds.indexOf(currentCand.id) > -1;
-
-  // 如果当前未点赞且已经满了 5 票，本地前置拦截
-  if(!isCurrentlyLiked && likedIds.length >= CFG.budget){
-    toast('您的 5 票推荐已满，可取消其他候选人后再投给 TA！');
-    return;
-  }
-
-  try {
-    var res = await fetch('/api/vote/toggle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jobNo: voter.jobNo,
-        candidateId: currentCand.id
-      })
-    });
-    var json = await res.json();
-    if(json.code === 0 && json.data){
-      likedIds = json.data.likedIds || [];
-      renderPlayerCard(cur, 0);
-      updatePills();
-
-      if(json.data.liked){
-        // 炸裂大红心动画
-        var b = $('bigHeart');
-        b.className = 'big-heart';
-        void b.offsetWidth;
-        b.className = 'big-heart burst';
-        toast('已成功为 ' + currentCand.name + ' 投出推荐票 ♥');
-      } else {
-        toast('已取消对 ' + currentCand.name + ' 的推荐票');
-      }
-    } else {
-      toast(json.message || '操作失败');
-    }
-  } catch(e){
-    toast('网络连接失败: ' + e.message);
-  }
-}
-
+/* 播放器内点赞按钮绑定 */
 $('btnLike').onclick = function(e){
   e.stopPropagation();
-  doToggleVote(false);
+  if(WORKS[cur]){
+    executeToggleVote(WORKS[cur].id);
+  }
 };
 
-/* ===== 手势控制：上下滑动切换 + 单击播放/暂停 + 双击点赞 ===== */
+/* ===== 播放器内手势控制 ===== */
 var sx = 0, sy = 0, st = 0, moved = 0, lastTap = 0, tapTimer = null;
 var stage = $('stage');
 
@@ -802,7 +860,7 @@ stage.addEventListener('touchend', function(e){
       // 双击：点赞
       clearTimeout(tapTimer);
       lastTap = 0;
-      doToggleVote(true);
+      if(WORKS[cur]) executeToggleVote(WORKS[cur].id);
     } else {
       // 单击：播放或暂停 (核心需求1)
       lastTap = Date.now();
@@ -813,7 +871,6 @@ stage.addEventListener('touchend', function(e){
   }
 }, { passive: true });
 
-// 兼容 PC 滚轮
 stage.addEventListener('wheel', function(e){
   if(Math.abs(e.deltaY) < 10) return;
   clearTimeout(window._wheelT);
@@ -822,13 +879,7 @@ stage.addEventListener('wheel', function(e){
   }, 90);
 });
 
-/* 引导层关闭 */
-$('guide').onclick = function(){
-  hide_($('guide'));
-  localStorage.setItem('xh_swipe_guide_shown', '1');
-};
-
-/* ===== 提交投票 ===== */
+/* ===== 6. 提交投票确认 ===== */
 function askSubmit(){
   if(!voter || !voter.jobNo){
     toast('请先输入姓名和工号');
@@ -886,7 +937,7 @@ $('btnGoPlayer').onclick = function(){
   openPlayer(0);
 };
 
-/* ===== 排行榜与 Excel 导出 (需求3：最后的点赞结果，有表可导出结果) ===== */
+/* ===== 7. 实时排行榜与 Excel 导出 ===== */
 async function loadLeaderboard(){
   try {
     var res = await fetch('/api/vote/results');
@@ -934,7 +985,7 @@ $('btnExportExcel').onclick = function(){
   window.open('/api/vote/export', '_blank');
 };
 
-/* ===== 页面初次加载 ===== */
+/* ===== 页面初始化 ===== */
 window.addEventListener('DOMContentLoaded', async function(){
   initVoterSession();
   await loadWorks();
