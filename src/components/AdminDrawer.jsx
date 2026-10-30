@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SURVEY_MODULES, SCALE_OPTIONS } from '../data/questionnaireData';
-import { AdminOverviewReport, AdminDetailsReport } from './AdminReports';
+import { AdminOverviewReport, AdminDetailsReport, AdminVotesReport } from './AdminReports';
 
 // Flatten all 27 questions for detailed inspection
 const ALL_SURVEY_QUESTIONS = [];
@@ -269,6 +269,12 @@ export default function AdminDrawer({ isOpen, onClose }) {
             >
               📝 问卷题库管理 ({questionsList.length || 27}题)
             </button>
+            <button 
+              className={`btn-tab-switch ${adminTab === 'votes' ? 'active' : ''}`}
+              onClick={() => setAdminTab('votes')}
+            >
+              🏆 员工投票结果
+            </button>
           </div>
 
           <div className="admin-header-actions">
@@ -312,6 +318,11 @@ export default function AdminDrawer({ isOpen, onClose }) {
               setAdminTab('candidates');
             }}
           />
+        )}
+
+        {/* Tab: Employee Voting Results */}
+        {adminTab === 'votes' && (
+          <AdminVotesReport />
         )}
 
         {/* Tab 3: Questionnaire Management Panel */}

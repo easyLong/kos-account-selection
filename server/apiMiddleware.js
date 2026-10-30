@@ -15,6 +15,8 @@ if (fs.existsSync(envPath)) {
 
 const DATA_FILE = path.resolve(process.cwd(), 'data', 'submissions.json');
 const QUESTIONS_FILE = path.resolve(process.cwd(), 'data', 'survey_questions.json');
+const VOTERS_FILE = path.resolve(process.cwd(), 'data', 'voters.json');
+const VOTES_FILE = path.resolve(process.cwd(), 'data', 'votes.json');
 const REPORT_TEMPLATE_FILE = path.resolve(process.cwd(), 'server', 'templates', 'report_template.xlsx');
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'videos');
 const AVATAR_DIR = path.resolve(process.cwd(), 'public', 'uploads', 'avatars');
@@ -41,6 +43,12 @@ function initStorage() {
   }
   if (!fs.existsSync(QUESTIONS_FILE)) {
     fs.writeFileSync(QUESTIONS_FILE, '[]', 'utf-8');
+  }
+  if (!fs.existsSync(VOTERS_FILE)) {
+    fs.writeFileSync(VOTERS_FILE, '[]', 'utf-8');
+  }
+  if (!fs.existsSync(VOTES_FILE)) {
+    fs.writeFileSync(VOTES_FILE, '[]', 'utf-8');
   }
 }
 
@@ -185,6 +193,33 @@ async function initDatabase() {
         status TINYINT DEFAULT 1,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 1. Voter table (deduplication by jobNo)
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS htf_kos_voters (
+        jobNo VARCHAR(64) PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        submitted TINYINT(1) DEFAULT 0,
+        submittedAt VARCHAR(64),
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 2. Votes table (each record is one vote for one candidate by one voter)
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS htf_kos_votes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        voterJobNo VARCHAR(64) NOT NULL,
+        voterName VARCHAR(100) NOT NULL,
+        candidateId VARCHAR(64) NOT NULL,
+        candidateName VARCHAR(100),
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_voter_cand (voterJobNo, candidateId),
+        INDEX idx_cand (candidateId),
+        INDEX idx_voter (voterJobNo)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
@@ -425,6 +460,325 @@ function generateReportExcelBuffer(candidates) {
   const maxR = Math.max(4 + (candidates || []).length - 1, 4);
   wsOverview['!ref'] = 'A1:O' + maxR;
   wsDetails['!ref'] = 'A1:Y' + maxR;
+
+  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+}
+
+// ==========================================
+// Video Showcase & Employee Voting System
+// ==========================================
+
+async function getVoteWorks() {
+  const apps = await getStoredApplications();
+  // Filter candidates with valid video URL
+  const videoCandidates = apps.filter(c => c.videoUrl && String(c.videoUrl).trim() !== '');
+
+  // Calculate vote count per candidate
+  const countMap = {};
+  if (dbAvailable && dbPool) {
+    try {
+      const [rows] = await dbPool.query('SELECT candidateId, COUNT(*) as cnt FROM htf_kos_votes GROUP BY candidateId');
+      for (const r of rows) {
+        countMap[r.candidateId] = Number(r.cnt);
+      }
+    } catch (e) {
+      console.warn('[Vote] Fetch vote counts failed:', e.message);
+    }
+  } else {
+    try {
+      if (fs.existsSync(VOTES_FILE)) {
+        const votes = JSON.parse(fs.readFileSync(VOTES_FILE, 'utf-8') || '[]');
+        for (const v of votes) {
+          countMap[v.candidateId] = (countMap[v.candidateId] || 0) + 1;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Sort candidates by ID ascending (XH-01, XH-02, ...)
+  videoCandidates.sort((a, b) => String(a.id || '').localeCompare(String(b.id || '')));
+
+  return videoCandidates.map((c, idx) => ({
+    id: c.id,
+    displayNo: idx + 1,
+    name: c.name || '未命名',
+    gender: c.gender || '',
+    department: c.department || '汇添富团队',
+    position: c.position || '创作者',
+    avatarUrl: c.avatarUrl || '',
+    videoTitle: c.videoTitle || '自媒体短视频创作提案',
+    videoIntro: c.videoIntro || c.personalIntro || '',
+    videoUrl: c.videoUrl,
+    videoDuration: c.videoDuration || '',
+    videoSize: c.videoSize || '',
+    accountPersona: c.accountPersona || c.targetAccountStyle || '',
+    specialtyTalent: c.specialtyTalent || '',
+    votesCount: countMap[c.id] || 0
+  }));
+}
+
+async function voterLogin(name, jobNo) {
+  const trimmedName = String(name || '').trim();
+  const trimmedJobNo = String(jobNo || '').trim();
+  if (!trimmedName || !trimmedJobNo) {
+    throw new Error('请完整填写姓名和工号');
+  }
+
+  let voter = null;
+  let likedIds = [];
+
+  if (dbAvailable && dbPool) {
+    // Upsert voter
+    await dbPool.query(`
+      INSERT INTO htf_kos_voters (jobNo, name) 
+      VALUES (?, ?) 
+      ON DUPLICATE KEY UPDATE name = VALUES(name)
+    `, [trimmedJobNo, trimmedName]);
+
+    const [voterRows] = await dbPool.query('SELECT * FROM htf_kos_voters WHERE jobNo = ?', [trimmedJobNo]);
+    voter = voterRows[0] || { jobNo: trimmedJobNo, name: trimmedName, submitted: 0 };
+
+    const [voteRows] = await dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo]);
+    likedIds = (voteRows || []).map(r => r.candidateId);
+  } else {
+    initStorage();
+    let voters = [];
+    try { voters = JSON.parse(fs.readFileSync(VOTERS_FILE, 'utf-8') || '[]'); } catch (e) {}
+    let existing = voters.find(v => v.jobNo === trimmedJobNo);
+    if (!existing) {
+      existing = { jobNo: trimmedJobNo, name: trimmedName, submitted: 0, createdAt: new Date().toISOString() };
+      voters.push(existing);
+      fs.writeFileSync(VOTERS_FILE, JSON.stringify(voters, null, 2), 'utf-8');
+    }
+    voter = existing;
+
+    let votes = [];
+    try { votes = JSON.parse(fs.readFileSync(VOTES_FILE, 'utf-8') || '[]'); } catch (e) {}
+    likedIds = votes.filter(v => v.voterJobNo === trimmedJobNo).map(v => v.candidateId);
+  }
+
+  return {
+    voter: {
+      jobNo: voter.jobNo,
+      name: voter.name,
+      submitted: !!voter.submitted,
+      submittedAt: voter.submittedAt || ''
+    },
+    likedIds,
+    budgetTotal: 5,
+    budgetRemaining: Math.max(0, 5 - likedIds.length)
+  };
+}
+
+async function toggleVote(jobNo, candidateId) {
+  const trimmedJobNo = String(jobNo || '').trim();
+  const trimmedCandId = String(candidateId || '').trim();
+  if (!trimmedJobNo || !trimmedCandId) {
+    throw new Error('参数不完整');
+  }
+
+  if (dbAvailable && dbPool) {
+    const [voterRows] = await dbPool.query('SELECT * FROM htf_kos_voters WHERE jobNo = ?', [trimmedJobNo]);
+    const voter = voterRows[0];
+    if (!voter) throw new Error('投票人未登录，请先输入工号');
+    if (voter.submitted) throw new Error('您已确认提交投票，无法再次修改');
+
+    // Check candidate name
+    const [candRows] = await dbPool.query('SELECT name FROM htf_kos_applications WHERE id = ?', [trimmedCandId]);
+    const candName = candRows[0]?.name || trimmedCandId;
+
+    // Check if already voted
+    const [existing] = await dbPool.query('SELECT id FROM htf_kos_votes WHERE voterJobNo = ? AND candidateId = ?', [trimmedJobNo, trimmedCandId]);
+    if (existing && existing.length > 0) {
+      // Unvote
+      await dbPool.query('DELETE FROM htf_kos_votes WHERE voterJobNo = ? AND candidateId = ?', [trimmedJobNo, trimmedCandId]);
+      const [nowRows] = await dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo]);
+      const likedIds = (nowRows || []).map(r => r.candidateId);
+      return { liked: false, likedIds, budgetRemaining: 5 - likedIds.length };
+    } else {
+      // Check budget
+      const [cntRows] = await dbPool.query('SELECT COUNT(*) as cnt FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo]);
+      const currentCount = Number(cntRows[0]?.cnt || 0);
+      if (currentCount >= 5) {
+        throw new Error('每人最多投 5 票，已达上限！可取消某位后再投给 TA');
+      }
+      await dbPool.query(`
+        INSERT INTO htf_kos_votes (voterJobNo, voterName, candidateId, candidateName)
+        VALUES (?, ?, ?, ?)
+      `, [trimmedJobNo, voter.name, trimmedCandId, candName]);
+      const [nowRows] = await dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo]);
+      const likedIds = (nowRows || []).map(r => r.candidateId);
+      return { liked: true, likedIds, budgetRemaining: 5 - likedIds.length };
+    }
+  } else {
+    // JSON file fallback
+    initStorage();
+    let voters = [];
+    try { voters = JSON.parse(fs.readFileSync(VOTERS_FILE, 'utf-8') || '[]'); } catch (e) {}
+    const voter = voters.find(v => v.jobNo === trimmedJobNo);
+    if (!voter) throw new Error('投票人未登录');
+    if (voter.submitted) throw new Error('您已提交投票');
+
+    let votes = [];
+    try { votes = JSON.parse(fs.readFileSync(VOTES_FILE, 'utf-8') || '[]'); } catch (e) {}
+    const exIdx = votes.findIndex(v => v.voterJobNo === trimmedJobNo && v.candidateId === trimmedCandId);
+    if (exIdx >= 0) {
+      votes.splice(exIdx, 1);
+      fs.writeFileSync(VOTES_FILE, JSON.stringify(votes, null, 2), 'utf-8');
+      const likedIds = votes.filter(v => v.voterJobNo === trimmedJobNo).map(v => v.candidateId);
+      return { liked: false, likedIds, budgetRemaining: 5 - likedIds.length };
+    } else {
+      const myCount = votes.filter(v => v.voterJobNo === trimmedJobNo).length;
+      if (myCount >= 5) throw new Error('每人最多投 5 票，已达上限！可取消某位后再投');
+      votes.push({
+        voterJobNo: trimmedJobNo,
+        voterName: voter.name,
+        candidateId: trimmedCandId,
+        candidateName: '',
+        createdAt: new Date().toISOString()
+      });
+      fs.writeFileSync(VOTES_FILE, JSON.stringify(votes, null, 2), 'utf-8');
+      const likedIds = votes.filter(v => v.voterJobNo === trimmedJobNo).map(v => v.candidateId);
+      return { liked: true, likedIds, budgetRemaining: 5 - likedIds.length };
+    }
+  }
+}
+
+async function submitVotes(jobNo) {
+  const trimmedJobNo = String(jobNo || '').trim();
+  if (!trimmedJobNo) throw new Error('工号不能为空');
+  const nowStr = new Date().toLocaleString('zh-CN', { hour12: false });
+
+  if (dbAvailable && dbPool) {
+    const [voterRows] = await dbPool.query('SELECT * FROM htf_kos_voters WHERE jobNo = ?', [trimmedJobNo]);
+    if (!voterRows.length) throw new Error('未找到投票人记录');
+    await dbPool.query('UPDATE htf_kos_voters SET submitted = 1, submittedAt = ? WHERE jobNo = ?', [nowStr, trimmedJobNo]);
+    const [votes] = await dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo]);
+    return { submitted: true, submittedAt: nowStr, voteCount: votes.length };
+  } else {
+    initStorage();
+    let voters = [];
+    try { voters = JSON.parse(fs.readFileSync(VOTERS_FILE, 'utf-8') || '[]'); } catch (e) {}
+    const voter = voters.find(v => v.jobNo === trimmedJobNo);
+    if (!voter) throw new Error('未找到投票人');
+    voter.submitted = 1;
+    voter.submittedAt = nowStr;
+    fs.writeFileSync(VOTERS_FILE, JSON.stringify(voters, null, 2), 'utf-8');
+    let votes = [];
+    try { votes = JSON.parse(fs.readFileSync(VOTES_FILE, 'utf-8') || '[]'); } catch (e) {}
+    const myVotes = votes.filter(v => v.voterJobNo === trimmedJobNo);
+    return { submitted: true, submittedAt: nowStr, voteCount: myVotes.length };
+  }
+}
+
+async function getVoteLeaderboard() {
+  const works = await getVoteWorks();
+  let allVotes = [];
+  let allVoters = [];
+
+  if (dbAvailable && dbPool) {
+    try {
+      const [voteRows] = await dbPool.query('SELECT * FROM htf_kos_votes ORDER BY createdAt DESC');
+      allVotes = voteRows || [];
+      const [voterRows] = await dbPool.query('SELECT * FROM htf_kos_voters ORDER BY createdAt DESC');
+      allVoters = voterRows || [];
+    } catch (e) {
+      console.warn('[Leaderboard] DB query error:', e.message);
+    }
+  } else {
+    try { allVotes = JSON.parse(fs.readFileSync(VOTES_FILE, 'utf-8') || '[]'); } catch (e) {}
+    try { allVoters = JSON.parse(fs.readFileSync(VOTERS_FILE, 'utf-8') || '[]'); } catch (e) {}
+  }
+
+  const candidateVotesMap = {};
+  for (const v of allVotes) {
+    if (!candidateVotesMap[v.candidateId]) {
+      candidateVotesMap[v.candidateId] = [];
+    }
+    candidateVotesMap[v.candidateId].push({
+      voterName: v.voterName,
+      voterJobNo: v.voterJobNo,
+      time: v.createdAt
+    });
+  }
+
+  const totalVotesCount = allVotes.length;
+  const totalVotersCount = new Set(allVotes.map(v => v.voterJobNo)).size;
+
+  const rankedCandidates = works.map(w => {
+    const voters = candidateVotesMap[w.id] || [];
+    const voteCount = voters.length;
+    const ratio = totalVotesCount > 0 ? ((voteCount / totalVotesCount) * 100).toFixed(1) + '%' : '0.0%';
+    return {
+      ...w,
+      voteCount,
+      voteRatio: ratio,
+      voters
+    };
+  }).sort((a, b) => b.voteCount - a.voteCount);
+
+  // Assign ranking numbers
+  rankedCandidates.forEach((c, idx) => {
+    c.rank = idx + 1;
+  });
+
+  return {
+    totalVotersCount,
+    totalVotesCount,
+    candidates: rankedCandidates,
+    allVotesList: allVotes
+  };
+}
+
+async function generateVoteExcelBuffer() {
+  const leaderboard = await getVoteLeaderboard();
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: 候选人得票排行榜
+  const rankHeaders = ['排名', '候选人编号', '姓名', '所属部门/团队', '现任岗位/职级', '短视频作品标题', '总得票数', '得票占比'];
+  const rankRows = leaderboard.candidates.map(c => [
+    c.rank,
+    c.id,
+    c.name,
+    c.department,
+    c.position,
+    c.videoTitle,
+    c.voteCount,
+    c.voteRatio
+  ]);
+  const wsRank = XLSX.utils.aoa_to_sheet([rankHeaders, ...rankRows]);
+  wsRank['!cols'] = [
+    { wch: 8 },  // 排名
+    { wch: 14 }, // 编号
+    { wch: 12 }, // 姓名
+    { wch: 18 }, // 部门
+    { wch: 18 }, // 岗位
+    { wch: 32 }, // 标题
+    { wch: 12 }, // 票数
+    { wch: 12 }  // 占比
+  ];
+  XLSX.utils.book_append_sheet(wb, wsRank, '候选人得票排行榜');
+
+  // Sheet 2: 员工投票明细流水表
+  const detailHeaders = ['序号', '投票人姓名', '投票人工号', '被投候选人编号', '被投候选人姓名', '投票时间'];
+  const detailRows = leaderboard.allVotesList.map((v, i) => [
+    i + 1,
+    v.voterName,
+    v.voterJobNo,
+    v.candidateId,
+    v.candidateName || '',
+    v.createdAt ? (typeof v.createdAt === 'object' ? v.createdAt.toISOString() : v.createdAt) : ''
+  ]);
+  const wsDetail = XLSX.utils.aoa_to_sheet([detailHeaders, ...detailRows]);
+  wsDetail['!cols'] = [
+    { wch: 8 },
+    { wch: 14 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 14 },
+    { wch: 24 }
+  ];
+  XLSX.utils.book_append_sheet(wb, wsDetail, '员工投票明细表');
 
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 }
@@ -1073,6 +1427,112 @@ export function createApiMiddleware() {
             }
           });
           return;
+        }
+
+        // 9. Video Showcase & Voting APIs
+        if (pathname === '/api/vote/works' && req.method === 'GET') {
+          getVoteWorks().then(works => {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 0, data: works }));
+          }).catch(err => {
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 500, message: err.message }));
+          });
+          return;
+        }
+
+        if (pathname === '/api/vote/login' && req.method === 'POST') {
+          parseJsonBody(async (err, data) => {
+            if (err) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 400, message: 'Invalid JSON body' }));
+              return;
+            }
+            try {
+              const result = await voterLogin(data.name, data.jobNo);
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 0, data: result }));
+            } catch (loginErr) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: -1, message: loginErr.message }));
+            }
+          });
+          return;
+        }
+
+        if (pathname === '/api/vote/toggle' && req.method === 'POST') {
+          parseJsonBody(async (err, data) => {
+            if (err) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 400, message: 'Invalid JSON body' }));
+              return;
+            }
+            try {
+              const result = await toggleVote(data.jobNo, data.candidateId);
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 0, data: result }));
+            } catch (voteErr) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: -1, message: voteErr.message }));
+            }
+          });
+          return;
+        }
+
+        if (pathname === '/api/vote/submit' && req.method === 'POST') {
+          parseJsonBody(async (err, data) => {
+            if (err) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 400, message: 'Invalid JSON body' }));
+              return;
+            }
+            try {
+              const result = await submitVotes(data.jobNo);
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 0, message: '投票提交成功', data: result }));
+            } catch (subErr) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: -1, message: subErr.message }));
+            }
+          });
+          return;
+        }
+
+        if (pathname === '/api/vote/results' && req.method === 'GET') {
+          getVoteLeaderboard().then(result => {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 0, data: result }));
+          }).catch(err => {
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 500, message: err.message }));
+          });
+          return;
+        }
+
+        if (pathname === '/api/vote/export' && req.method === 'GET') {
+          generateVoteExcelBuffer().then(buffer => {
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const filename = encodeURIComponent(`星火计划_员工视频投票结果统计表_${dateStr}.xlsx`);
+            res.writeHead(200, {
+              'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              'Content-Disposition': `attachment; filename="${filename}"; filename*=UTF-8''${filename}`,
+              'Content-Length': buffer.length
+            });
+            res.end(buffer);
+          }).catch(err => {
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 500, message: '导出失败: ' + err.message }));
+          });
+          return;
+        }
+
+        if (pathname === '/vote' || pathname === '/vote/') {
+          const votePath = path.resolve(process.cwd(), 'public', 'vote.html');
+          if (fs.existsSync(votePath)) {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            fs.createReadStream(votePath).pipe(res);
+            return;
+          }
         }
 
         next();

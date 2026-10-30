@@ -598,3 +598,212 @@ export function AdminDetailsReport({ candidates, onUpdateCandidate, onSelectCand
     </div>
   );
 }
+
+/**
+ * 报表三：【员工投票结果排行榜与导出】
+ */
+export function AdminVotesReport() {
+  const [data, setData] = useState({ totalVotersCount: 0, totalVotesCount: 0, candidates: [] });
+  const [loading, setLoading] = useState(false);
+  const [selectedCandVoters, setSelectedCandVoters] = useState(null);
+
+  const fetchResults = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/vote/results');
+      const json = await res.json();
+      if (json.code === 0 && json.data) {
+        setData(json.data);
+      }
+    } catch (e) {
+      console.warn('Fetch vote results error', e);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchResults();
+  }, []);
+
+  const handleExport = () => {
+    window.open('/api/vote/export', '_blank');
+  };
+
+  const topCandidate = data.candidates?.[0];
+
+  return (
+    <div className="report-view-container animate-fade-in">
+      {/* KPI Cards */}
+      <div className="report-kpi-grid">
+        <div className="kpi-card">
+          <span className="kpi-label">参选视频总数</span>
+          <span className="kpi-value">{data.candidates?.length || 0}</span>
+          <span className="kpi-sub">位视频创作者</span>
+        </div>
+        <div className="kpi-card highlight-pass">
+          <span className="kpi-label">参与投票员工</span>
+          <span className="kpi-value text-emerald">{data.totalVotersCount || 0}</span>
+          <span className="kpi-sub">位员工实名认证</span>
+        </div>
+        <div className="kpi-card highlight-s">
+          <span className="kpi-label">累计投出推荐票</span>
+          <span className="kpi-value text-gold">{data.totalVotesCount || 0}</span>
+          <span className="kpi-sub">张推荐票</span>
+        </div>
+        <div className="kpi-card highlight-a">
+          <span className="kpi-label">当前最高得票</span>
+          <span className="kpi-value text-green">{topCandidate?.voteCount || 0}</span>
+          <span className="kpi-sub">{topCandidate ? `${topCandidate.name} (${topCandidate.id})` : '暂无数据'}</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label">每人投票预算</span>
+          <span className="kpi-value">5</span>
+          <span className="kpi-sub">票/人（去重限制）</span>
+        </div>
+        <div className="kpi-card highlight-pending">
+          <span className="kpi-label">投票状态</span>
+          <span className="kpi-value text-amber" style={{ fontSize: '18px' }}>火热进行中</span>
+          <span className="kpi-sub">实时统计入库</span>
+        </div>
+      </div>
+
+      {/* Action Toolbar */}
+      <div className="report-action-toolbar">
+        <div className="toolbar-left" style={{ display: 'flex', gap: '10px' }}>
+          <button className="btn-excel-export" onClick={handleExport} style={{ background: 'linear-gradient(135deg,#D97706 0%,#B45309 100%)' }}>
+            📥 导出投票结果 Excel 报表
+          </button>
+          <button 
+            className="btn-refresh-top" 
+            onClick={() => window.open('/vote.html', '_blank')}
+            style={{ color: '#2b2119', background: '#EAE4D6', border: '1px solid #D6CEBE' }}
+          >
+            📱 打开手机端展播与投票页
+          </button>
+        </div>
+        <div className="toolbar-right">
+          <button className="btn-refresh" onClick={fetchResults} disabled={loading}>
+            {loading ? '刷新中...' : '⟳ 刷新实时榜单'}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Ranking Table */}
+      <div className="report-table-card">
+        <div className="report-table-scroll">
+          <table className="report-custom-table">
+            <thead>
+              <tr className="th-main-row">
+                <th style={{ width: '60px', textAlign: 'center' }}>排名</th>
+                <th style={{ width: '90px' }}>候选人编号</th>
+                <th style={{ width: '90px' }}>姓名</th>
+                <th style={{ width: '120px' }}>所属部门</th>
+                <th style={{ width: '110px' }}>现任岗位</th>
+                <th style={{ minWidth: '180px' }}>短视频提案标题</th>
+                <th style={{ width: '90px', textAlign: 'center' }}>得票数</th>
+                <th style={{ width: '140px' }}>得票占比</th>
+                <th style={{ width: '100px', textAlign: 'center' }}>投票员工</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(!data.candidates || data.candidates.length === 0) ? (
+                <tr>
+                  <td colSpan="9" className="empty-row">暂无视频作品或投票数据</td>
+                </tr>
+              ) : (
+                data.candidates.map((c) => {
+                  const isTop1 = c.rank === 1;
+                  const isTop2 = c.rank === 2;
+                  return (
+                    <tr key={c.id} className="report-data-row">
+                      <td style={{ textAlign: 'center' }}>
+                        <span 
+                          className="badge-id-tag" 
+                          style={{
+                            backgroundColor: isTop1 ? '#FEF3C7' : (isTop2 ? '#E0E7FF' : '#F3F4F6'),
+                            color: isTop1 ? '#B45309' : (isTop2 ? '#4338CA' : '#374151'),
+                            fontWeight: '800'
+                          }}
+                        >
+                          {c.rank}
+                        </span>
+                      </td>
+                      <td><span className="badge-id-tag">{c.id}</span></td>
+                      <td><strong className="cell-name">{c.name}</strong></td>
+                      <td>{c.department || '-'}</td>
+                      <td>{c.position || '-'}</td>
+                      <td className="cell-ellipsis" title={c.videoTitle || ''}>{c.videoTitle || '-'}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span style={{ fontSize: '15px', fontWeight: '800', color: isTop1 ? '#B45309' : (isTop2 ? '#059669' : '#17140F') }}>
+                          {c.voteCount} 票
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ flex: 1, height: '8px', background: '#EAE5D9', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ width: c.voteRatio, height: '100%', background: 'linear-gradient(90deg, #D97706, #F59E0B)', borderRadius: '4px' }}></div>
+                          </div>
+                          <span style={{ fontSize: '11.5px', color: '#776E60', minWidth: '38px', textAlign: 'right' }}>{c.voteRatio}</span>
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          className="btn-inspect-sm"
+                          onClick={() => setSelectedCandVoters(c)}
+                        >
+                          明细 ({c.voters?.length || 0}) ›
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Voters Detail Modal */}
+      {selectedCandVoters && (
+        <div className="modal-backdrop animate-fade-in" onClick={() => setSelectedCandVoters(null)}>
+          <div className="report-video-modal" style={{ maxWidth: '600px', background: '#FFFFFF' }} onClick={e => e.stopPropagation()}>
+            <div className="video-modal-header" style={{ background: '#17140F', color: '#FFF' }}>
+              <span className="video-modal-title">
+                👥 投给【{selectedCandVoters.name} ({selectedCandVoters.id})】的员工清单
+              </span>
+              <button className="modal-close-btn" onClick={() => setSelectedCandVoters(null)}>✕</button>
+            </div>
+            <div style={{ maxHeight: '60vh', overflowY: 'auto', padding: '16px' }}>
+              {(!selectedCandVoters.voters || selectedCandVoters.voters.length === 0) ? (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#999' }}>暂无员工投票</div>
+              ) : (
+                <table className="report-custom-table" style={{ width: '100%' }}>
+                  <thead>
+                    <tr className="th-main-row">
+                      <th style={{ width: '50px' }}>序号</th>
+                      <th>员工姓名</th>
+                      <th>员工工号</th>
+                      <th>投票时间</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedCandVoters.voters.map((v, i) => (
+                      <tr key={i} className="report-data-row">
+                        <td>{i + 1}</td>
+                        <td><strong className="cell-name">{v.voterName}</strong></td>
+                        <td><span className="badge-id-tag">{v.voterJobNo}</span></td>
+                        <td className="cell-time">{v.time ? (typeof v.time === 'object' ? v.time.toISOString() : v.time) : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

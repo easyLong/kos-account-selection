@@ -59,10 +59,16 @@ export default function LandingPage({ onStart, onOpenAdmin }) {
           >
             <span>立即报名</span>
           </button>
+          <button
+            id="btn-open-vote-showcase"
+            className="btn-vote-showcase-entrance"
+            onClick={() => window.open('/vote.html', '_self')}
+          >
+            <span>🎬 员工视频展播与投票专区 ›</span>
+          </button>
           <div className="landing-quick-hint">
             <span>⚡ 全程仅需 3 步 · 约 3 分钟即可完成</span>
           </div>
-
         </div>
       </div>
     </div>

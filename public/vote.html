@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>星火计划 · 员工视频投票</title>
+<style>
+  :root{
+    --brown:#4a2c10; --gold:#b8860b; --gold-l:#e8c766; --cream:#f6f3ee;
+    --ink:#2b2119; --sub:#7a6a55; --line:#e4dccc; --red:#a03c1c; --green:#2f7a4f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:#e9e4da;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);min-height:100vh}
+  #phone{max-width:430px;margin:0 auto;min-height:100vh;background:var(--cream);position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.15);display:flex;flex-direction:column}
+  .hide{display:none!important}
+
+  /* ---------- 通用组件 ---------- */
+  .kv{background:linear-gradient(135deg,#4a2c10 0%,#7a4d18 55%,#b8860b 100%);color:#fff}
+  .btn{display:block;width:100%;padding:14px;border:0;border-radius:12px;background:linear-gradient(135deg,#b8860b,#e8c766);color:#3b2410;font-size:16px;font-weight:700;cursor:pointer;transition:transform .15s,filter .15s}
+  .btn:active{transform:scale(.98);filter:brightness(.95)}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn.sec{background:linear-gradient(135deg,#2f5d50,#558a79);color:#fff}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+  /* ---------- 入口页 ---------- */
+  #entry{padding:0 0 34px;flex:1;display:flex;flex-direction:column}
+  #entry .hero{padding:54px 24px 36px;text-align:left}
+  #entry .tag{display:inline-block;border:1px solid rgba(255,255,255,.5);border-radius:99px;padding:3px 12px;font-size:12px;letter-spacing:2px}
+  #entry h1{margin:16px 0 8px;font-size:25px;line-height:1.35;font-weight:800}
+  #entry p.sub{margin:0;opacity:.9;font-size:13.5px;line-height:1.6}
+  
+  .rules{margin:18px 22px 14px;padding:16px;background:#fff;border-radius:14px;border:1px solid var(--line);font-size:13px;line-height:1.9}
+  .rules b{color:var(--gold)}
+
+  .login-card{margin:0 22px 20px;padding:18px;background:#fff;border-radius:14px;border:1px solid var(--line);box-shadow:0 4px 12px rgba(74,44,16,.04)}
+  .login-title{font-size:14px;font-weight:700;color:var(--brown);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+  .form-row{margin-bottom:12px}
+  .form-row label{display:block;font-size:12px;color:var(--sub);margin-bottom:5px;font-weight:600}
+  .form-row input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;outline:none;background:#faf8f5;color:var(--ink);transition:border-color .2s}
+  .form-row input:focus{border-color:var(--gold);background:#fff}
+  .login-status-badge{background:#fdf6e6;border:1px solid #ebd092;border-radius:8px;padding:10px 12px;font-size:12.5px;color:#855513;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .login-status-badge .sw-btn{color:var(--gold);cursor:pointer;font-weight:700;text-decoration:underline}
+
+  #entry .footnote{text-align:center;font-size:11.5px;color:var(--sub);margin-top:16px}
+
+  /* ---------- 顶栏 ---------- */
+  .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(246,243,238,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .topbar .title{font-size:14px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pill{font-size:12px;padding:4px 9px;border-radius:99px;background:#fff;border:1px solid var(--line);white-space:nowrap}
+  .pill.user{background:#fdf7ea;border-color:#e4cca1;color:#8b5b19;font-weight:600}
+  .pill.warn{border-color:#e0a13c;color:#a86a10;background:#fff7e8}
+  .pill.out{border-color:#d99a90;color:#a03c1c;background:#fdeceb}
+
+  /* ---------- 宫格 ---------- */
+  #gallery{padding-bottom:28px}
+  .gallery-actions{display:flex;gap:8px;padding:12px 12px 2px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
+  .card{position:relative;background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line);cursor:pointer;transition:transform .2s,box-shadow .2s}
+  .card:active{transform:scale(.98)}
+  .cover{aspect-ratio:3/4;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:rgba(255,255,255,.94);letter-spacing:1px;position:relative;background:#2a1f18}
+  .cover .play-badge{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;backdrop-filter:blur(4px);border:1.5px solid rgba(255,255,255,.6);margin-bottom:8px}
+  .card.seen .cover{opacity:.8}
+  .card .meta{padding:8px 10px;background:#fff}
+  .card .nm{font-size:13px;font-weight:700;color:#221a14}
+  .card .dp{font-size:11px;color:var(--sub);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card .vt{font-size:11.5px;color:var(--gold);font-weight:600;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .heart-badge{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(0,0,0,.2);color:#ff4d6a}
+  .rank-badge{position:absolute;top:8px;left:8px;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:800;background:rgba(0,0,0,.6);color:#fff}
+  .rank-badge.top{background:linear-gradient(135deg,#b8860b,#e8c766);color:#3b2410}
+  .votes-badge{position:absolute;bottom:8px;right:8px;font-size:11px;color:#fff;background:rgba(0,0,0,.6);padding:2px 7px;border-radius:8px}
+  .card.seen .seen-tag{position:absolute;top:8px;left:8px;font-size:10px;color:#fff;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:6px}
+
+  /* ---------- 沉浸流视频播放器 ---------- */
+  #player{position:fixed;inset:0;z-index:60;background:#000;color:#fff;display:flex;flex-direction:column}
+  #player .pbar{display:flex;align-items:center;gap:10px;padding:12px 14px;font-size:12.5px;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:10}
+  #player .pbar .x{margin-left:auto;opacity:.9;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:8px;cursor:pointer}
+  
+  #stage{flex:1;position:relative;overflow:hidden;background:#0a0a0a;display:flex;align-items:center;justify-content:center}
+  .slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000}
+  
+  /* 真实视频标签 */
+  #videoEl{width:100%;height:100%;object-fit:contain;background:#000}
+  
+  @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  @keyframes down{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+  .anim-up{animation:up .25s ease-out}
+  .anim-down{animation:down .25s ease-out}
+  
+  /* 核心需求 1：不自动播放，点了再播 */
+  .play-center-btn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:12;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:opacity .2s,transform .2s}
+  .play-center-btn .play-icon-circle{width:70px;height:70px;border-radius:50%;background:rgba(0,0,0,.65);border:2.5px solid var(--gold-l);display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;padding-left:4px;box-shadow:0 8px 30px rgba(0,0,0,.6);backdrop-filter:blur(4px)}
+  .play-center-btn .play-hint-text{margin-top:10px;font-size:13px;font-weight:700;color:#fff;background:rgba(0,0,0,.6);padding:4px 12px;border-radius:12px;letter-spacing:1px}
+  .play-center-btn:active{transform:translate(-50%,-50%) scale(.95)}
+  
+  .playpause{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:54px;opacity:.9;z-index:12;pointer-events:none}
+
+  .info{position:absolute;left:16px;bottom:36px;z-index:8;max-width:75%;text-shadow:0 2px 6px rgba(0,0,0,.85)}
+  .info .no{font-size:12px;opacity:.85;letter-spacing:1px}
+  .info .nmm{font-size:21px;font-weight:800;margin-top:4px}
+  .info .dpp{font-size:12px;opacity:.85;margin-top:3px}
+  .info .vtt{font-size:13.5px;color:var(--gold-l);font-weight:700;margin-top:5px;line-height:1.4}
+  .info .vii{font-size:11.5px;opacity:.75;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+  .ctrl{position:absolute;right:14px;bottom:42px;z-index:8;display:flex;flex-direction:column;align-items:center;gap:18px}
+  .ctrl .ctrl-item{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .ctrl .btn-circle{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;user-select:none;backdrop-filter:blur(4px);transition:transform .15s}
+  .ctrl .btn-circle:active{transform:scale(.9)}
+  .ctrl .btn-circle.liked{color:#ff4d6a;border-color:rgba(255,77,106,.5);background:rgba(255,77,106,.2)}
+  .ctrl .ctrl-label{font-size:11px;font-weight:700;color:rgba(255,255,255,.9)}
+
+  .prog{position:absolute;left:0;bottom:0;height:4px;background:rgba(255,255,255,.2);width:100%;z-index:9}
+  .prog i{display:block;height:100%;width:0;background:var(--gold-l)}
+
+  .arrows{position:absolute;right:14px;top:40%;transform:translateY(-50%);z-index:8;display:flex;flex-direction:column;gap:12px}
+  .arrows div{width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+  .arrows div[disabled]{opacity:.25;cursor:not-allowed}
+
+  .big-heart{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.2);font-size:120px;opacity:0;pointer-events:none;z-index:15;color:#ff4d6a}
+  @keyframes burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
+  .burst{animation:burst .7s ease-out}
+
+  /* ---------- 引导浮层 ---------- */
+  #guide{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center}
+  #guide .box{margin:0 20px 48px;padding:22px 20px;border-radius:18px;background:#fff;text-align:center;font-size:14.5px;line-height:1.9;color:var(--ink);box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  #guide .box b{color:var(--gold)}
+
+  /* ---------- Toast / Modal ---------- */
+  #toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);z-index:90;background:rgba(23,20,15,.92);color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;display:flex;gap:12px;align-items:center;max-width:90%;box-shadow:0 6px 20px rgba(0,0,0,.3);border:1px solid rgba(197,154,63,.4)}
+  #toast button{border:0;background:var(--gold);color:#3b2410;font-weight:700;padding:6px 12px;border-radius:8px;font-size:12px;white-space:nowrap;cursor:pointer}
+  
+  .mask{position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:0 24px}
+  .modal{background:#fff;border-radius:18px;padding:24px 20px;width:100%;max-width:380px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+  .modal h3{margin:0 0 10px;font-size:18px;color:var(--ink)}
+  .modal p{margin:0 0 20px;font-size:13.5px;color:var(--sub);line-height:1.8}
+  .modal .row{display:flex;gap:10px}
+
+  /* ---------- 排行榜模态框 ---------- */
+  .leaderboard-modal{background:#fff;border-radius:18px;width:100%;max-width:400px;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 50px rgba(0,0,0,.4)}
+  .lb-header{padding:16px;background:#24190e;color:#fff;display:flex;justify-content:space-between;align-items:center}
+  .lb-header h4{margin:0;font-size:16px;font-weight:700;color:var(--gold-l)}
+  .lb-body{flex:1;overflow-y:auto;padding:12px}
+  .lb-item{display:flex;align-items:center;padding:10px;border-bottom:1px solid var(--line);gap:10px}
+  .lb-rank{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:#eee;color:#666}
+  .lb-rank.r1{background:#ffc107;color:#fff}
+  .lb-rank.r2{background:#adb5bd;color:#fff}
+  .lb-rank.r3{background:#cd7f32;color:#fff}
+  .lb-info{flex:1;min-width:0}
+  .lb-name{font-size:13px;font-weight:700}
+  .lb-dept{font-size:11px;color:var(--sub)}
+  .lb-votes{font-size:15px;font-weight:800;color:var(--gold)}
+  .lb-footer{padding:12px 16px;background:#f8f6f1;border-top:1px solid var(--line);display:flex;gap:8px}
+
+  /* ---------- 结束页 ---------- */
+  #end{padding:0 0 34px;flex:1}
+  #end .hero{padding:60px 24px 34px;text-align:center}
+  #end .big{font-size:38px;font-weight:800;letter-spacing:2px}
+  #end .tip{margin:18px 24px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:14px;font-size:13.5px;line-height:1.9;color:var(--sub)}
+  .stat{margin:18px 24px;display:flex;gap:10px;text-align:center}
+  .stat div{flex:1;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 6px}
+  .stat .v{font-size:24px;font-weight:800;color:var(--gold)}
+  .stat .k{font-size:11.5px;color:var(--sub);margin-top:4px}
+</style>
+</head>
+<body>
+<div id="phone">
+
+  <!-- ============ 1. 入口页 (姓名+工号登录去重) ============ -->
+  <section id="entry">
+    <div class="hero kv">
+      <span class="tag">汇添富 · 星火计划</span>
+      <h1>财经自媒体短视频<br>创作者选拔投票</h1>
+      <p class="sub">员工人气评选 · 选出你心目中最具潜力的自媒体之星</p>
+    </div>
+    
+    <div class="rules">
+      共 <b id="eTotal">0</b> 个参选作品，每位员工最多投 <b id="eBudget">5</b> 票<br>
+      · 上下滑动浏览全部作品，<b>点击视频画面即可开始播放</b><br>
+      · 点击 <b>♡</b> 投出推荐票，再次点击可取消重投<br>
+      · 投票提交后不可撤回，活动截止后公开得票排行
+    </div>
+
+    <!-- 登录去重卡片 (需求2：姓名+工号 登录验证) -->
+    <div class="login-card">
+      <div class="login-title">
+        <span>👤 员工投票人认证</span>
+      </div>
+
+      <div id="loginFormArea">
+        <div class="form-row">
+          <label>员工姓名：</label>
+          <input type="text" id="loginName" placeholder="例如：张三" maxlength="20">
+        </div>
+        <div class="form-row">
+          <label>员工工号：</label>
+          <input type="text" id="loginJobNo" placeholder="例如：10882" maxlength="32">
+        </div>
+      </div>
+
+      <div id="loggedInArea" class="hide">
+        <div class="login-status-badge">
+          <span>已就绪：<strong id="loggedInfoTxt">--</strong></span>
+          <span class="sw-btn" id="btnSwitchAccount">切换工号</span>
+        </div>
+      </div>
+
+      <button class="btn" id="btnStart" style="margin-top:8px">进入作品展示集</button>
+      <div style="font-size:11px;color:var(--sub);text-align:center;margin-top:8px">一人一号实名认证 · 系统自动去重</div>
+    </div>
+
+    <div class="footnote">汇添富基金 · 自媒体创作者选拔项目组</div>
+  </section>
+
+  <!-- ============ 2. 作品列表宫格页 ============ -->
+  <section id="gallery" class="hide">
+    <div class="topbar">
+      <span class="title" id="gTitle">全部作品 (0)</span>
+      <span class="pill user" id="pillUser">工号: --</span>
+      <span class="pill" id="pillBudget">剩余 ♡ 5 / 5</span>
+      <span class="pill" id="pillSeen">已看 0 / 0</span>
+    </div>
+
+    <div class="gallery-actions">
+      <button class="btn" id="btnGoPlayer" style="padding:10px;font-size:13.5px">▶ 进入上下滑播放流</button>
+      <button class="btn ghost" id="btnOpenLeaderboard" style="padding:10px;font-size:13.5px;width:auto">🏆 实时榜单</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div style="padding:0 20px;margin-top:8px">
+      <button class="btn" id="btnSubmit">确认并提交我的票数</button>
+    </div>
+    <div style="text-align:center;font-size:11.5px;color:var(--sub);margin:14px 0 10px">每位员工限投 5 票 · 提交后生效并锁定</div>
+  </section>
+
+  <!-- ============ 3. 沉浸流视频播放器 (核心需求1：不及时播放，点了再播) ============ -->
+  <div id="player" class="hide">
+    <div class="pbar">
+      <span id="pIdx">01 / 01</span>
+      <span id="pBudget">♡ 5</span>
+      <span class="x" id="pClose">✕ 返回作品列表</span>
+    </div>
+
+    <div id="stage">
+      <div class="slide" id="slide">
+        <!-- 核心视频播放标签 -->
+        <video 
+          id="videoEl" 
+          playsinline 
+          webkit-playsinline 
+          x5-video-player-type="h5-page"
+          preload="metadata"
+        ></video>
+
+        <!-- 需求1：不需要及时播放，点了再播！居中醒目播放按钮 -->
+        <div class="play-center-btn" id="playCenterBtn">
+          <div class="play-icon-circle">▶</div>
+          <span class="play-hint-text">点击播放视频</span>
+        </div>
+
+        <div class="playpause hide" id="playpause">⏸</div>
+      </div>
+
+      <!-- 左下角信息 -->
+      <div class="info">
+        <div class="no" id="pNo">编号 01</div>
+        <div class="nmm" id="pName">—</div>
+        <div class="dpp" id="pDept">—</div>
+        <div class="vtt" id="pTitle">—</div>
+        <div class="vii" id="pIntro"></div>
+      </div>
+
+      <!-- 右侧悬浮操作栏 -->
+      <div class="ctrl">
+        <div class="ctrl-item">
+          <div class="btn-circle" id="btnSound">🔊</div>
+          <span class="ctrl-label">声音</span>
+        </div>
+        <div class="ctrl-item">
+          <div class="btn-circle" id="btnLike">♡</div>
+          <span class="ctrl-label" id="pLikeText">投票</span>
+        </div>
+      </div>
+
+      <!-- 上下滑动切换箭头 -->
+      <div class="arrows">
+        <div id="btnPrev">▲</div>
+        <div id="btnNext">▼</div>
+      </div>
+
+      <!-- 双击/点赞大爱心炸裂动画 -->
+      <div class="big-heart" id="bigHeart">♥</div>
+      <!-- 底部播放进度条 -->
+      <div class="prog"><i id="progBar"></i></div>
+    </div>
+  </div>
+
+  <!-- ============ 4. 投票成功结束页 ============ -->
+  <section id="end" class="hide">
+    <div class="hero kv">
+      <div class="big">感谢参与！</div>
+      <p class="sub" style="margin-top:10px">您的每一票，都在为优秀的星火创作者赋能</p>
+    </div>
+    <div class="stat">
+      <div><div class="v" id="sVote">0</div><div class="k">投出票数</div></div>
+      <div><div class="v" id="sSeen">0</div><div class="k">浏览作品</div></div>
+      <div><div class="v" id="sTotal">0</div><div class="k">参选总数</div></div>
+    </div>
+    <div class="tip">
+      您的投票已安全提交并存入数据库。<br>
+      评审工作完成后，最终入围名单将由星火计划选拔项目组正式公布。
+    </div>
+    <div style="padding:0 24px;display:flex;flex-direction:column;gap:10px">
+      <button class="btn" id="btnEndViewLeaderboard">🏆 查看当前投票排行榜</button>
+      <button class="btn ghost" id="btnBackGallery">继续浏览作品展示（只读）</button>
+    </div>
+  </section>
+
+  <!-- ============ 5. 排行榜与导出模态框 ============ -->
+  <div id="leaderboardMask" class="mask hide">
+    <div class="leaderboard-modal">
+      <div class="lb-header">
+        <h4>🏆 实时投票排行榜</h4>
+        <button id="lbClose" style="background:transparent;border:0;color:#fff;font-size:18px;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:10px 14px;background:#fbf8f2;border-bottom:1px solid var(--line);font-size:12px;display:flex;justify-content:space-between">
+        <span>参与投票员工：<b id="lbTotalVoters" style="color:var(--gold)">0</b> 人</span>
+        <span>累计推荐票数：<b id="lbTotalVotes" style="color:var(--gold)">0</b> 票</span>
+      </div>
+      <div class="lb-body" id="lbList">
+        <!-- Ranked candidate rows -->
+      </div>
+      <div class="lb-footer">
+        <button class="btn ghost" id="btnRefreshLb" style="flex:1;padding:10px;font-size:13px">⟳ 刷新榜单</button>
+        <button class="btn" id="btnExportExcel" style="flex:1.8;padding:10px;font-size:13px">📥 导出 Excel 表格</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 6. 首次进入引导层 ============ -->
+  <div id="guide" class="hide">
+    <div class="box">
+      <b>上下滑动</b> 可切换看下一个作品<br>
+      <b>点击视频画面</b> 随时开始/暂停播放<br>
+      点 <b>♡</b> 或 <b>双击屏幕</b> 投出推荐票<br>
+      <span style="color:var(--sub);font-size:12px;margin-top:6px;display:block">（每人最多投 5 票，可取消再投）</span>
+      <button class="btn" style="margin-top:14px;padding:9px;font-size:13.5px">我知道了，开始浏览</button>
+    </div>
+  </div>
+
+  <!-- ============ 7. Toast & 确认提交模态框 ============ -->
+  <div id="toast" class="hide"><span id="toastMsg"></span><button id="toastAct"></button></div>
+  <div id="mask" class="mask hide">
+    <div class="modal">
+      <h3 id="mTitle">确认提交投票？</h3>
+      <p id="mBody"></p>
+      <div class="row">
+        <button class="btn ghost" id="mCancel" style="flex:1">再看看</button>
+        <button class="btn" id="mOk" style="flex:1">确认提交</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===== 全局状态 ===== */
+var CFG = { budget: 5, total: 0 };
+var WORKS = [];
+var voter = null; // { name: '', jobNo: '', submitted: false }
+var likedIds = []; // 候选人 ID 列表 (最多 5 个)
+var seenIds = [];
+var cur = 0; // 当前沉浸流卡片索引
+var isPlaying = false;
+var videoEl = document.getElementById('videoEl');
+
+var PALETTES = [
+  ['#4a2c10','#b8860b'],['#7a4d18','#e8c766'],['#2f5d50','#8fd3b6'],
+  ['#3c4a6b','#9fb6e8'],['#6b3550','#e39ec0'],['#5a4a2a','#d9c08a']
+];
+
+/* ===== DOM 便捷选择器 ===== */
+function $(id){ return document.getElementById(id); }
+function show(el){ if(el) el.classList.remove('hide'); }
+function hide_(el){ if(el) el.classList.add('hide'); }
+function go(id){
+  ['entry','gallery','end'].forEach(function(s){ hide_($(s)); });
+  if(id) show($(id));
+}
+function pad(n){ return n < 10 ? '0' + n : '' + n; }
+
+/* ===== Toast 提示 ===== */
+var toastTimer = null;
+function toast(msg, btnText, btnAction){
+  $('toastMsg').textContent = msg;
+  if(btnText){
+    show($('toastAct'));
+    $('toastAct').textContent = btnText;
+    $('toastAct').onclick = function(){
+      hide_($('toast'));
+      if(btnAction) btnAction();
+    };
+  } else {
+    hide_($('toast'));
+  }
+  show($('toast'));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ hide_($('toast')); }, 3200);
+}
+
+/* ===== 初始化加载投票人会话 ===== */
+function initVoterSession(){
+  try {
+    var raw = localStorage.getItem('xh_voter_session');
+    if(raw){
+      voter = JSON.parse(raw);
+      if(voter && voter.name && voter.jobNo){
+        $('loginName').value = voter.name;
+        $('loginJobNo').value = voter.jobNo;
+        $('loggedInfoTxt').textContent = voter.name + ' (' + voter.jobNo + ')';
+        hide_($('loginFormArea'));
+        show($('loggedInArea'));
+        $('btnStart').textContent = '以当前身份进入';
+      }
+    }
+  } catch(e){}
+}
+
+$('btnSwitchAccount').onclick = function(){
+  voter = null;
+  localStorage.removeItem('xh_voter_session');
+  hide_($('loggedInArea'));
+  show($('loginFormArea'));
+  $('btnStart').textContent = '进入作品展示集';
+};
+
+/* ===== 核心：获取后台真实视频候选人 ===== */
+async function loadWorks(){
+  try {
+    var res = await fetch('/api/vote/works');
+    var json = await res.json();
+    if(json.code === 0 && Array.isArray(json.data)){
+      WORKS = json.data;
+    }
+  } catch(e){
+    console.warn('Load works error:', e);
+  }
+
+  CFG.total = WORKS.length;
+  $('eTotal').textContent = CFG.total;
+  $('eBudget').textContent = CFG.budget;
+  $('sTotal').textContent = CFG.total;
+  if($('gTitle')) $('gTitle').textContent = '全部参选作品 (' + CFG.total + ')';
+}
+
+/* ===== 登录与认证 ===== */
+async function doLogin(){
+  var name = $('loginName').value.trim();
+  var jobNo = $('loginJobNo').value.trim();
+
+  if(!name || !jobNo){
+    toast('请完整输入您的姓名与工号进行验证');
+    return;
+  }
+
+  $('btnStart').disabled = true;
+  $('btnStart').textContent = '正在验证身份...';
+
+  try {
+    var res = await fetch('/api/vote/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, jobNo: jobNo })
+    });
+    var json = await res.json();
+    if(json.code === 0 && json.data){
+      voter = json.data.voter;
+      likedIds = json.data.likedIds || [];
+      localStorage.setItem('xh_voter_session', JSON.stringify(voter));
+
+      updatePills();
+
+      if(voter.submitted){
+        // 已提交过直接去结束页或只读作品
+        go('gallery');
+        renderGallery();
+        toast('您之前已提交过投票，当前为只读浏览模式');
+      } else {
+        go('gallery');
+        renderGallery();
+      }
+    } else {
+      toast(json.message || '登录验证失败');
+    }
+  } catch(e){
+    toast('网络连接异常: ' + e.message);
+  }
+
+  $('btnStart').disabled = false;
+  $('btnStart').textContent = '进入作品展示集';
+}
+
+$('btnStart').onclick = doLogin;
+
+/* ===== 票数 Pill 刷新 ===== */
+function updatePills(){
+  var left = Math.max(0, CFG.budget - likedIds.length);
+  var el = $('pillBudget');
+  if(el){
+    el.textContent = '剩余 ♡ ' + left + ' / ' + CFG.budget;
+    el.className = 'pill' + (left === 0 ? ' out' : (left === 1 ? ' warn' : ''));
+  }
+  if($('pillSeen')) $('pillSeen').textContent = '已看 ' + seenIds.length + ' / ' + CFG.total;
+  if($('pBudget')) $('pBudget').textContent = '♡ 剩余 ' + left;
+  if($('pillUser') && voter) $('pillUser').textContent = voter.name + ' (' + voter.jobNo + ')';
+}
+
+/* ===== 渲染作品宫格 ===== */
+function renderGallery(){
+  var g = $('grid');
+  g.innerHTML = '';
+
+  if(WORKS.length === 0){
+    g.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 10px;color:var(--sub);font-size:13px">后台暂未找到带有视频链接的参选人，请先在报名系统上传短视频</div>';
+    return;
+  }
+
+  WORKS.forEach(function(w, idx){
+    var isLiked = likedIds.indexOf(w.id) > -1;
+    var isSeen = seenIds.indexOf(w.id) > -1;
+    var hue = PALETTES[idx % PALETTES.length];
+
+    var card = document.createElement('div');
+    card.className = 'card' + (isSeen ? ' seen' : '');
+    card.innerHTML = 
+      '<div class="cover" style="background:linear-gradient(135deg,' + hue[0] + ',' + hue[1] + ')">' +
+        '<div class="play-badge">▶</div>' +
+        '<span style="font-size:16px;opacity:.9">' + (w.id || pad(idx + 1)) + '</span>' +
+      '</div>' +
+      (isLiked ? '<div class="heart-badge">♥</div>' : '') +
+      (isSeen && !isLiked ? '<div class="seen-tag">已看</div>' : '') +
+      '<div class="meta">' +
+        '<div class="nm">' + (w.name || '参选人') + '</div>' +
+        '<div class="dp">' + (w.department || '') + ' · ' + (w.position || '') + '</div>' +
+        '<div class="vt">' + (w.videoTitle || '自媒体短视频') + '</div>' +
+      '</div>';
+
+    card.onclick = function(){
+      openPlayer(idx);
+    };
+
+    g.appendChild(card);
+  });
+
+  updatePills();
+  $('btnSubmit').textContent = voter && voter.submitted ? '已确认提交 · 只读' : '确认并提交我的票数';
+  $('btnSubmit').disabled = !!(voter && voter.submitted);
+}
+
+/* ===== 核心：沉浸流视频播放器 (点了再播) ===== */
+function openPlayer(idx){
+  if(WORKS.length === 0) return;
+  cur = idx;
+  go(null);
+  show($('player'));
+  markSeen(WORKS[cur].id);
+  renderPlayerCard(cur, 0);
+
+  // 检查是否需要引导
+  if(!localStorage.getItem('xh_swipe_guide_shown')){
+    show($('guide'));
+  }
+}
+
+function renderPlayerCard(idx, animDir){
+  var w = WORKS[idx];
+  if(!w) return;
+
+  var s = $('slide');
+  s.className = 'slide' + (animDir === 1 ? ' anim-up' : (animDir === -1 ? ' anim-down' : ''));
+
+  // 1. 停止当前视频播放并重置 (需求1：不需要及时播放，点了再播)
+  videoEl.pause();
+  videoEl.currentTime = 0;
+  isPlaying = false;
+  
+  if(w.videoUrl){
+    videoEl.src = w.videoUrl;
+    videoEl.load();
+  }
+
+  // 2. 显示居中大播放按钮，隐藏暂停提示
+  show($('playCenterBtn'));
+  hide_($('playpause'));
+  $('progBar').style.width = '0%';
+
+  // 3. 填充信息
+  var isLiked = likedIds.indexOf(w.id) > -1;
+  $('pNo').textContent = '编号 ' + (w.id || pad(idx + 1)) + (isLiked ? ' · 已投 ♥' : '');
+  $('pName').textContent = w.name;
+  $('pDept').textContent = (w.department || '') + ' · ' + (w.position || '');
+  $('pTitle').textContent = w.videoTitle || '自媒体短视频创作提案';
+  $('pIntro').textContent = w.videoIntro || w.accountPersona || '';
+
+  $('pIdx').textContent = pad(idx + 1) + ' / ' + pad(CFG.total);
+  
+  // 4. 点赞状态
+  var btnLike = $('btnLike');
+  if(isLiked){
+    btnLike.textContent = '♥';
+    btnLike.className = 'btn-circle liked';
+    $('pLikeText').textContent = '已推荐';
+  } else {
+    btnLike.textContent = '♡';
+    btnLike.className = 'btn-circle';
+    $('pLikeText').textContent = '投票';
+  }
+
+  $('btnPrev').setAttribute('disabled', idx === 0 ? '1' : '');
+  $('btnNext').setAttribute('disabled', idx === CFG.total - 1 ? '1' : '');
+
+  updatePills();
+}
+
+function markSeen(candId){
+  if(seenIds.indexOf(candId) < 0){
+    seenIds.push(candId);
+    updatePills();
+  }
+}
+
+/* 播放 / 暂停切换 (点了再播) */
+function toggleVideoPlay(){
+  if(!videoEl.src) return;
+
+  if(videoEl.paused){
+    videoEl.play().then(function(){
+      isPlaying = true;
+      hide_($('playCenterBtn'));
+      hide_($('playpause'));
+    }).catch(function(err){
+      console.warn('Video play error:', err);
+      toast('视频播放失败，请点击重试');
+    });
+  } else {
+    videoEl.pause();
+    isPlaying = false;
+    show($('playCenterBtn'));
+  }
+}
+
+$('playCenterBtn').onclick = function(e){
+  e.stopPropagation();
+  toggleVideoPlay();
+};
+
+/* 视频原生事件绑定 */
+videoEl.addEventListener('timeupdate', function(){
+  if(videoEl.duration){
+    var pct = (videoEl.currentTime / videoEl.duration) * 100;
+    $('progBar').style.width = pct + '%';
+  }
+});
+
+videoEl.addEventListener('ended', function(){
+  isPlaying = false;
+  show($('playCenterBtn'));
+  $('progBar').style.width = '100%';
+});
+
+videoEl.addEventListener('error', function(){
+  console.warn('Video load error');
+  $('playCenterBtn').querySelector('.play-hint-text').textContent = '视频加载中或地址不可用';
+});
+
+/* 上下滑动切换 */
+function switchCard(dir){
+  if(dir === 1 && cur >= CFG.total - 1){
+    toast('已经是最后一个作品了');
+    return;
+  }
+  if(dir === -1 && cur <= 0){
+    toast('已经是第一个作品了');
+    return;
+  }
+
+  cur += dir;
+  markSeen(WORKS[cur].id);
+  renderPlayerCard(cur, dir);
+}
+
+function closePlayer(){
+  videoEl.pause();
+  hide_($('player'));
+  go('gallery');
+  renderGallery();
+}
+
+$('pClose').onclick = closePlayer;
+$('btnPrev').onclick = function(e){ e.stopPropagation(); switchCard(-1); };
+$('btnNext').onclick = function(e){ e.stopPropagation(); switchCard(1); };
+
+/* 静音切换 */
+var isMuted = false;
+$('btnSound').onclick = function(e){
+  e.stopPropagation();
+  isMuted = !isMuted;
+  videoEl.muted = isMuted;
+  $('btnSound').textContent = isMuted ? '🔇' : '🔊';
+};
+
+/* ===== 点赞功能 (需求3：最多投5票，后端去重) ===== */
+async function doToggleVote(fromDoubleTap){
+  if(!voter || !voter.jobNo){
+    toast('您尚未登录，请先输入工号');
+    return;
+  }
+  if(voter.submitted){
+    toast('您已确认提交投票，无法再次修改');
+    return;
+  }
+
+  var currentCand = WORKS[cur];
+  if(!currentCand) return;
+
+  var isCurrentlyLiked = likedIds.indexOf(currentCand.id) > -1;
+
+  // 如果当前未点赞且已经满了 5 票，本地前置拦截
+  if(!isCurrentlyLiked && likedIds.length >= CFG.budget){
+    toast('您的 5 票推荐已满，可取消其他候选人后再投给 TA！');
+    return;
+  }
+
+  try {
+    var res = await fetch('/api/vote/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jobNo: voter.jobNo,
+        candidateId: currentCand.id
+      })
+    });
+    var json = await res.json();
+    if(json.code === 0 && json.data){
+      likedIds = json.data.likedIds || [];
+      renderPlayerCard(cur, 0);
+      updatePills();
+
+      if(json.data.liked){
+        // 炸裂大红心动画
+        var b = $('bigHeart');
+        b.className = 'big-heart';
+        void b.offsetWidth;
+        b.className = 'big-heart burst';
+        toast('已成功为 ' + currentCand.name + ' 投出推荐票 ♥');
+      } else {
+        toast('已取消对 ' + currentCand.name + ' 的推荐票');
+      }
+    } else {
+      toast(json.message || '操作失败');
+    }
+  } catch(e){
+    toast('网络连接失败: ' + e.message);
+  }
+}
+
+$('btnLike').onclick = function(e){
+  e.stopPropagation();
+  doToggleVote(false);
+};
+
+/* ===== 手势控制：上下滑动切换 + 单击播放/暂停 + 双击点赞 ===== */
+var sx = 0, sy = 0, st = 0, moved = 0, lastTap = 0, tapTimer = null;
+var stage = $('stage');
+
+stage.addEventListener('touchstart', function(e){
+  sx = e.touches[0].clientX;
+  sy = e.touches[0].clientY;
+  st = Date.now();
+  moved = 0;
+}, { passive: true });
+
+stage.addEventListener('touchmove', function(e){
+  var dx = e.touches[0].clientX - sx;
+  var dy = e.touches[0].clientY - sy;
+  if(Math.abs(dy) > 8) moved = 1;
+}, { passive: true });
+
+stage.addEventListener('touchend', function(e){
+  var dy = e.changedTouches[0].clientY - sy;
+  var dx = e.changedTouches[0].clientX - sx;
+  var dt = Date.now() - st;
+
+  // 垂直滑动翻页检测 (> 50px)
+  if(Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)){
+    switchCard(dy < 0 ? 1 : -1);
+    return;
+  }
+
+  // 点击检测
+  if(!moved && dt < 300){
+    if(Date.now() - lastTap < 280){
+      // 双击：点赞
+      clearTimeout(tapTimer);
+      lastTap = 0;
+      doToggleVote(true);
+    } else {
+      // 单击：播放或暂停 (核心需求1)
+      lastTap = Date.now();
+      tapTimer = setTimeout(function(){
+        toggleVideoPlay();
+      }, 260);
+    }
+  }
+}, { passive: true });
+
+// 兼容 PC 滚轮
+stage.addEventListener('wheel', function(e){
+  if(Math.abs(e.deltaY) < 10) return;
+  clearTimeout(window._wheelT);
+  window._wheelT = setTimeout(function(){
+    switchCard(e.deltaY > 0 ? 1 : -1);
+  }, 90);
+});
+
+/* 引导层关闭 */
+$('guide').onclick = function(){
+  hide_($('guide'));
+  localStorage.setItem('xh_swipe_guide_shown', '1');
+};
+
+/* ===== 提交投票 ===== */
+function askSubmit(){
+  if(!voter || !voter.jobNo){
+    toast('请先输入姓名和工号');
+    return;
+  }
+  if(voter.submitted){
+    toast('您已完成投票提交');
+    return;
+  }
+
+  $('mTitle').textContent = '确认提交您的投票？';
+  $('mBody').innerHTML = likedIds.length > 0
+    ? '您已投出 <b>' + likedIds.length + '</b> 张推荐票（上限 5 票）。<br>提交后不可修改票数，确认提交吗？'
+    : '您当前未勾选任何推荐票，确认以弃权提交吗？';
+
+  show($('mask'));
+}
+
+$('btnSubmit').onclick = askSubmit;
+$('mCancel').onclick = function(){ hide_($('mask')); };
+
+$('mOk').onclick = async function(){
+  hide_($('mask'));
+  try {
+    var res = await fetch('/api/vote/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobNo: voter.jobNo })
+    });
+    var json = await res.json();
+    if(json.code === 0){
+      voter.submitted = true;
+      localStorage.setItem('xh_voter_session', JSON.stringify(voter));
+
+      $('sVote').textContent = likedIds.length;
+      $('sSeen').textContent = seenIds.length;
+
+      videoEl.pause();
+      hide_($('player'));
+      go('end');
+    } else {
+      toast(json.message || '提交失败');
+    }
+  } catch(e){
+    toast('提交请求异常: ' + e.message);
+  }
+};
+
+$('btnBackGallery').onclick = function(){
+  go('gallery');
+  renderGallery();
+};
+
+$('btnGoPlayer').onclick = function(){
+  openPlayer(0);
+};
+
+/* ===== 排行榜与 Excel 导出 (需求3：最后的点赞结果，有表可导出结果) ===== */
+async function loadLeaderboard(){
+  try {
+    var res = await fetch('/api/vote/results');
+    var json = await res.json();
+    if(json.code === 0 && json.data){
+      var d = json.data;
+      $('lbTotalVoters').textContent = d.totalVotersCount;
+      $('lbTotalVotes').textContent = d.totalVotesCount;
+
+      var html = '';
+      d.candidates.forEach(function(c, i){
+        var rankCls = i === 0 ? 'r1' : (i === 1 ? 'r2' : (i === 2 ? 'r3' : ''));
+        html += 
+          '<div class="lb-item">' +
+            '<div class="lb-rank ' + rankCls + '">' + (i + 1) + '</div>' +
+            '<div class="lb-info">' +
+              '<div class="lb-name">' + c.name + ' <span style="font-weight:normal;color:var(--sub);font-size:11px">(' + c.id + ')</span></div>' +
+              '<div class="lb-dept">' + (c.department || '') + ' · ' + (c.videoTitle || '短视频提案') + '</div>' +
+            '</div>' +
+            '<div class="lb-votes">' + c.voteCount + ' <span style="font-size:11px;font-weight:normal">票</span></div>' +
+          '</div>';
+      });
+
+      if(d.candidates.length === 0){
+        html = '<div style="text-align:center;padding:30px;color:var(--sub);font-size:12.5px">暂无投票数据</div>';
+      }
+
+      $('lbList').innerHTML = html;
+      show($('leaderboardMask'));
+    } else {
+      toast('获取排行榜失败');
+    }
+  } catch(e){
+    toast('加载排行榜异常: ' + e.message);
+  }
+}
+
+$('btnOpenLeaderboard').onclick = loadLeaderboard;
+$('btnEndViewLeaderboard').onclick = loadLeaderboard;
+$('btnRefreshLb').onclick = loadLeaderboard;
+$('lbClose').onclick = function(){ hide_($('leaderboardMask')); };
+
+// 导出 Excel 表格
+$('btnExportExcel').onclick = function(){
+  window.open('/api/vote/export', '_blank');
+};
+
+/* ===== 页面初次加载 ===== */
+window.addEventListener('DOMContentLoaded', async function(){
+  initVoterSession();
+  await loadWorks();
+});
+</script>
+</body>
+</html>
