@@ -1036,22 +1036,27 @@ async function saveApplication(appData) {
   }
 
   // Always keep local JSON in sync as solid local backup
-  const list = [];
   try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-    list.push(...JSON.parse(raw));
-  } catch (e) {}
+    const list = [];
+    try {
+      const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+      list.push(...JSON.parse(raw));
+    } catch (e) {}
 
-  const existingIndex = list.findIndex(item => item.id === appData.id);
-  if (existingIndex >= 0) {
-    list[existingIndex] = { ...list[existingIndex], ...appData, updatedAt: new Date().toISOString() };
-  } else {
-    list.unshift(appData);
+    const existingIndex = list.findIndex(item => item.id === appData.id);
+    if (existingIndex >= 0) {
+      list[existingIndex] = { ...list[existingIndex], ...appData, updatedAt: new Date().toISOString() };
+    } else {
+      list.unshift(appData);
+    }
+    fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), 'utf-8');
+  } catch (fsErr) {
+    console.warn('[Storage] Local JSON backup write failed:', fsErr.message);
   }
-  fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), 'utf-8');
+
   appsCache = null;
   invalidateVoteCache();
-  return list[0] || appData;
+  return appData;
 }
 
 function getLocalIpAddress() {
