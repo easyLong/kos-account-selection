@@ -362,10 +362,76 @@ async function generateReportExcelBuffer(candidates) {
 
   const wsOverview = wb.getWorksheet('报名总览');
   const wsDetails = wb.getWorksheet('测评与作品明细');
+  const wsInst = wb.getWorksheet('导出说明');
 
   if (!wsOverview || !wsDetails) {
     throw new Error('Template sheets missing: 报名总览 / 测评与作品明细');
   }
+
+  // 1. 打开工作簿第一视角升级：直接激活“报名总览”，赋予高端品牌色标签
+  wb.views = [
+    { firstSheet: 0, activeTab: 1, visibility: 'visible' }
+  ];
+
+  wsOverview.properties.tabColor = { argb: 'FF4A2C10' }; // 汇添富品牌经典暖棕
+  wsDetails.properties.tabColor = { argb: 'FFB45309' };  // 琥珀金
+  if (wsInst) wsInst.properties.tabColor = { argb: 'FF94A3B8' }; // 沉稳板岩灰
+
+  // 2. 核心视图体验升级：冻结前3列表头，默认滚到首位，开启清晰网格线，自适应缩放
+  wsOverview.views = [
+    { state: 'frozen', xSplit: 0, ySplit: 3, topLeftCell: 'A4', activeCell: 'A4', showGridLines: true }
+  ];
+  wsDetails.views = [
+    { state: 'frozen', xSplit: 4, ySplit: 3, topLeftCell: 'E4', activeCell: 'A4', showGridLines: true, zoomScale: 90 }
+  ];
+
+  // 3. 黄金列宽排版：彻底解决文字截断与 ### 溢出，留有舒适视觉呼吸感
+  const overviewWidths = [
+    8,  // A: 序号
+    14, // B: 数据日期
+    14, // C: 评审编号
+    20, // D: 提交时间
+    20, // E: 问卷完成时间
+    13, // F: 审核状态
+    13, // G: 姓名
+    9,  // H: 性别
+    22, // I: 所属部门/团队
+    20, // J: 现任岗位/职级
+    38, // K: 一句话介绍
+    28, // L: 本人账号风格
+    14, // M: 总分(145)
+    18, // N: 系统定级
+    36  // O: 评审意见
+  ];
+  overviewWidths.forEach((w, i) => {
+    wsOverview.getColumn(i + 1).width = w;
+  });
+
+  const detailsWidths = [
+    8,  // A: 序号
+    14, // B: 数据日期
+    14, // C: 评审编号
+    13, // D: 姓名
+    13, 13, 13, 13, 13, 13, // E-J: 模块一至六
+    15, // K: 量表总分(125)
+    42, // L: Q26 原文
+    13, // M: Q26 得分
+    42, // N: Q27 原文
+    13, // O: Q27 得分
+    14, // P: 简答小计(20)
+    14, // Q: 总分(145)
+    18, // R: 系统定级
+    28, // S: 作品标题
+    22, // T: 视频文件名
+    12, // U: 视频时长
+    12, // V: 视频大小
+    36, // W: 视频链接
+    40, // X: 作品构思
+    34  // Y: 评分人/备注
+  ];
+  detailsWidths.forEach((w, i) => {
+    wsDetails.getColumn(i + 1).width = w;
+  });
 
   function calcM(ans, s, e) {
     let sum = 0;
@@ -376,20 +442,30 @@ async function generateReportExcelBuffer(candidates) {
     return sum;
   }
 
-  function getRating(scale, text) {
-    const total = scale + text;
-    if (total >= 112 && scale >= 102 && text >= 10) return 'S级·标杆IP';
-    if (total >= 88 && scale >= 80 && text >= 4) return 'A级·主力IP';
-    if (total >= 65 && scale >= 60) return 'B级·储备IP';
+  function normalizeRating(rawRating, scaleTotal, textTotal) {
+    const total = scaleTotal + textTotal;
+    let r = String(rawRating || '').trim();
+    if (r.startsWith('S') || (total >= 112 && scaleTotal >= 102 && textTotal >= 10)) return 'S级·标杆IP';
+    if (r.startsWith('A') || (total >= 88 && scaleTotal >= 80 && textTotal >= 4)) return 'A级·主力IP';
+    if (r.startsWith('B') || (total >= 65 && scaleTotal >= 60)) return 'B级·储备IP';
+    if (r) return r;
     return '暂不推荐·幕后支持';
   }
 
   function setCellResult(cell, result) {
     if (cell.value && typeof cell.value === 'object') {
       if (cell.value.sharedFormula) {
-        cell.value = { sharedFormula: cell.value.sharedFormula, result: result };
+        cell.value = {
+          sharedFormula: cell.value.sharedFormula,
+          result: result
+        };
       } else if (cell.value.formula) {
-        cell.value = { formula: cell.value.formula, result: result };
+        cell.value = {
+          formula: cell.value.formula,
+          ref: cell.value.ref,
+          shareType: cell.value.shareType,
+          result: result
+        };
       } else {
         cell.value = result;
       }
@@ -398,31 +474,40 @@ async function generateReportExcelBuffer(candidates) {
     }
   }
 
+  const borderStyle = {
+    left: { style: 'thin', color: { argb: 'FFD9C9A8' } },
+    right: { style: 'thin', color: { argb: 'FFD9C9A8' } },
+    top: { style: 'thin', color: { argb: 'FFD9C9A8' } },
+    bottom: { style: 'thin', color: { argb: 'FFD9C9A8' } }
+  };
+
+  function formatCell(cell, opts = {}) {
+    cell.style = {
+      font: opts.font || { name: '微软雅黑', size: 9.5, color: { argb: 'FF334155' } },
+      fill: opts.fill || { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } },
+      border: opts.border || borderStyle,
+      alignment: opts.alignment || { vertical: 'middle', horizontal: 'center' }
+    };
+  }
+
   const list = candidates || [];
 
-  // 如果候选人人数超过模板预设行数 (第56行是第53位候选人)，动态复制第56行的单元格样式与行高
+  // 如果候选人人数超过模板预设行数 (第56行是第53位候选人)，动态扩充行高
   if (list.length > 53) {
     const templateRowO = wsOverview.getRow(56);
     const templateRowD = wsDetails.getRow(56);
     for (let r = 57; r < 4 + list.length; r++) {
       const rowO = wsOverview.getRow(r);
       rowO.height = templateRowO.height;
-      templateRowO.eachCell({ includeEmpty: true }, (srcCell, colNumber) => {
-        const targetCell = rowO.getCell(colNumber);
-        targetCell.style = Object.assign({}, srcCell.style);
-      });
-
       const rowD = wsDetails.getRow(r);
       rowD.height = templateRowD.height;
-      templateRowD.eachCell({ includeEmpty: true }, (srcCell, colNumber) => {
-        const targetCell = rowD.getCell(colNumber);
-        targetCell.style = Object.assign({}, srcCell.style);
-      });
     }
   }
 
   list.forEach((c, idx) => {
     const r = 4 + idx;
+    const isEven = idx % 2 === 1;
+    const zebraBg = isEven ? 'FFFDFBF7' : 'FFFFFFFF';
     const subDate = (c.submittedAt || '').split(' ')[0] || new Date().toISOString().slice(0, 10);
     const ans = c.surveyAnswers || {};
     const m1 = calcM(ans, 1, 5);
@@ -431,89 +516,320 @@ async function generateReportExcelBuffer(candidates) {
     const m4 = calcM(ans, 15, 18);
     const m5 = calcM(ans, 19, 21);
     const m6 = calcM(ans, 22, 25);
-    const scaleTotal = m1 + m2 + m3 + m4 + m5 + m6;
+    let scaleTotal = m1 + m2 + m3 + m4 + m5 + m6;
+    if (scaleTotal === 0 && Number(c.surveyScaleScore) > 0) {
+      scaleTotal = Number(c.surveyScaleScore);
+    }
+
     const q26Text = ans['26'] || c.specialtyTalent || '';
     const q27Text = ans['27'] || c.accountPersona || '';
-    const q26Score = Number(c.q26Score || 0);
-    const q27Score = Number(c.q27Score || 0);
-    const textTotal = q26Score + q27Score;
-    const totalScore = scaleTotal + textTotal;
-    const rating = getRating(scaleTotal, textTotal);
+    let q26Score = Number(c.q26Score || 0);
+    let q27Score = Number(c.q27Score || 0);
+    let textTotal = q26Score + q27Score;
+    if (textTotal === 0 && Number(c.surveySubjectiveScore) > 0) {
+      textTotal = Number(c.surveySubjectiveScore);
+      q26Score = Math.floor(textTotal / 2);
+      q27Score = Math.ceil(textTotal / 2);
+    }
 
-    // 1. 报名总览 (严格匹配客户模板 15 列: A 到 O)
+    let totalScore = scaleTotal + textTotal;
+    if (totalScore === 0 && Number(c.surveyScore) > 0) {
+      totalScore = Number(c.surveyScore);
+    }
+
+    const rating = normalizeRating(c.surveyRating, scaleTotal, textTotal);
+
+    // 动态行高计算（总览表）：根据一句话介绍、定位、评语长度自适应展开，绝不遮挡文字
+    const introChars = (c.personalIntro || '').length;
+    const styleChars = (c.targetAccountStyle || c.accountPersona || '').length;
+    const reviewChars = (c.reviewComments || c.videoReview || '').length;
+    const ovMaxLines = Math.max(1, Math.ceil(introChars / 18), Math.ceil(styleChars / 13), Math.ceil(reviewChars / 17));
+    const ovHeight = Math.max(38, Math.min(120, ovMaxLines * 18 + 14));
+
+    // 动态行高计算（明细表）：根据 Q26、Q27 长文本、作品构思自适应展开
+    const q26Chars = (q26Text || '').length;
+    const q27Chars = (q27Text || '').length;
+    const titleChars = (c.videoTitle || '').length;
+    const introVChars = (c.videoIntro || '').length;
+    const dtMaxLines = Math.max(1, Math.ceil(q26Chars / 20), Math.ceil(q27Chars / 20), Math.ceil(introVChars / 19), Math.ceil(titleChars / 13));
+    const dtHeight = Math.max(48, Math.min(140, dtMaxLines * 18 + 16));
+
+    // 定级胶囊徽章色彩（符合高级金融商务视觉）
+    let ratingFill = 'FFF3F4F6', ratingFont = 'FF6B7280';
+    if (rating.includes('S级')) { ratingFill = 'FFFEF3C7'; ratingFont = 'FFB45309'; }
+    else if (rating.includes('A级')) { ratingFill = 'FFDCFCE7'; ratingFont = 'FF15803D'; }
+    else if (rating.includes('B级')) { ratingFill = 'FFFFEDD5'; ratingFont = 'FFC2410C'; }
+
+    // 审核状态色彩
+    let statusFont = 'FF4B5563';
+    if (c.status === '初筛通过') statusFont = 'FF15803D';
+    else if (c.status === '初筛未通过') statusFont = 'FFDC2626';
+
+    // ================= 1. 报名总览 =================
     const rowO = wsOverview.getRow(r);
-    setCellResult(rowO.getCell(1), idx + 1); // A: 序号
-    rowO.getCell(2).value = subDate; // B: 数据日期
-    rowO.getCell(3).value = c.id || ('XH-' + String(idx + 1).padStart(2, '0')); // C: 评审编号
-    rowO.getCell(4).value = c.submittedAt || ''; // D: 提交时间
-    rowO.getCell(5).value = c.surveyTime || c.submittedAt || ''; // E: 问卷完成时间
-    rowO.getCell(6).value = c.status || '待初筛'; // F: 审核状态
-    rowO.getCell(7).value = c.name || ''; // G: 姓名
-    rowO.getCell(8).value = c.gender || '男'; // H: 性别
-    rowO.getCell(9).value = c.department || ''; // I: 所属部门/团队
-    rowO.getCell(10).value = c.position || ''; // J: 现任岗位/职级
-    rowO.getCell(11).value = c.personalIntro || ''; // K: 一句话介绍
-    rowO.getCell(12).value = c.targetAccountStyle || c.accountPersona || ''; // L: 本人账号风格
-    setCellResult(rowO.getCell(13), totalScore); // M: 总分(145) (模板 VLOOKUP 公式结果)
-    setCellResult(rowO.getCell(14), rating); // N: 系统定级 (模板 VLOOKUP 公式结果)
-    rowO.getCell(15).value = c.reviewComments || c.videoReview || ''; // O: 评审意见
+    rowO.height = ovHeight;
 
-    // 2. 测评与作品明细 (严格匹配客户模板 25 列: A 到 Y)
+    // A: 序号
+    setCellResult(rowO.getCell(1), idx + 1);
+    formatCell(rowO.getCell(1), { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } } });
+
+    // B: 数据日期
+    rowO.getCell(2).value = subDate;
+    formatCell(rowO.getCell(2), { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } } });
+
+    // C: 评审编号
+    rowO.getCell(3).value = c.id || ('XH-' + String(idx + 1).padStart(2, '0'));
+    formatCell(rowO.getCell(3), {
+      font: { name: '微软雅黑', size: 9.5, bold: true, color: { argb: 'FF1E293B' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // D: 提交时间
+    rowO.getCell(4).value = c.submittedAt || '';
+    formatCell(rowO.getCell(4), { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } } });
+
+    // E: 问卷完成时间
+    rowO.getCell(5).value = c.surveyTime || c.submittedAt || '';
+    formatCell(rowO.getCell(5), { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } } });
+
+    // F: 审核状态
+    rowO.getCell(6).value = c.status || '待初筛';
+    formatCell(rowO.getCell(6), {
+      font: { name: '微软雅黑', size: 9.5, bold: true, color: { argb: statusFont } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // G: 姓名
+    rowO.getCell(7).value = c.name || '';
+    formatCell(rowO.getCell(7), {
+      font: { name: '微软雅黑', size: 10, bold: true, color: { argb: 'FF0F172A' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // H: 性别
+    rowO.getCell(8).value = c.gender || '男';
+    formatCell(rowO.getCell(8), { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } } });
+
+    // I: 部门
+    rowO.getCell(9).value = c.department || '';
+    formatCell(rowO.getCell(9), {
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // J: 岗位
+    rowO.getCell(10).value = c.position || '';
+    formatCell(rowO.getCell(10), {
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // K: 一句话介绍
+    rowO.getCell(11).value = c.personalIntro || '';
+    formatCell(rowO.getCell(11), {
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // L: 账号风格
+    rowO.getCell(12).value = c.targetAccountStyle || c.accountPersona || '';
+    formatCell(rowO.getCell(12), {
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // M: 总分(145)
+    setCellResult(rowO.getCell(13), totalScore);
+    formatCell(rowO.getCell(13), {
+      font: { name: '微软雅黑', size: 10.5, bold: true, color: { argb: 'FFB45309' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // N: 系统定级 (彩色胶囊徽章底色与专属字体色)
+    const cellRatingO = rowO.getCell(14);
+    setCellResult(cellRatingO, rating);
+    formatCell(cellRatingO, {
+      font: { name: '微软雅黑', size: 9.5, bold: true, color: { argb: ratingFont } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: ratingFill } }
+    });
+
+    // O: 评审意见
+    rowO.getCell(15).value = c.reviewComments || c.videoReview || '';
+    formatCell(rowO.getCell(15), {
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // ================= 2. 测评与作品明细 =================
     const rowD = wsDetails.getRow(r);
-    setCellResult(rowD.getCell(1), idx + 1); // A: 序号
-    rowD.getCell(2).value = subDate; // B: 数据日期
-    rowD.getCell(3).value = c.id || ('XH-' + String(idx + 1).padStart(2, '0')); // C: 评审编号
-    rowD.getCell(4).value = c.name || ''; // D: 姓名
-    rowD.getCell(5).value = m1; // E: 模块一 表达沟通(25)
-    rowD.getCell(6).value = m2; // F: 模块二 差异化特质(25)
-    rowD.getCell(7).value = m3; // G: 模块三 跨界专业(20)
-    rowD.getCell(8).value = m4; // H: 模块四 镜头表现(20)
-    rowD.getCell(9).value = m5; // I: 模块五 学习力网感(15)
-    rowD.getCell(10).value = m6; // J: 模块六 自驱力抗压(20)
-    setCellResult(rowD.getCell(11), scaleTotal); // K: 量表总分(125) (SUM公式)
-    rowD.getCell(12).value = q26Text; // L: Q26 原文
-    rowD.getCell(13).value = q26Score; // M: Q26 得分
-    rowD.getCell(14).value = q27Text; // N: Q27 原文
-    rowD.getCell(15).value = q27Score; // O: Q27 得分
-    setCellResult(rowD.getCell(16), textTotal); // P: 简答小计(20) (公式)
-    setCellResult(rowD.getCell(17), totalScore); // Q: 总分(145) (公式)
-    setCellResult(rowD.getCell(18), rating); // R: 系统定级 (公式)
-    rowD.getCell(19).value = c.videoTitle || ''; // S: 作品标题
-    rowD.getCell(20).value = c.videoName || (c.videoUrl ? c.videoUrl.split('/').pop() : ''); // T: 视频文件名
-    rowD.getCell(21).value = c.videoDuration || ''; // U: 视频时长
-    rowD.getCell(22).value = c.videoSize || ''; // V: 视频大小
-    rowD.getCell(23).value = c.videoUrl || ''; // W: 视频链接
-    rowD.getCell(24).value = c.videoIntro || ''; // X: 作品构思
+    rowD.height = dtHeight;
+
+    // A-D
+    setCellResult(rowD.getCell(1), idx + 1);
+    formatCell(rowD.getCell(1), { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } } });
+
+    rowD.getCell(2).value = subDate;
+    formatCell(rowD.getCell(2), { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } } });
+
+    rowD.getCell(3).value = c.id || ('XH-' + String(idx + 1).padStart(2, '0'));
+    formatCell(rowD.getCell(3), {
+      font: { name: '微软雅黑', size: 9.5, bold: true, color: { argb: 'FF1E293B' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    rowD.getCell(4).value = c.name || '';
+    formatCell(rowD.getCell(4), {
+      font: { name: '微软雅黑', size: 10, bold: true, color: { argb: 'FF0F172A' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // E-J (各模块分)
+    [m1, m2, m3, m4, m5, m6].forEach((mVal, mIdx) => {
+      const cIdx = 5 + mIdx;
+      rowD.getCell(cIdx).value = mVal;
+      formatCell(rowD.getCell(cIdx), {
+        font: { name: '微软雅黑', size: 9.5, color: { argb: 'FF334155' } },
+        fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+      });
+    });
+
+    // K: 量表总分
+    setCellResult(rowD.getCell(11), scaleTotal);
+    formatCell(rowD.getCell(11), {
+      font: { name: '微软雅黑', size: 10, bold: true, color: { argb: 'FF0F172A' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // L-O: Q26/Q27 原文及得分
+    rowD.getCell(12).value = q26Text;
+    formatCell(rowD.getCell(12), {
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    rowD.getCell(13).value = q26Score;
+    formatCell(rowD.getCell(13), {
+      font: { name: '微软雅黑', size: 10, bold: true, color: { argb: 'FF2563EB' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    rowD.getCell(14).value = q27Text;
+    formatCell(rowD.getCell(14), {
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    rowD.getCell(15).value = q27Score;
+    formatCell(rowD.getCell(15), {
+      font: { name: '微软雅黑', size: 10, bold: true, color: { argb: 'FF2563EB' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // P: 简答小计
+    setCellResult(rowD.getCell(16), textTotal);
+    formatCell(rowD.getCell(16), {
+      font: { name: '微软雅黑', size: 10, bold: true, color: { argb: 'FF0F172A' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // Q: 总分
+    setCellResult(rowD.getCell(17), totalScore);
+    formatCell(rowD.getCell(17), {
+      font: { name: '微软雅黑', size: 10.5, bold: true, color: { argb: 'FFB45309' } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // R: 系统定级 (彩色胶囊徽章)
+    const cellRatingD = rowD.getCell(18);
+    setCellResult(cellRatingD, rating);
+    formatCell(cellRatingD, {
+      font: { name: '微软雅黑', size: 9.5, bold: true, color: { argb: ratingFont } },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: ratingFill } }
+    });
+
+    // S-V: 作品标题, 视频文件名, 时长, 大小
+    rowD.getCell(19).value = c.videoTitle || '';
+    formatCell(rowD.getCell(19), {
+      font: { name: '微软雅黑', size: 9.5, bold: true, color: { argb: 'FF1E293B' } },
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    rowD.getCell(20).value = c.videoName || (c.videoUrl ? c.videoUrl.split('/').pop() : '');
+    formatCell(rowD.getCell(20), {
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    rowD.getCell(21).value = c.videoDuration || '';
+    formatCell(rowD.getCell(21), { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } } });
+
+    rowD.getCell(22).value = c.videoSize || '';
+    formatCell(rowD.getCell(22), { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } } });
+
+    // W: 视频链接 (可点击超链接对象，优雅蓝色下划线)
+    if (c.videoUrl) {
+      rowD.getCell(23).value = { text: c.videoUrl, hyperlink: c.videoUrl };
+    } else {
+      rowD.getCell(23).value = '';
+    }
+    formatCell(rowD.getCell(23), {
+      font: { name: '微软雅黑', size: 8.5, color: { argb: 'FF2563EB' }, underline: true },
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // X: 作品构思
+    rowD.getCell(24).value = c.videoIntro || '';
+    formatCell(rowD.getCell(24), {
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
+
+    // Y: 评分人/备注
     const remark = [
       c.reviewerRemark ? ('评审人: ' + c.reviewerRemark) : '',
       (c.videoScore !== null && c.videoScore !== undefined) ? ('视频打分: ' + c.videoScore) : '',
       c.videoReview ? ('评语: ' + c.videoReview) : ''
     ].filter(Boolean).join(' | ');
-    rowD.getCell(25).value = remark || c.reviewerRemark || ''; // Y: 评分人/备注
+    rowD.getCell(25).value = remark || c.reviewerRemark || '';
+    formatCell(rowD.getCell(25), {
+      alignment: { vertical: 'middle', horizontal: 'left', wrapText: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: zebraBg } }
+    });
   });
 
-  // 清除前4行可能残留的模板示例数据（当名单少于4人时）
-  for (let r = 4 + list.length; r <= 7; r++) {
+  // 4. 干净收尾：将候选人名单之后的未用模板行彻底隐藏收拢，绝不留多余的空白边框行
+  const startEmptyRow = 4 + list.length;
+  for (let r = startEmptyRow; r <= wsOverview.rowCount; r++) {
     const rowO = wsOverview.getRow(r);
-    for (let c = 2; c <= 12; c++) rowO.getCell(c).value = null;
-    rowO.getCell(15).value = null;
-    setCellResult(rowO.getCell(1), '');
-    setCellResult(rowO.getCell(13), '');
-    setCellResult(rowO.getCell(14), '');
-
+    rowO.eachCell({ includeEmpty: true }, cell => {
+      cell.value = null;
+      cell.style = {};
+    });
+    rowO.hidden = true;
+  }
+  for (let r = startEmptyRow; r <= wsDetails.rowCount; r++) {
     const rowD = wsDetails.getRow(r);
-    for (let c = 2; c <= 10; c++) rowD.getCell(c).value = null;
-    for (let c = 12; c <= 15; c++) rowD.getCell(c).value = null;
-    for (let c = 19; c <= 25; c++) rowD.getCell(c).value = null;
-    setCellResult(rowD.getCell(1), '');
-    setCellResult(rowD.getCell(11), '');
-    setCellResult(rowD.getCell(16), '');
-    setCellResult(rowD.getCell(17), '');
-    setCellResult(rowD.getCell(18), '');
+    rowD.eachCell({ includeEmpty: true }, cell => {
+      cell.value = null;
+      cell.style = {};
+    });
+    rowD.hidden = true;
+  }
+
+  // 5. 动态同步更新“导出说明”首页封面信息
+  if (wsInst) {
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const timeStr = new Date().toLocaleString('zh-CN', { hour12: false });
+    wsInst.getCell('C6').value = dateStr;
+    wsInst.getCell('C7').value = timeStr + '（系统自动生成导出）';
+    wsInst.getCell('C8').value = `星火计划_每日报名与问卷评分表_${dateStr.replace(/-/g, '')}.xlsx`;
   }
 
   return await wb.xlsx.writeBuffer();
 }
+
 
 // ==========================================
 // High-Concurrency In-Memory Micro-Cache System
