@@ -168,7 +168,16 @@ export default function AdminDrawer({ isOpen, onClose }) {
   };
 
   const handleExportDailyExcel = () => {
-    window.open('/api/reports/export', '_blank');
+    try {
+      const a = document.createElement('a');
+      a.href = '/api/reports/export';
+      a.download = `星火计划_报名导出_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (e) {
+      window.open('/api/reports/export', '_blank');
+    }
   };
 
   // Export full table to CSV (Opens in Excel with UTF-8 BOM)

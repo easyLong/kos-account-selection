@@ -709,7 +709,16 @@ export function AdminVotesReport() {
   }, []);
 
   const handleExport = () => {
-    window.open('/api/vote/export', '_blank');
+    try {
+      const a = document.createElement('a');
+      a.href = '/api/vote/export';
+      a.download = `星火计划_员工视频投票结果统计表_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (e) {
+      window.open('/api/vote/export', '_blank');
+    }
   };
 
   const topCandidate = data.candidates?.[0];
