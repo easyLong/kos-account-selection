@@ -27,9 +27,9 @@ if ! command -v node >/dev/null 2>&1; then
     exit 1
 fi
 
-# 2. 检查依赖包 (确保所有必需依赖如 ali-oss, xlsx 均已就绪)
-if [ ! -d "$PROJECT_DIR/node_modules" ] || [ ! -d "$PROJECT_DIR/node_modules/ali-oss" ] || [ ! -d "$PROJECT_DIR/node_modules/xlsx" ]; then
-    echo "📦 正在检测/更新项目依赖 (安装 ali-oss、xlsx 及相关包)..."
+# 2. 检查依赖包 (确保所有必需依赖如 ali-oss, xlsx, exceljs 均已就绪)
+if [ ! -d "$PROJECT_DIR/node_modules" ] || [ ! -d "$PROJECT_DIR/node_modules/ali-oss" ] || [ ! -d "$PROJECT_DIR/node_modules/xlsx" ] || [ ! -d "$PROJECT_DIR/node_modules/exceljs" ]; then
+    echo "📦 正在检测/更新项目依赖 (安装 ali-oss、xlsx、exceljs 及相关包)..."
     npm install
     if [ $? -ne 0 ]; then
         echo "❌ 依赖安装失败，请检查网络或配置"

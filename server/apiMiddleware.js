@@ -4,6 +4,7 @@ import os from 'os';
 import busboy from 'busboy';
 import dotenv from 'dotenv';
 import XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 // Load .env from server directory
 const envPath = path.resolve(process.cwd(), 'server', '.env');
@@ -351,13 +352,20 @@ async function saveSurveyQuestion(q) {
 }
 
 // Generate Standard Excel Report (matching 星火计划_每日报名与问卷评分模板 - 向量.xlsx)
-function generateReportExcelBuffer(candidates) {
+async function generateReportExcelBuffer(candidates) {
   if (!fs.existsSync(REPORT_TEMPLATE_FILE)) {
     throw new Error('Report template file not found: ' + REPORT_TEMPLATE_FILE);
   }
-  const wb = XLSX.readFile(REPORT_TEMPLATE_FILE);
-  const wsOverview = wb.Sheets['报名总览'];
-  const wsDetails = wb.Sheets['测评与作品明细'];
+
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(REPORT_TEMPLATE_FILE);
+
+  const wsOverview = wb.getWorksheet('报名总览');
+  const wsDetails = wb.getWorksheet('测评与作品明细');
+
+  if (!wsOverview || !wsDetails) {
+    throw new Error('Template sheets missing: 报名总览 / 测评与作品明细');
+  }
 
   function calcM(ans, s, e) {
     let sum = 0;
@@ -376,17 +384,44 @@ function generateReportExcelBuffer(candidates) {
     return '暂不推荐·幕后支持';
   }
 
-  // Clear sample rows 4 to 150 in both sheets
-  for (let r = 4; r <= 150; r++) {
-    for (let c = 0; c < 15; c++) {
-      delete wsOverview[XLSX.utils.encode_col(c) + r];
-    }
-    for (let c = 0; c < 25; c++) {
-      delete wsDetails[XLSX.utils.encode_col(c) + r];
+  function setCellResult(cell, result) {
+    if (cell.value && typeof cell.value === 'object') {
+      if (cell.value.sharedFormula) {
+        cell.value = { sharedFormula: cell.value.sharedFormula, result: result };
+      } else if (cell.value.formula) {
+        cell.value = { formula: cell.value.formula, result: result };
+      } else {
+        cell.value = result;
+      }
+    } else {
+      cell.value = result;
     }
   }
 
-  (candidates || []).forEach((c, idx) => {
+  const list = candidates || [];
+
+  // 如果候选人人数超过模板预设行数 (第56行是第53位候选人)，动态复制第56行的单元格样式与行高
+  if (list.length > 53) {
+    const templateRowO = wsOverview.getRow(56);
+    const templateRowD = wsDetails.getRow(56);
+    for (let r = 57; r < 4 + list.length; r++) {
+      const rowO = wsOverview.getRow(r);
+      rowO.height = templateRowO.height;
+      templateRowO.eachCell({ includeEmpty: true }, (srcCell, colNumber) => {
+        const targetCell = rowO.getCell(colNumber);
+        targetCell.style = Object.assign({}, srcCell.style);
+      });
+
+      const rowD = wsDetails.getRow(r);
+      rowD.height = templateRowD.height;
+      templateRowD.eachCell({ includeEmpty: true }, (srcCell, colNumber) => {
+        const targetCell = rowD.getCell(colNumber);
+        targetCell.style = Object.assign({}, srcCell.style);
+      });
+    }
+  }
+
+  list.forEach((c, idx) => {
     const r = 4 + idx;
     const subDate = (c.submittedAt || '').split(' ')[0] || new Date().toISOString().slice(0, 10);
     const ans = c.surveyAnswers || {};
@@ -405,78 +440,79 @@ function generateReportExcelBuffer(candidates) {
     const totalScore = scaleTotal + textTotal;
     const rating = getRating(scaleTotal, textTotal);
 
-    // 报名总览 (15 cols)
-    const overviewCols = [
-      { v: idx + 1, t: 'n' },
-      { v: subDate, t: 's' },
-      { v: c.id || '', t: 's' },
-      { v: c.submittedAt || '', t: 's' },
-      { v: c.surveyTime || c.submittedAt || '', t: 's' },
-      { v: c.status || '待初筛', t: 's' },
-      { v: c.name || '', t: 's' },
-      { v: c.gender || '男', t: 's' },
-      { v: c.department || '', t: 's' },
-      { v: c.position || '', t: 's' },
-      { v: c.personalIntro || '', t: 's' },
-      { v: c.targetAccountStyle || c.accountPersona || '', t: 's' },
-      { v: totalScore, t: 'n' },
-      { v: rating, t: 's' },
-      { v: c.reviewComments || '', t: 's' },
-      { v: c.videoScore !== null && c.videoScore !== undefined ? c.videoScore : '', t: typeof c.videoScore === 'number' ? 'n' : 's' },
-      { v: c.videoReview || '', t: 's' }
-    ];
+    // 1. 报名总览 (严格匹配客户模板 15 列: A 到 O)
+    const rowO = wsOverview.getRow(r);
+    setCellResult(rowO.getCell(1), idx + 1); // A: 序号
+    rowO.getCell(2).value = subDate; // B: 数据日期
+    rowO.getCell(3).value = c.id || ('XH-' + String(idx + 1).padStart(2, '0')); // C: 评审编号
+    rowO.getCell(4).value = c.submittedAt || ''; // D: 提交时间
+    rowO.getCell(5).value = c.surveyTime || c.submittedAt || ''; // E: 问卷完成时间
+    rowO.getCell(6).value = c.status || '待初筛'; // F: 审核状态
+    rowO.getCell(7).value = c.name || ''; // G: 姓名
+    rowO.getCell(8).value = c.gender || '男'; // H: 性别
+    rowO.getCell(9).value = c.department || ''; // I: 所属部门/团队
+    rowO.getCell(10).value = c.position || ''; // J: 现任岗位/职级
+    rowO.getCell(11).value = c.personalIntro || ''; // K: 一句话介绍
+    rowO.getCell(12).value = c.targetAccountStyle || c.accountPersona || ''; // L: 本人账号风格
+    setCellResult(rowO.getCell(13), totalScore); // M: 总分(145) (模板 VLOOKUP 公式结果)
+    setCellResult(rowO.getCell(14), rating); // N: 系统定级 (模板 VLOOKUP 公式结果)
+    rowO.getCell(15).value = c.reviewComments || c.videoReview || ''; // O: 评审意见
 
-    overviewCols.forEach((cell, colIdx) => {
-      wsOverview[XLSX.utils.encode_col(colIdx) + r] = cell;
-    });
-
-    // 测评与作品明细 (27 cols)
-    const detailsCols = [
-      { v: idx + 1, t: 'n' },
-      { v: subDate, t: 's' },
-      { v: c.id || '', t: 's' },
-      { v: c.name || '', t: 's' },
-      { v: m1, t: 'n' },
-      { v: m2, t: 'n' },
-      { v: m3, t: 'n' },
-      { v: m4, t: 'n' },
-      { v: m5, t: 'n' },
-      { v: m6, t: 'n' },
-      { v: scaleTotal, t: 'n' },
-      { v: q26Text, t: 's' },
-      { v: q26Score, t: 'n' },
-      { v: q27Text, t: 's' },
-      { v: q27Score, t: 'n' },
-      { v: textTotal, t: 'n' },
-      { v: totalScore, t: 'n' },
-      { v: rating, t: 's' },
-      { v: c.videoTitle || '', t: 's' },
-      { v: c.videoName || (c.videoUrl ? c.videoUrl.split('/').pop() : ''), t: 's' },
-      { v: c.videoDuration || '', t: 's' },
-      { v: c.videoSize || '', t: 's' },
-      { v: c.videoUrl || '', t: 's' },
-      { v: c.videoIntro || '', t: 's' },
-      { v: c.videoScore !== null && c.videoScore !== undefined ? c.videoScore : '', t: typeof c.videoScore === 'number' ? 'n' : 's' },
-      { v: c.videoReview || '', t: 's' },
-      { v: c.reviewerRemark || '', t: 's' }
-    ];
-
-    detailsCols.forEach((cell, colIdx) => {
-      wsDetails[XLSX.utils.encode_col(colIdx) + r] = cell;
-    });
+    // 2. 测评与作品明细 (严格匹配客户模板 25 列: A 到 Y)
+    const rowD = wsDetails.getRow(r);
+    setCellResult(rowD.getCell(1), idx + 1); // A: 序号
+    rowD.getCell(2).value = subDate; // B: 数据日期
+    rowD.getCell(3).value = c.id || ('XH-' + String(idx + 1).padStart(2, '0')); // C: 评审编号
+    rowD.getCell(4).value = c.name || ''; // D: 姓名
+    rowD.getCell(5).value = m1; // E: 模块一 表达沟通(25)
+    rowD.getCell(6).value = m2; // F: 模块二 差异化特质(25)
+    rowD.getCell(7).value = m3; // G: 模块三 跨界专业(20)
+    rowD.getCell(8).value = m4; // H: 模块四 镜头表现(20)
+    rowD.getCell(9).value = m5; // I: 模块五 学习力网感(15)
+    rowD.getCell(10).value = m6; // J: 模块六 自驱力抗压(20)
+    setCellResult(rowD.getCell(11), scaleTotal); // K: 量表总分(125) (SUM公式)
+    rowD.getCell(12).value = q26Text; // L: Q26 原文
+    rowD.getCell(13).value = q26Score; // M: Q26 得分
+    rowD.getCell(14).value = q27Text; // N: Q27 原文
+    rowD.getCell(15).value = q27Score; // O: Q27 得分
+    setCellResult(rowD.getCell(16), textTotal); // P: 简答小计(20) (公式)
+    setCellResult(rowD.getCell(17), totalScore); // Q: 总分(145) (公式)
+    setCellResult(rowD.getCell(18), rating); // R: 系统定级 (公式)
+    rowD.getCell(19).value = c.videoTitle || ''; // S: 作品标题
+    rowD.getCell(20).value = c.videoName || (c.videoUrl ? c.videoUrl.split('/').pop() : ''); // T: 视频文件名
+    rowD.getCell(21).value = c.videoDuration || ''; // U: 视频时长
+    rowD.getCell(22).value = c.videoSize || ''; // V: 视频大小
+    rowD.getCell(23).value = c.videoUrl || ''; // W: 视频链接
+    rowD.getCell(24).value = c.videoIntro || ''; // X: 作品构思
+    const remark = [
+      c.reviewerRemark ? ('评审人: ' + c.reviewerRemark) : '',
+      (c.videoScore !== null && c.videoScore !== undefined) ? ('视频打分: ' + c.videoScore) : '',
+      c.videoReview ? ('评语: ' + c.videoReview) : ''
+    ].filter(Boolean).join(' | ');
+    rowD.getCell(25).value = remark || c.reviewerRemark || ''; // Y: 评分人/备注
   });
 
-  const maxR = Math.max(4 + (candidates || []).length - 1, 4);
-  wsOverview['P3'] = { v: '视频打分', t: 's' };
-  wsOverview['Q3'] = { v: '视频评价', t: 's' };
-  wsDetails['Y3'] = { v: '视频打分', t: 's' };
-  wsDetails['Z3'] = { v: '视频评价', t: 's' };
-  wsDetails['AA3'] = { v: '评分人/备注', t: 's' };
+  // 清除前4行可能残留的模板示例数据（当名单少于4人时）
+  for (let r = 4 + list.length; r <= 7; r++) {
+    const rowO = wsOverview.getRow(r);
+    for (let c = 2; c <= 12; c++) rowO.getCell(c).value = null;
+    rowO.getCell(15).value = null;
+    setCellResult(rowO.getCell(1), '');
+    setCellResult(rowO.getCell(13), '');
+    setCellResult(rowO.getCell(14), '');
 
-  wsOverview['!ref'] = 'A1:Q' + maxR;
-  wsDetails['!ref'] = 'A1:AA' + maxR;
+    const rowD = wsDetails.getRow(r);
+    for (let c = 2; c <= 10; c++) rowD.getCell(c).value = null;
+    for (let c = 12; c <= 15; c++) rowD.getCell(c).value = null;
+    for (let c = 19; c <= 25; c++) rowD.getCell(c).value = null;
+    setCellResult(rowD.getCell(1), '');
+    setCellResult(rowD.getCell(11), '');
+    setCellResult(rowD.getCell(16), '');
+    setCellResult(rowD.getCell(17), '');
+    setCellResult(rowD.getCell(18), '');
+  }
 
-  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  return await wb.xlsx.writeBuffer();
 }
 
 // ==========================================
@@ -1432,9 +1468,9 @@ export function createApiMiddleware() {
           (async () => {
             try {
               const list = await getStoredApplications();
-              const buffer = generateReportExcelBuffer(list);
+              const buffer = await generateReportExcelBuffer(list);
               const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-              const filename = `星火计划_报名导出_${dateStr}.xlsx`;
+              const filename = `星火计划_每日报名与问卷评分表_${dateStr}.xlsx`;
               const encodedFilename = encodeURIComponent(filename);
 
               res.writeHead(200, {
