@@ -120,17 +120,22 @@ function serveFile(filePath, req, res) {
     }
 
     const acceptEncoding = req.headers['accept-encoding'] || '';
-    const shouldGzip = cached.gzipBuffer && acceptEncoding.includes('gzip');
+    const shouldGzip = Boolean(cached.gzipBuffer && acceptEncoding.includes('gzip'));
 
-    res.writeHead(200, {
+    const headers = {
       'Content-Type': cached.contentType,
-      'Content-Encoding': shouldGzip ? 'gzip' : undefined,
       'Content-Length': shouldGzip ? cached.gzipBuffer.length : cached.buffer.length,
       'ETag': cached.etag,
       'Accept-Ranges': 'bytes',
       'Access-Control-Allow-Origin': '*',
       'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable'
-    });
+    };
+
+    if (shouldGzip) {
+      headers['Content-Encoding'] = 'gzip';
+    }
+
+    res.writeHead(200, headers);
     res.end(shouldGzip ? cached.gzipBuffer : cached.buffer);
     return;
   }
