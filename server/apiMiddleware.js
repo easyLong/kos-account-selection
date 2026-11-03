@@ -5,6 +5,7 @@ import busboy from 'busboy';
 import dotenv from 'dotenv';
 import XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
+import QRCode from 'qrcode';
 
 // Load .env from server directory
 const envPath = path.resolve(process.cwd(), 'server', '.env');
@@ -848,6 +849,19 @@ let candidateNameMap = {
   'XH-03': '王炫霄'
 };
 
+// ==========================================
+// 扫码登录跨端联动会话池 (TTL: 10分钟)
+// ==========================================
+const scanSessions = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, sess] of scanSessions.entries()) {
+    if (now - sess.createdAt > 10 * 60 * 1000) {
+      scanSessions.delete(token);
+    }
+  }
+}, 60 * 1000);
+
 function invalidateVoteCache() {
   worksCache = null;
   leaderboardCache = null;
@@ -888,14 +902,31 @@ async function getVoteWorks() {
   // Sort candidates by ID ascending (XH-01, XH-02, ...)
   videoCandidates.sort((a, b) => String(a.id || '').localeCompare(String(b.id || '')));
 
+  // 针对不同视频的开场黑屏、转场淡入或微表情，配置最佳海报抽帧时间点（毫秒）
+  const SNAPSHOT_TIMESTAMPS = {
+    'XH-04': 500,    // 张燕军: 0.5s 避开 1s 时的闭眼眨眼帧，双眼精神有神
+    'XH-06': 3000,   // 马若琳: 3.0s 舞台人物近景特写微笑着装，避开远景暗边
+    'XH-07': 6000,   // 晏建军: 6.0s 讲师西装本人正面出镜形象，告别纯文字 PPT
+    'XH-11': 34000,  // 濮子千: 34.0s 健身房标志性金句T恤正面特写，告别暗室闹钟
+    'XH-17': 2000,   // 王予宁: 2.0s 正对镜头甜美微笑，避开低头闭眼帧
+    'XH-18': 10000,  // 王钢: 10.0s 彻底解决前 4 秒纯黑屏问题，大航海战舰正视海报
+    'XH-20': 34000,  // 濮子千: 34.0s 对应第二条视频精选封面
+  };
+
+  // 权威横屏作品 ID 清单（确保移动端全屏时 100% 自动旋转大屏横向展开）
+  const LANDSCAPE_WORK_IDS = new Set(['XH-07', 'XH-11', 'XH-18', 'XH-20']);
+
   const result = videoCandidates.map((c, idx) => {
     // Keep local candidate name map warm for fast toggleVote
     if (c.id && c.name) candidateNameMap[c.id] = c.name;
 
-    // Generate valid first-frame snapshot for video
+    // Generate valid first-frame snapshot for video (with automatic rotation based on video orientation)
+    const snapshotTime = (c.id && SNAPSHOT_TIMESTAMPS[c.id]) ? SNAPSHOT_TIMESTAMPS[c.id] : 1000;
     const coverUrl = (c.videoUrl && c.videoUrl.includes('aliyuncs.com'))
-      ? `${c.videoUrl}?x-oss-process=video/snapshot,t_1000,f_jpg,w_600,m_fast`
+      ? `${c.videoUrl}?x-oss-process=video/snapshot,t_${snapshotTime},f_jpg,w_600,m_fast,ar_auto`
       : (c.avatarUrl || '');
+
+    const isLandscape = LANDSCAPE_WORK_IDS.has(c.id) || Boolean(c.isLandscape);
 
     return {
       id: c.id,
@@ -906,6 +937,7 @@ async function getVoteWorks() {
       position: c.position || '创作者',
       avatarUrl: c.avatarUrl || '',
       coverUrl: coverUrl,
+      isLandscape: isLandscape,
       videoTitle: c.videoTitle || '自媒体短视频创作提案',
       videoIntro: c.videoIntro || c.personalIntro || '',
       videoUrl: c.videoUrl,
@@ -1005,7 +1037,14 @@ async function toggleVote(jobNo, candidateId) {
       await dbPool.query('DELETE FROM htf_kos_votes WHERE voterJobNo = ? AND candidateId = ?', [trimmedJobNo, trimmedCandId]);
       const nextLikedIds = likedIds.filter(id => id !== trimmedCandId);
       invalidateVoteCache();
-      return { liked: false, likedIds: nextLikedIds, budgetRemaining: 5 - nextLikedIds.length };
+      let candidateVotes = 0;
+      try {
+        const [cntRows] = await dbPool.query('SELECT COUNT(*) as cnt FROM htf_kos_votes WHERE candidateId = ?', [trimmedCandId]);
+        candidateVotes = Number(cntRows && cntRows[0] ? cntRows[0].cnt : 0);
+      } catch (cntErr) {
+        console.warn('[Vote] Count query error:', cntErr.message);
+      }
+      return { liked: false, likedIds: nextLikedIds, budgetRemaining: 5 - nextLikedIds.length, candidateVotes };
     } else {
       // Fast budget check
       if (likedIds.length >= 5) {
@@ -1019,7 +1058,14 @@ async function toggleVote(jobNo, candidateId) {
 
       const nextLikedIds = [...likedIds, trimmedCandId];
       invalidateVoteCache();
-      return { liked: true, likedIds: nextLikedIds, budgetRemaining: 5 - nextLikedIds.length };
+      let candidateVotes = 0;
+      try {
+        const [cntRows] = await dbPool.query('SELECT COUNT(*) as cnt FROM htf_kos_votes WHERE candidateId = ?', [trimmedCandId]);
+        candidateVotes = Number(cntRows && cntRows[0] ? cntRows[0].cnt : 0);
+      } catch (cntErr) {
+        console.warn('[Vote] Count query error:', cntErr.message);
+      }
+      return { liked: true, likedIds: nextLikedIds, budgetRemaining: 5 - nextLikedIds.length, candidateVotes };
     }
   } else {
     // JSON file fallback
@@ -1038,7 +1084,8 @@ async function toggleVote(jobNo, candidateId) {
       fs.writeFileSync(VOTES_FILE, JSON.stringify(votes, null, 2), 'utf-8');
       const likedIds = votes.filter(v => v.voterJobNo === trimmedJobNo).map(v => v.candidateId);
       invalidateVoteCache();
-      return { liked: false, likedIds, budgetRemaining: 5 - likedIds.length };
+      const candidateVotes = votes.filter(v => v.candidateId === trimmedCandId).length;
+      return { liked: false, likedIds, budgetRemaining: 5 - likedIds.length, candidateVotes };
     } else {
       const myCount = votes.filter(v => v.voterJobNo === trimmedJobNo).length;
       if (myCount >= 5) throw new Error('每人最多投 5 票，已达上限！可取消某位后再投');
@@ -1052,7 +1099,8 @@ async function toggleVote(jobNo, candidateId) {
       fs.writeFileSync(VOTES_FILE, JSON.stringify(votes, null, 2), 'utf-8');
       const likedIds = votes.filter(v => v.voterJobNo === trimmedJobNo).map(v => v.candidateId);
       invalidateVoteCache();
-      return { liked: true, likedIds, budgetRemaining: 5 - likedIds.length };
+      const candidateVotes = votes.filter(v => v.candidateId === trimmedCandId).length;
+      return { liked: true, likedIds, budgetRemaining: 5 - likedIds.length, candidateVotes };
     }
   }
 }
@@ -1975,6 +2023,134 @@ export function createApiMiddleware() {
           }).catch(err => {
             res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({ code: 500, message: '导出失败: ' + err.message }));
+          });
+          return;
+        }
+
+        // 9.1 生成投票专属二维码 (支持微信直接扫码进入 / 扫码登录)
+        if (pathname === '/api/vote/qrcode' && req.method === 'GET') {
+          const ip = getLocalIpAddress();
+          const hostHeader = req.headers['x-forwarded-host'] || req.headers.host;
+          const protoHeader = req.headers['x-forwarded-proto'] || 'http';
+          const baseVoteUrl = (hostHeader && !hostHeader.startsWith('localhost') && !hostHeader.startsWith('127.0.0.1'))
+            ? `${protoHeader}://${hostHeader}/vote`
+            : `http://${ip}:5173/vote`;
+          const targetUrl = url.searchParams.get('text') || baseVoteUrl;
+
+          if (url.searchParams.get('format') === 'png') {
+            QRCode.toBuffer(targetUrl, { margin: 1, width: 280 }).then(buf => {
+              res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
+              res.end(buf);
+            }).catch(err => {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ code: 500, message: err.message }));
+            });
+            return;
+          }
+
+          QRCode.toDataURL(targetUrl, {
+            margin: 1,
+            width: 280,
+            color: { dark: '#1C1813', light: '#FFFFFF' }
+          }).then(qrDataUrl => {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({
+              code: 0,
+              data: {
+                qrCodeUrl: qrDataUrl,
+                voteUrl: baseVoteUrl,
+                targetUrl: targetUrl
+              }
+            }));
+          }).catch(err => {
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 500, message: err.message }));
+          });
+          return;
+        }
+
+        // 9.2 生成跨端扫码登录令牌与专属二维码
+        if (pathname === '/api/vote/scan-token' && req.method === 'GET') {
+          const ip = getLocalIpAddress();
+          const hostHeader = req.headers['x-forwarded-host'] || req.headers.host;
+          const protoHeader = req.headers['x-forwarded-proto'] || 'http';
+          const baseVoteUrl = (hostHeader && !hostHeader.startsWith('localhost') && !hostHeader.startsWith('127.0.0.1'))
+            ? `${protoHeader}://${hostHeader}/vote`
+            : `http://${ip}:5173/vote`;
+
+          const token = 'st_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 8);
+          const scanVoteUrl = `${baseVoteUrl}?scanToken=${token}`;
+
+          scanSessions.set(token, {
+            status: 'waiting',
+            voter: null,
+            createdAt: Date.now()
+          });
+
+          QRCode.toDataURL(scanVoteUrl, {
+            margin: 1,
+            width: 280,
+            color: { dark: '#1C1813', light: '#FFFFFF' }
+          }).then(qrDataUrl => {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({
+              code: 0,
+              data: {
+                token: token,
+                scanVoteUrl: scanVoteUrl,
+                baseVoteUrl: baseVoteUrl,
+                qrCodeUrl: qrDataUrl
+              }
+            }));
+          }).catch(err => {
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 500, message: err.message }));
+          });
+          return;
+        }
+
+        // 9.3 轮询扫码登录授权状态 (电脑端轮询)
+        if (pathname === '/api/vote/scan-poll' && req.method === 'GET') {
+          const token = url.searchParams.get('token');
+          if (!token || !scanSessions.has(token)) {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ code: 0, data: { status: 'expired' } }));
+            return;
+          }
+          const sess = scanSessions.get(token);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ code: 0, data: sess }));
+          return;
+        }
+
+        // 9.4 手机端扫码后确认登录授权 (同步登录电脑端)
+        if (pathname === '/api/vote/scan-confirm' && req.method === 'POST') {
+          parseJsonBody(async (err, body) => {
+            if (err || !body || !body.token || !body.jobNo) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 400, message: 'Invalid scan confirmation' }));
+              return;
+            }
+            const token = body.token;
+            if (!scanSessions.has(token)) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: -1, message: '扫码会话已过期，请刷新二维码' }));
+              return;
+            }
+
+            try {
+              const voterResult = await voterLogin(body.name || '员工', body.jobNo);
+              scanSessions.set(token, {
+                status: 'confirmed',
+                voter: voterResult,
+                createdAt: Date.now()
+              });
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: 0, message: '扫码授权成功', data: voterResult }));
+            } catch (loginErr) {
+              res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ code: -1, message: loginErr.message }));
+            }
           });
           return;
         }

@@ -3,17 +3,394 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>参选作品展播</title>
+<meta name="x5-fullscreen" content="true">
+<meta name="x5-page-mode" content="app">
+<meta name="full-screen" content="yes">
+<meta name="browsermode" content="application">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>星火计划 · 创作者选拔投票</title>
 <style>
   :root{
     --brown:#4a2c10; --gold:#b8860b; --gold-l:#e8c766; --cream:#f6f3ee;
     --ink:#2b2119; --sub:#7a6a55; --line:#e4dccc; --red:#a03c1c; --green:#2f7a4f;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html, body{margin:0;overscroll-behavior:none;-webkit-overscroll-behavior:none}
+  html, body{margin:0;overscroll-behavior:none;-webkit-overscroll-behavior:none;overscroll-behavior-x:none}
   body{background:#e9e4da;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);min-height:100vh}
   #phone{max-width:440px;margin:0 auto;min-height:100vh;background:var(--cream);position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.15);display:flex;flex-direction:column}
   .hide{display:none!important}
+
+  /* ---------- 桌面端 2 列大屏与 iPhone 16 手机壳仿真器 ---------- */
+  .desktop-layout-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 30px 20px;
+    box-sizing: border-box;
+    position: relative;
+  }
+  .phone-simulator-column {
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .iphone-frame {
+    width: 395px;
+    height: 812px;
+    background: #000;
+    border-radius: 52px;
+    border: 10px solid #28241F;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 0 2px #4D4438;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .iphone-dynamic-island {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 26px;
+    background: #000;
+    border-radius: 18px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 10px;
+    pointer-events: none;
+  }
+  .camera-lens {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #111A2E;
+    box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.4);
+  }
+  .wechat-header-bar {
+    height: 48px;
+    padding-top: 18px;
+    background: #14110C;
+    color: #FFFFFF;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 16px;
+    padding-right: 16px;
+    font-size: 14.5px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    position: relative;
+    z-index: 90;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .wx-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .wx-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #F6F3EC;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .wx-more-dots {
+    font-size: 18px;
+    color: #D2C9B8;
+    letter-spacing: 1px;
+  }
+  .iphone-home-indicator {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 135px;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 3px;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  /* ---------- 右侧：桌面端微信扫码直达卡片 ---------- */
+  .desktop-sidebar-column {
+    width: 380px;
+    max-width: 420px;
+    flex-shrink: 0;
+  }
+  .sidebar-card {
+    background: rgba(28, 24, 19, 0.95);
+    border: 1px solid rgba(197, 154, 63, 0.35);
+    border-radius: 20px;
+    padding: 28px 24px;
+    color: #FFFFFF;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .sidebar-tag {
+    display: inline-block;
+    font-size: 11.5px;
+    color: #E5BE64;
+    background: rgba(197, 154, 63, 0.2);
+    border: 1px solid rgba(197, 154, 63, 0.4);
+    padding: 3px 12px;
+    border-radius: 99px;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+  .sidebar-title {
+    font-size: 21px;
+    font-weight: 800;
+    margin: 0 0 6px;
+    color: #FAF6ED;
+    letter-spacing: .5px;
+  }
+  .sidebar-sub {
+    font-size: 13px;
+    color: #A69E8F;
+    line-height: 1.6;
+    margin: 0 0 20px;
+  }
+  .qr-container-box {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 20px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  }
+  .qr-img-wrapper {
+    width: 210px;
+    height: 210px;
+    background: #faf8f5;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #ebe5d8;
+    cursor: pointer;
+  }
+  .qr-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    transition: opacity .2s;
+  }
+  .qr-loading {
+    font-size: 13px;
+    color: #8C8474;
+    font-weight: 600;
+  }
+  .qr-scan-status-pill {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #fdf6e7;
+    border: 1px solid #e8cd8a;
+    color: #855513;
+    font-size: 12.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #b8860b;
+    display: inline-block;
+  }
+  .status-dot.pulsing {
+    background: #22c55e;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    animation: pulseGreen 1.8s infinite;
+  }
+  @keyframes pulseGreen {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+  }
+  .qr-info-row {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+  .qr-url-input {
+    flex: 1;
+    padding: 9px 11px;
+    font-size: 12px;
+    border: 1px solid #DFD9CE;
+    border-radius: 8px;
+    background: #F8F6F1;
+    color: #4A443A;
+    outline: none;
+    font-family: monospace;
+  }
+  .btn-copy {
+    padding: 9px 14px;
+    background: linear-gradient(135deg, #b8860b, #e8c766);
+    color: #3b2410;
+    border: none;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform .15s, filter .15s;
+  }
+  .btn-copy:active {
+    transform: scale(.96);
+  }
+  .sidebar-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: #D2C9B8;
+  }
+  .step-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(197, 154, 63, 0.25);
+    border: 1px solid rgba(197, 154, 63, 0.6);
+    color: #FFEAA7;
+    font-size: 11.5px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-text b {
+    color: #FFEAA7;
+  }
+
+  /* 登录卡片 Tab 切换 */
+  .login-tabs {
+    display: flex;
+    background: #f0ebe1;
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 16px;
+    gap: 3px;
+  }
+  .login-tab-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sub);
+    background: transparent;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .login-tab-btn.active {
+    background: #fff;
+    color: var(--brown);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  /* 桌面端大屏适配 */
+  @media(min-width:768px){
+    body { background: radial-gradient(circle at center, #1C1813 0%, #0E0C09 100%); }
+    #phone {
+      flex: 1;
+      width: 100%;
+      max-width: 100%;
+      min-height: 0;
+      background: var(--cream);
+      position: relative;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .gallery-dock {
+      position: absolute;
+      left: 0;
+      transform: none;
+      width: 100%;
+      max-width: 100%;
+    }
+  }
+
+  /* 移动端原生全屏适配 (隐藏仿真手机壳与右侧栏) */
+  @media(max-width:767px){
+    body { background: #e9e4da; }
+    .desktop-layout-wrapper {
+      display: block;
+      padding: 0;
+      min-height: 100vh;
+      width: 100%;
+      background: transparent;
+    }
+    .phone-simulator-column {
+      display: block;
+      width: 100%;
+    }
+    .iphone-frame {
+      width: 100%;
+      max-width: 440px;
+      margin: 0 auto;
+      height: auto;
+      min-height: 100vh;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      background: transparent;
+      overflow: visible;
+    }
+    .iphone-dynamic-island,
+    .wechat-header-bar,
+    .iphone-home-indicator,
+    .desktop-sidebar-column {
+      display: none !important;
+    }
+    #phone {
+      width: 100%;
+      max-width: 440px;
+      margin: 0 auto;
+      min-height: 100vh;
+      height: auto;
+      overflow: visible;
+      box-shadow: 0 0 40px rgba(0,0,0,.15);
+    }
+  }
 
   /* ---------- 通用组件 ---------- */
   .kv{background:linear-gradient(135deg,#4a2c10 0%,#7a4d18 55%,#b8860b 100%);color:#fff}
@@ -53,7 +430,72 @@
   .pill.out{border-color:#d99a90;color:#a03c1c;background:#fdeceb}
 
   /* ---------- 3. 展播列表 (支持直接点赞 + 真实有效画面) ---------- */
-  #gallery{padding-bottom:28px}
+  #gallery{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+
+  /* ---------- 吸底操作栏 (吸盘式固定屏幕底部，随时提交免滑到底部) ---------- */
+  .gallery-dock{
+    position:fixed;
+    bottom:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:100%;
+    max-width:440px;
+    z-index:30;
+    box-sizing:border-box;
+    padding:10px 16px max(12px, env(safe-area-inset-bottom));
+    background:rgba(246,243,238,.95);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    border-top:1px solid rgba(228,220,204,.9);
+    box-shadow:0 -4px 18px rgba(43,33,25,.08);
+  }
+  .gallery-dock-inner{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .dock-summary{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    min-width:72px;
+    line-height:1.2;
+    flex-shrink:0;
+  }
+  .dock-summary-label{
+    font-size:11px;
+    color:var(--sub);
+    font-weight:600;
+  }
+  .dock-summary-val{
+    display:flex;
+    align-items:baseline;
+    gap:2px;
+    margin-top:2px;
+  }
+  .dock-count-num{
+    font-size:18px;
+    font-weight:800;
+    color:var(--gold);
+    font-variant-numeric:tabular-nums;
+    transition:color .2s;
+  }
+  .dock-count-total{
+    font-size:11.5px;
+    color:var(--sub);
+  }
+  .btn-dock-submit{
+    flex:1;
+    margin:0;
+    padding:12px 16px;
+    font-size:14.5px;
+    letter-spacing:.3px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    box-shadow:0 3px 10px rgba(184,134,11,.25);
+  }
   
   .gallery-actions{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 2px}
   .view-switch-btns{display:flex;gap:4px;background:#ebe5d9;padding:3px;border-radius:8px}
@@ -79,7 +521,7 @@
   .card-heart-action:active{transform:scale(.86)}
   .card-heart-action.liked{background:#fff;border-color:rgba(255,75,100,.35);box-shadow:0 4px 16px rgba(225,29,72,.38),0 0 0 2px rgba(255,60,90,.2);transform:scale(1.05)}
   
-  .card-meta{padding:10px;flex:1;display:flex;flex-direction:column;justify-content:space-between}
+  .card-meta{padding:10px 10px 12px;display:flex;flex-direction:column;gap:3px}
   .card-title-name{display:flex;justify-content:space-between;align-items:baseline}
   .card-nm{font-size:13.5px;font-weight:700;color:#221a14}
   .card-votes-pill{font-size:11.5px;color:var(--gold);font-weight:700;display:flex;align-items:center;gap:4px}
@@ -109,7 +551,7 @@
     width:100vw;
     height:100vh;
     height:100dvh;
-    z-index:90;
+    z-index:9999;
     background:#000;
     color:#fff;
     touch-action:none;
@@ -118,41 +560,109 @@
   }
   @media(min-width:768px){
     #player{
-      max-width:440px;
-      left:50%;
-      right:auto;
-      transform:translateX(-50%);
-      box-shadow:0 0 80px rgba(0,0,0,.85);
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      border-radius:42px;
+      z-index:90;
+      transition:max-width .3s cubic-bezier(0.2,0.9,0.3,1), height .3s cubic-bezier(0.2,0.9,0.3,1), transform .3s cubic-bezier(0.2,0.9,0.3,1);
+    }
+    #player.is-rotated{
+      position:fixed !important;
+      max-width:960px !important;
+      width:960px !important;
+      height:540px !important;
+      top:50% !important;
+      left:50% !important;
+      bottom:auto !important;
+      transform:translate(-50%, -50%) !important;
+      border-radius:18px !important;
+      box-shadow:0 24px 90px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.15) !important;
+      z-index:99999 !important;
     }
   }
 
-  /* 顶部半透明浮层：完全悬浮在视频上方，绝不占用视频任何高度 */
+  /* 移动端全屏旋转 (物理90°无损大屏) */
+  @media(max-width:767px){
+    #player{
+      position:fixed !important;
+      inset:0 !important;
+      width:100vw !important;
+      height:100vh !important;
+      height:100dvh !important;
+      border-radius:0 !important;
+      z-index:9999 !important;
+    }
+    #player.is-rotated{
+      position:fixed !important;
+      top:50% !important;
+      left:50% !important;
+      right:auto !important;
+      bottom:auto !important;
+      width:100vh !important;
+      width:100dvh !important;
+      height:100vw !important;
+      transform:translate(-50%, -50%) rotate(90deg) !important;
+      transform-origin:center center !important;
+      transition:transform .3s cubic-bezier(0.2, 0.9, 0.3, 1), width .3s, height .3s;
+      z-index:99999 !important;
+    }
+    #player.is-rotated .player-top-overlay{
+      padding:calc(12px + env(safe-area-inset-top, 0px)) calc(20px + env(safe-area-inset-right, 0px)) 12px calc(20px + env(safe-area-inset-left, 0px)) !important;
+      z-index:999999 !important;
+    }
+  }
+
+  @media(orientation: landscape) and (max-height: 500px){
+    #player.is-rotated{
+      transform: none !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+    }
+  }
+
+  /* 顶部半透明浮层：完全悬浮在视频上方，绝不占用视频任何高度，响应式三段布局 */
   .player-top-overlay{
     position:absolute;
     top:0;
     left:0;
     right:0;
-    z-index:25;
+    z-index:30;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:max(14px, env(safe-area-inset-top)) 16px 14px;
-    background:linear-gradient(to bottom, rgba(0,0,0,.65) 0%, rgba(0,0,0,.2) 70%, transparent 100%);
+    gap:8px;
+    padding:calc(12px + env(safe-area-inset-top, 0px)) 14px 12px;
+    background:linear-gradient(to bottom, rgba(0,0,0,.7) 0%, rgba(0,0,0,.35) 60%, transparent 100%);
     pointer-events:none;
+    box-sizing:border-box;
   }
   .player-top-overlay > *{
     pointer-events:auto;
   }
 
+  .player-top-actions{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-shrink:0;
+  }
+
   .btn-float-back{
     display:flex;
     align-items:center;
-    gap:4px;
-    background:rgba(0,0,0,.45);
-    border:1px solid rgba(255,255,255,.2);
+    gap:3px;
+    background:rgba(0,0,0,.48);
+    border:1px solid rgba(255,255,255,.22);
     border-radius:99px;
-    padding:6px 14px 6px 10px;
-    font-size:13px;
+    padding:5px 12px 5px 8px;
+    font-size:12.5px;
     font-weight:600;
     color:#fff;
     cursor:pointer;
@@ -160,25 +670,88 @@
     -webkit-backdrop-filter:blur(10px);
     transition:transform .15s, background .15s;
     user-select:none;
+    -webkit-user-select:none;
+    touch-action:manipulation;
+    flex-shrink:0;
+    white-space:nowrap;
+    -webkit-tap-highlight-color:transparent;
   }
   .btn-float-back:active{transform:scale(.94);background:rgba(255,255,255,.2)}
-  .btn-float-back .back-arrow{font-size:20px;line-height:1;margin-top:-2px}
+  .btn-float-back .back-arrow{font-size:18px;line-height:1;margin-top:-1.5px}
 
   .float-meta-badge{
     display:flex;
     align-items:center;
-    gap:6px;
-    background:rgba(0,0,0,.45);
-    border:1px solid rgba(255,255,255,.18);
+    gap:5px;
+    background:rgba(0,0,0,.48);
+    border:1px solid rgba(255,255,255,.2);
     border-radius:99px;
-    padding:6px 14px;
-    font-size:12px;
+    padding:5px 11px;
+    font-size:11.5px;
     font-weight:700;
     color:#fff;
     backdrop-filter:blur(10px);
     -webkit-backdrop-filter:blur(10px);
+    flex-shrink:0;
+    white-space:nowrap;
   }
   .float-meta-badge .meta-sep{opacity:.4}
+
+  /* 核心：唯一全屏播放按钮 (智能全屏横竖屏切换，退出自动回退竖屏) */
+  .btn-float-fullscreen{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    background:rgba(0,0,0,.55);
+    border:1.5px solid rgba(255,255,255,.32);
+    border-radius:99px;
+    padding:6px 14px;
+    font-size:12.5px;
+    font-weight:700;
+    color:#fff;
+    cursor:pointer;
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    transition:all .2s ease;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:manipulation;
+    box-shadow:0 2px 10px rgba(0,0,0,.4);
+    white-space:nowrap;
+    flex-shrink:0;
+    pointer-events:auto !important;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn-float-fullscreen:active{transform:scale(.92);background:rgba(255,255,255,.3)}
+  .btn-float-fullscreen .fullscreen-icon{font-size:13px;display:inline-block;line-height:1}
+  .btn-float-fullscreen.is-fs{
+    background:linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+    border:1.5px solid #FFEAA7 !important;
+    color:#FFF !important;
+    box-shadow:0 0 18px rgba(245, 158, 11, 0.8), 0 2px 8px rgba(0,0,0,0.5) !important;
+  }
+
+  /* 横屏旋转全屏时，强制视频完整展现，绝不被任何比例拉伸裁剪 */
+  #player.is-rotated #videoEl{
+    object-fit:contain !important;
+  }
+
+  /* HTML5 全屏沉浸模式覆盖 (完全铺满屏幕，消除浏览器顶栏) */
+  #player:fullscreen,
+  #player:-webkit-full-screen,
+  #player:-moz-full-screen,
+  #player:-ms-fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    position: fixed !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    border-radius: 0 !important;
+    z-index: 99999 !important;
+    background: #000 !important;
+  }
 
   #stage{
     position:absolute;
@@ -208,13 +781,34 @@
     will-change:transform;
   }
 
-  /* 核心：满屏自适应 cover 填充满屏，绝无上下黑边与断层！ */
+  /* 核心：满屏自适应与横屏智能适配（抖音/视频号高级质感） */
+  .slide-ambient-bg{
+    position:absolute;
+    inset:-24px;
+    background-size:cover;
+    background-position:center;
+    filter:blur(32px) brightness(0.5);
+    opacity:0;
+    transition:opacity .35s ease;
+    pointer-events:none;
+    z-index:1;
+  }
+  .slide.is-landscape .slide-ambient-bg{
+    opacity:1;
+  }
   #videoEl{
+    position:relative;
+    z-index:2;
     width:100%;
     height:100%;
     object-fit:cover;
     background:#000;
     pointer-events:none;
+    transition:object-fit .2s ease;
+  }
+  .slide.is-landscape #videoEl{
+    object-fit:contain;
+    background:transparent;
   }
   
   @keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -235,23 +829,175 @@
 
   .playpause{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:54px;opacity:.9;z-index:14;pointer-events:none}
 
-  .info{position:absolute;left:16px;bottom:36px;z-index:8;max-width:75%;text-shadow:0 2px 6px rgba(0,0,0,.9)}
-  .info .no{font-size:12px;opacity:.85;letter-spacing:1px}
-  .info .nmm{font-size:21px;font-weight:800;margin-top:4px}
-  .info .dpp{font-size:12px;opacity:.85;margin-top:3px}
-  .info .vtt{font-size:13.5px;color:var(--gold-l);font-weight:700;margin-top:5px;line-height:1.4}
-  .info .vii{font-size:11.5px;opacity:.8;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  /* ---------- 候选人信息折叠/展开系统 (默认极简折叠避让字幕 + 一键展开详阅) ---------- */
+  .info{
+    position:absolute;
+    left:14px;
+    bottom:calc(42px + env(safe-area-inset-bottom, 0px));
+    z-index:18;
+    max-width:76%;
+    pointer-events:none;
+    transition:bottom .25s ease;
+  }
+  .info > *{
+    pointer-events:auto;
+  }
+  .info-collapsed-bar{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .info-header-line{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    text-shadow:0 2px 6px rgba(0,0,0,.95);
+  }
+  .info .nmm{
+    font-size:18px;
+    font-weight:800;
+    color:#fff;
+    letter-spacing:.3px;
+  }
+  .info .no{
+    font-size:11px;
+    font-weight:700;
+    color:var(--gold-l,#FFEAA7);
+    background:rgba(0,0,0,.5);
+    padding:1px 7px;
+    border-radius:6px;
+    border:0.5px solid rgba(255,255,255,.2);
+    backdrop-filter:blur(6px);
+  }
+  .info-title-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .vtt-compact{
+    font-size:12px;
+    color:rgba(255,255,255,.9);
+    max-width:180px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    text-shadow:0 1.5px 5px rgba(0,0,0,.9);
+    font-weight:600;
+  }
+  .btn-info-toggle{
+    display:inline-flex;
+    align-items:center;
+    gap:2px;
+    background:rgba(0,0,0,.52);
+    border:0.5px solid rgba(255,255,255,.32);
+    border-radius:10px;
+    padding:1px 7px;
+    font-size:10.5px;
+    font-weight:600;
+    color:var(--gold-l,#FFEAA7);
+    backdrop-filter:blur(6px);
+    cursor:pointer;
+    transition:background .2s, transform .15s;
+    flex-shrink:0;
+  }
+  .btn-info-toggle:active{
+    transform:scale(.92);
+    background:rgba(0,0,0,.75);
+  }
+  .toggle-arrow{
+    font-size:10px;
+    transition:transform .2s ease;
+  }
 
-  .ctrl{position:absolute;right:14px;bottom:44px;z-index:10;display:flex;flex-direction:column;align-items:center}
+  /* 展开的详情抽屉面板 (半透明磨砂呈现，绝不遮挡上方主体画面) */
+  .info-drawer{
+    margin-top:6px;
+    background:rgba(18, 14, 10, 0.88);
+    border:1px solid rgba(255, 255, 255, 0.2);
+    border-radius:14px;
+    padding:12px 14px;
+    color:#fff;
+    box-shadow:0 8px 32px rgba(0,0,0,.75);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    max-height:220px;
+    overflow-y:auto;
+    animation:fadeInDrawer .2s ease-out;
+  }
+  @keyframes fadeInDrawer{
+    from{opacity:0;transform:translateY(6px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+  .drawer-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:6px;
+    padding-bottom:5px;
+    border-bottom:0.5px solid rgba(255,255,255,.14);
+  }
+  .drawer-header .dpp{
+    font-size:12px;
+    color:#D2C9B8;
+    font-weight:600;
+  }
+  .btn-drawer-close{
+    font-size:11px;
+    color:var(--gold-l,#FFEAA7);
+    background:rgba(255,255,255,.12);
+    padding:2px 8px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .info-drawer .vtt{
+    font-size:13px;
+    color:var(--gold-l,#FFEAA7);
+    font-weight:700;
+    margin-bottom:6px;
+    line-height:1.4;
+  }
+  .info-drawer .vii{
+    font-size:11.5px;
+    color:rgba(255,255,255,.88);
+    line-height:1.6;
+    white-space:pre-wrap;
+    max-height:120px;
+    overflow-y:auto;
+  }
+
+  .ctrl{
+    position:absolute;
+    right:14px;
+    bottom:calc(50px + env(safe-area-inset-bottom, 0px));
+    z-index:10;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
   .ctrl .ctrl-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
   .ctrl .btn-circle{width:56px;height:56px;border-radius:50%;background:rgba(20,18,25,.65);border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:rgba(255,255,255,.92);box-shadow:0 4px 20px rgba(0,0,0,.5);transition:all .25s cubic-bezier(0.34,1.56,0.64,1)}
   .ctrl .btn-circle:active{transform:scale(.88)}
   .ctrl .btn-circle.liked{background:rgba(45,12,20,.82);border-color:rgba(255,75,100,.9);box-shadow:0 0 24px rgba(225,29,72,.7),inset 0 0 14px rgba(255,45,80,.4);transform:scale(1.06)}
   .ctrl .ctrl-label{font-size:11px;font-weight:700;color:rgba(255,255,255,.95);letter-spacing:.5px;text-shadow:0 1px 4px rgba(0,0,0,.85);padding:3px 9px;border-radius:10px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);transition:all .2s}
   .ctrl .ctrl-label.liked{color:#ffd1d9;background:rgba(225,29,72,.5);border:0.5px solid rgba(255,80,110,.55)}
+  .ctrl .ctrl-votes-badge{font-size:11px;font-weight:800;color:var(--gold-l);letter-spacing:.5px;text-shadow:0 1px 4px rgba(0,0,0,.9);margin-top:1px;background:rgba(0,0,0,.5);padding:2px 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 
-  .prog{position:absolute;left:0;bottom:0;height:4px;background:rgba(255,255,255,.2);width:100%;z-index:9}
-  .prog i{display:block;height:100%;width:0;background:var(--gold-l)}
+  /* 底部可拖拽快进进度条系统 (专业短视频触控体验，全面适配全面屏避让小黑条) */
+  .prog-wrap{position:absolute;left:0;right:0;bottom:0;height:calc(36px + env(safe-area-inset-bottom, 0px));z-index:25;display:flex;align-items:flex-end;padding:0 14px calc(6px + env(safe-area-inset-bottom, 0px)) 14px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none}
+  .prog-track{position:relative;width:100%;height:4px;background:rgba(255,255,255,.25);border-radius:3px;transition:height .15s ease,background-color .15s ease}
+  .prog-wrap:hover .prog-track,.prog-wrap.active .prog-track{height:7px;background:rgba(255,255,255,.38)}
+  .prog-buf{position:absolute;left:0;top:0;height:100%;width:0;background:rgba(255,255,255,.28);border-radius:3px;pointer-events:none}
+  .prog-bar{position:absolute;left:0;top:0;height:100%;width:0;background:linear-gradient(90deg,var(--gold,#C59A3F),var(--gold-l,#FFEAA7));border-radius:3px;pointer-events:none;box-shadow:0 0 6px rgba(245,158,11,.6)}
+  .prog-thumb{position:absolute;top:50%;left:0;width:12px;height:12px;border-radius:50%;background:#ffffff;border:2px solid var(--gold,#C59A3F);box-shadow:0 1px 6px rgba(0,0,0,.6),0 0 10px rgba(245,158,11,.8);transform:translate(-50%,-50%) scale(.85);transition:transform .12s ease,opacity .15s ease;opacity:.85;pointer-events:none}
+  .prog-wrap:hover .prog-thumb,.prog-wrap.active .prog-thumb{transform:translate(-50%,-50%) scale(1.4);opacity:1;background:#fff;border-color:#F59E0B}
+  /* 浮动时间气泡提示 */
+  .prog-tooltip{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);background:rgba(20,18,25,.92);border:1px solid rgba(245,158,11,.55);color:#fff;padding:4px 10px;border-radius:8px;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-weight:700;letter-spacing:.5px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.55);pointer-events:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:30}
+  .prog-tooltip #progCurrentTime{color:var(--gold-l,#FFEAA7)}
+  .prog-tooltip .prog-time-sep{margin:0 4px;opacity:.6}
+  .prog-tooltip #progDuration{opacity:.85}
 
   /* 点赞推荐全屏震撼爆发动效 */
   .big-star-burst{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;z-index:18;display:flex;align-items:center;justify-content:center}
@@ -287,6 +1033,12 @@
   .modal h3{margin:0 0 10px;font-size:18px;color:var(--ink)}
   .modal p{margin:0 0 20px;font-size:13.5px;color:var(--sub);line-height:1.8}
   .modal .row{display:flex;gap:10px}
+
+  /* 退出确认弹窗专用样式 */
+  .exit-modal{max-width:340px;padding:26px 20px 22px}
+  .exit-modal-icon{font-size:38px;line-height:1;margin-bottom:12px}
+  .exit-modal h3{font-size:17px;font-weight:700;color:var(--ink);margin:0 0 10px}
+  .exit-modal p{font-size:13px;color:var(--sub);line-height:1.75;margin:0 0 20px}
 
   /* 排行榜模态框 */
   .leaderboard-modal{background:#fff;border-radius:18px;width:100%;max-width:400px;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 50px rgba(0,0,0,.4)}
@@ -329,7 +1081,27 @@
     </linearGradient>
   </defs>
 </svg>
-<div id="phone">
+<div class="desktop-layout-wrapper" id="desktopWrapper">
+  <!-- 左侧：iPhone 16 Pro 手机模拟器容器 (移动端自适应为 100% 原生全屏) -->
+  <div class="phone-simulator-column">
+    <div class="iphone-frame" id="iphoneFrame">
+      <!-- 灵动岛 (桌面端独有) -->
+      <div class="iphone-dynamic-island">
+        <div class="camera-lens"></div>
+      </div>
+
+      <!-- 微信顶栏 (桌面端独有) -->
+      <div class="wechat-header-bar">
+        <div class="wx-left">
+          <span class="wx-title">星火计划 · 创作者选拔投票</span>
+        </div>
+        <div class="wx-right">
+          <span class="wx-more-dots">···</span>
+        </div>
+      </div>
+
+      <!-- 手机主内容区域 -->
+      <div id="phone">
 
   <!-- ============ 1. 入口页 (实名去重认证) ============ -->
   <section id="entry">
@@ -346,8 +1118,13 @@
       · 为保障所有作品公平曝光，已为每位员工提供专属个性化顺序
     </div>
 
-    <!-- 登录卡片 (输入框常驻显示，支持回车直登与一键清空换号) -->
-    <div class="login-card">
+    <!-- 登录卡片 (输入姓名与工号进行身份认证) -->
+    <div class="login-card" id="loginCard">
+      <div class="login-title">
+        <span style="font-size:16px">🔑</span>
+        <span>员工工号认证登录</span>
+      </div>
+
       <div id="loggedInArea" class="hide" style="margin-bottom:12px">
         <div class="login-status-badge" style="margin-bottom:0">
           <span>已记住：<strong id="loggedInfoTxt">--</strong></span>
@@ -364,9 +1141,8 @@
           <label>工号：</label>
           <input type="text" id="loginJobNo" placeholder="输入工号 (如：10001)" maxlength="32" autocomplete="off">
         </div>
+        <button class="btn" id="btnStart" style="margin-top:8px">开始投票</button>
       </div>
-
-      <button class="btn" id="btnStart" style="margin-top:8px">开始投票</button>
     </div>
   </section>
 
@@ -378,11 +1154,7 @@
       <span class="pill" id="pillBudget">剩余 5 / 5 票</span>
     </div>
 
-    <div class="gallery-actions">
-      <div class="view-switch-btns">
-        <button class="view-switch-btn active" id="btnViewGrid">双列宫格</button>
-        <button class="view-switch-btn" id="btnViewFeed">单列大图</button>
-      </div>
+    <div class="gallery-actions" style="justify-content:flex-end">
       <div style="display:flex;gap:6px">
         <button class="btn ghost" id="btnOpenLeaderboard" style="padding:6px 10px;font-size:12.5px;width:auto">🏆 实时榜单</button>
         <button class="btn sec" id="btnGoPlayer" style="padding:6px 12px;font-size:12.5px;width:auto">▶ 上下滑播放</button>
@@ -392,8 +1164,18 @@
     <!-- 作品展示容器 (支持直接点赞，有效视频封面) -->
     <div class="grid" id="grid"></div>
 
-    <div style="padding:0 20px;margin:12px 0 20px">
-      <button class="btn" id="btnSubmit">确认并提交我的票数</button>
+    <!-- 吸底操作栏 (吸盘式固定底部，无需滑到最底部) -->
+    <div class="gallery-dock" id="galleryDock">
+      <div class="gallery-dock-inner">
+        <div class="dock-summary">
+          <div class="dock-summary-label">已投推荐票</div>
+          <div class="dock-summary-val">
+            <span class="dock-count-num" id="dockCountNum">0</span>
+            <span class="dock-count-total">/ 5 票</span>
+          </div>
+        </div>
+        <button class="btn btn-dock-submit" id="btnSubmit">确认并提交我的票数</button>
+      </div>
     </div>
   </section>
 
@@ -405,25 +1187,34 @@
         <span class="back-arrow">‹</span>
         <span class="back-txt">返回</span>
       </div>
+
+      <!-- 中间操作按钮胶囊组：只保留一个全屏按钮 -->
+      <div class="player-top-actions">
+        <!-- 核心：唯一全屏播放按钮 (智能全屏横竖屏切换，退出自动回退竖屏) -->
+        <div class="btn-float-fullscreen" id="btnFullscreen" title="开启全屏播放">
+          <span class="fullscreen-icon" id="fullscreenIcon">⛶</span>
+          <span class="fullscreen-txt" id="fullscreenTxt">全屏</span>
+        </div>
+      </div>
+
       <div class="float-meta-badge">
-        <span id="pIdx">01 / 03</span>
-        <span class="meta-sep">·</span>
         <span id="pBudget">剩余 5 票</span>
       </div>
     </div>
 
     <div id="stage">
       <div class="slide" id="slide">
-        <!-- 核心视频播放标签 (标准 H.264 MP4 流，配置 WeChat X5 / iOS 极速无黑屏行内播放) -->
+        <!-- 视频背景模糊层 (横屏视频时自动显现，打造抖音/视频号沉浸式背景) -->
+        <div class="slide-ambient-bg" id="slideAmbientBg"></div>
+        <!-- 核心视频播放标签 (标准 H.264 MP4 流，配置 WeChat X5 / iOS 极速无黑屏行内播放，绝不默认全屏) -->
         <video 
           id="videoEl" 
           playsinline="true" 
           webkit-playsinline="true" 
           x5-playsinline="true" 
           x5-video-player-type="h5-page"
-          x5-video-player-fullscreen="false"
           x5-video-orientation="portrait"
-          controlsList="nodownload nofullscreen noremoteplayback"
+          controlsList="nodownload noremoteplayback"
           disablePictureInPicture="true"
           preload="auto"
           loop
@@ -444,13 +1235,32 @@
         <div class="playpause hide" id="playpause">⏸</div>
       </div>
 
-      <!-- 左下角信息 (抖音式简洁创作者与作品信息，消除生硬的项目描述) -->
-      <div class="info">
-        <div class="no" id="pNo">作品 01</div>
-        <div class="nmm" id="pName">—</div>
-        <div class="dpp" id="pDept">—</div>
-        <div class="vtt hide" id="pTitle"></div>
-        <div class="vii hide" id="pIntro"></div>
+      <!-- 左下角信息 (默认折叠极简呈现避让字幕 + 一键展开详阅) -->
+      <div class="info" id="playerInfoBox">
+        <!-- 默认紧凑折叠摘要栏：极窄高度，彻底释放底部字幕空间 -->
+        <div class="info-collapsed-bar" id="infoCollapsedBar" onclick="toggleInfoDrawer(event)">
+          <div class="info-header-line">
+            <span class="nmm" id="pName">@创作者</span>
+            <span class="no" id="pNo">作品 01</span>
+          </div>
+          <div class="info-title-row">
+            <span class="vtt-compact" id="pTitleCompact">🎬 视频提案</span>
+            <span class="btn-info-toggle" id="btnInfoToggle">
+              <span id="infoToggleTxt">详情</span>
+              <span class="toggle-arrow" id="infoToggleArrow">▾</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 展开态详情抽屉面板 (默认隐藏，点击详情时浮层展开) -->
+        <div class="info-drawer hide" id="infoDrawer">
+          <div class="drawer-header">
+            <div class="dpp" id="pDept">—</div>
+            <span class="btn-drawer-close" onclick="toggleInfoDrawer(event)">收起 ▴</span>
+          </div>
+          <div class="vtt" id="pTitle"></div>
+          <div class="vii" id="pIntro"></div>
+        </div>
       </div>
 
       <!-- 右侧悬浮操作栏 (专业点赞投票交互器) -->
@@ -460,6 +1270,7 @@
             <!-- 点赞矢量徽章由 renderPlayerLikeState 动态注入 -->
           </div>
           <span class="ctrl-label" id="pLikeText">投TA一票</span>
+          <span class="ctrl-votes-badge" id="pVoteCountBadge">0 票</span>
         </div>
       </div>
 
@@ -477,8 +1288,20 @@
           <span class="sp s4">✧</span>
         </div>
       </div>
-      <!-- 底部播放进度条 -->
-      <div class="prog"><i id="progBar"></i></div>
+      <!-- 底部播放进度条与拖拽快进控制器 -->
+      <div class="prog-wrap" id="progWrap" title="拖动或点击调整播放进度">
+        <!-- 拖拽快进时浮动时间提示 (例如: 00:45 / 01:30) -->
+        <div class="prog-tooltip hide" id="progTooltip">
+          <span id="progCurrentTime">00:00</span>
+          <span class="prog-time-sep">/</span>
+          <span id="progDuration">00:00</span>
+        </div>
+        <div class="prog-track" id="progTrack">
+          <div class="prog-buf" id="progBuf"></div>
+          <div class="prog-bar" id="progBar"></div>
+          <div class="prog-thumb" id="progThumb"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -514,8 +1337,7 @@
       </div>
       <div class="lb-body" id="lbList"></div>
       <div class="lb-footer">
-        <button class="btn ghost" id="btnRefreshLb" style="flex:1;padding:10px;font-size:13px">⟳ 刷新榜单</button>
-        <button class="btn" id="btnExportExcel" style="flex:1.8;padding:10px;font-size:13px">📥 导出 Excel 表格</button>
+        <button class="btn" id="btnRefreshLb" style="width:100%;padding:11px;font-size:13.5px">⟳ 刷新实时榜单</button>
       </div>
     </div>
   </div>
@@ -533,6 +1355,73 @@
     </div>
   </div>
 
+  <!-- ============ 7. 退出防误触确认模态框 (防微信手势误退) ============ -->
+  <div id="exitMask" class="mask hide">
+    <div class="modal exit-modal">
+      <div class="exit-modal-icon">⚠️</div>
+      <h3 id="exitTitle">确认退出展播投票？</h3>
+      <p id="exitBody">
+        您投出的推荐票尚未最终确认提交。<br>
+        若现在退出，投票记录将不会生效！
+      </p>
+      <div class="row">
+        <button class="btn ghost" id="btnStayVote" style="flex:1">继续投票</button>
+        <button class="btn" id="btnConfirmExit" style="flex:1;background:linear-gradient(135deg,#8f3118,#b84725);color:#fff">确认退出</button>
+      </div>
+    </div>
+  </div>
+
+</div> <!-- 关闭 #phone -->
+
+      <!-- iPhone 底部横条 (桌面端独有) -->
+      <div class="iphone-home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- 右侧：微信扫码直达投票卡片 (桌面端展示，移动端自动隐藏) -->
+  <div class="desktop-sidebar-column" id="desktopSidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-header">
+        <span class="sidebar-tag">汇添富 · 星火计划</span>
+        <h3 class="sidebar-title">手机微信扫码直达投票</h3>
+        <p class="sidebar-sub">手机微信扫一扫，进入手机端登录卡片，输入工号即可投票</p>
+      </div>
+
+      <div class="qr-container-box">
+        <div class="qr-img-wrapper" id="desktopQrBox" title="点击可重新获取二维码" onclick="refreshDesktopQrCode()">
+          <img src="" alt="手机扫码直达投票" class="qr-image" id="desktopQrImg" />
+          <div class="qr-loading hide" id="desktopQrLoading">正在生成二维码...</div>
+        </div>
+
+        <div class="qr-scan-status-pill" id="qrScanStatus">
+          <span class="status-dot pulsing" id="statusDot"></span>
+          <span id="qrStatusText">微信扫码直达工号登录卡片</span>
+        </div>
+
+        <div class="qr-info-row">
+          <input type="text" readonly id="desktopVoteUrlInput" class="qr-url-input" />
+          <button class="btn-copy" id="btnCopyDesktopUrl" onclick="copyDesktopVoteUrl()">
+            复制投票链接
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-steps">
+        <div class="step-item">
+          <span class="step-num">1</span>
+          <div class="step-text">手机打开微信 <b>“扫一扫”</b></div>
+        </div>
+        <div class="step-item">
+          <span class="step-num">2</span>
+          <div class="step-text">手机直达 <b>“工号登录卡片”</b></div>
+        </div>
+        <div class="step-item">
+          <span class="step-num">3</span>
+          <div class="step-text">输入 <b>“员工姓名与工号”</b> 即可投票</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -604,6 +1493,11 @@ var cur = 0; // 当前沉浸流卡片索引
 var isPlaying = false;
 var currentViewMode = 'grid'; // 'grid' | 'feed'
 var videoEl = document.getElementById('videoEl');
+if(videoEl){
+  videoEl.playsInline = true;
+  videoEl.setAttribute('playsinline', '');
+  videoEl.setAttribute('webkit-playsinline', '');
+}
 
 /* ===== DOM 便捷选择器 ===== */
 function $(id){ return document.getElementById(id); }
@@ -676,6 +1570,9 @@ $('btnSwitchAccount').onclick = function(){
   $('btnStart').textContent = '开始投票';
   $('loginName').focus();
   applyWorksOrder();
+  if(window.innerWidth >= 768){
+    initDesktopQrCode();
+  }
 };
 
 // 快捷体验：姓名/工号输入框按回车直接提交登录
@@ -779,7 +1676,7 @@ async function doLogin(){
 
 $('btnStart').onclick = doLogin;
 
-/* ===== 4. 刷新顶部票数统计 ===== */
+/* ===== 4. 刷新顶部与吸底票数统计 ===== */
 function updatePills(){
   var left = Math.max(0, CFG.budget - likedIds.length);
   var el = $('pillBudget');
@@ -789,12 +1686,31 @@ function updatePills(){
   }
   if($('pBudget')) $('pBudget').innerHTML = renderVoteIcon(true, 13) + ' <span>剩余 ' + left + ' 票</span>';
   if($('pillUser') && voter) $('pillUser').textContent = voter.name + ' (' + voter.jobNo + ')';
+
+  // 同步更新吸底操作栏 (已投推荐票数字 & 提交按钮文案状态)
+  var dockCount = $('dockCountNum');
+  if(dockCount){
+    dockCount.textContent = likedIds.length;
+    dockCount.style.color = likedIds.length >= CFG.budget ? '#e11d48' : 'var(--gold)';
+  }
+  var btnSub = $('btnSubmit');
+  if(btnSub){
+    if(voter && voter.submitted){
+      btnSub.textContent = '已确认提交 · 只读';
+      btnSub.disabled = true;
+    } else {
+      btnSub.textContent = likedIds.length > 0
+        ? '确认并提交我的票数 (' + likedIds.length + '/' + CFG.budget + ')'
+        : '确认并提交我的票数';
+      btnSub.disabled = false;
+    }
+  }
 }
 
 /* ===== 5. 核心：渲染作品列表 (有效画面 + 直接点赞，不需要点进去) ===== */
 function renderGallery(){
   var g = $('grid');
-  g.className = currentViewMode === 'feed' ? 'feed-mode' : 'grid';
+  g.className = 'grid';
   g.innerHTML = '';
 
   if(WORKS.length === 0){
@@ -817,10 +1733,6 @@ function renderGallery(){
         '<div class="cover-overlay"></div>' +
         '<div class="card-play-icon">▶</div>' +
         '<span class="card-cand-id">' + (w.id || pad(idx + 1)) + '</span>' +
-        /* 核心需求：高定点赞投票按钮 (投TA一票 / 已投票 ✓) */
-        '<div class="card-heart-action ' + (isLiked ? 'liked' : '') + '" onclick="onDirectVoteClick(event, \'' + w.id + '\')" title="' + (isLiked ? '取消投票' : '投 TA 一票') + '">' +
-          renderVoteIcon(isLiked, 19) +
-        '</div>' +
       '</div>' +
       '<div class="card-meta">' +
         '<div class="card-title-name">' +
@@ -829,7 +1741,7 @@ function renderGallery(){
         '</div>' +
         '<div class="card-dp">' + (w.department || '汇添富') + ' · ' + (w.position || '创作者') + '</div>' +
         '<div class="card-vt">🎬 ' + (w.videoTitle || '自媒体短视频') + '</div>' +
-        /* 卡片底部直观投票按钮 (投 TA 一票 / 已投票 ✓) */
+        /* 核心需求：胶囊投票按钮 (投TA一票 / 已投票 ✓) */
         '<button class="btn-card-vote ' + (isLiked ? 'liked' : '') + '" onclick="onDirectVoteClick(event, \'' + w.id + '\')">' +
           renderVoteIcon(isLiked, 15) +
           '<span>' + (isLiked ? '已投票 ✓' : '投 TA 一票') + '</span>' +
@@ -840,23 +1752,7 @@ function renderGallery(){
   });
 
   updatePills();
-  $('btnSubmit').textContent = voter && voter.submitted ? '已确认提交 · 只读' : '确认并提交我的票数';
-  $('btnSubmit').disabled = !!(voter && voter.submitted);
 }
-
-// 视图切换 (双列宫格 / 单列大图)
-$('btnViewGrid').onclick = function(){
-  currentViewMode = 'grid';
-  $('btnViewGrid').classList.add('active');
-  $('btnViewFeed').classList.remove('active');
-  renderGallery();
-};
-$('btnViewFeed').onclick = function(){
-  currentViewMode = 'feed';
-  $('btnViewFeed').classList.add('active');
-  $('btnViewGrid').classList.remove('active');
-  renderGallery();
-};
 
 /* ===== 核心需求2：不需要点进去才能点赞！列表直接点赞函数 ===== */
 window.onDirectVoteClick = function(e, candidateId){
@@ -904,20 +1800,28 @@ async function executeToggleVote(candidateId){
     if(json.code === 0 && json.data){
       likedIds = json.data.likedIds || [];
       
-      // 更新该候选人本地投票数 (同步 WORKS 与 RAW_WORKS)
+      // 更新该候选人本地投票数 (优先采用服务端返回的真实权威票数，杜绝对象引用重复叠加+2)
+      var finalVotes;
+      if (typeof json.data.candidateVotes === 'number') {
+        finalVotes = json.data.candidateVotes;
+      } else {
+        var prevCount = targetCand ? (targetCand.votesCount || 0) : (rawCand ? (rawCand.votesCount || 0) : 0);
+        finalVotes = Math.max(0, prevCount + (json.data.liked ? 1 : -1));
+      }
+
       if(targetCand){
-        targetCand.votesCount = Math.max(0, (targetCand.votesCount || 0) + (json.data.liked ? 1 : -1));
+        targetCand.votesCount = finalVotes;
       }
       var rawCand = RAW_WORKS.find(function(w){ return w.id === candidateId; });
-      if(rawCand){
-        rawCand.votesCount = Math.max(0, (rawCand.votesCount || 0) + (json.data.liked ? 1 : -1));
+      if(rawCand && rawCand !== targetCand){
+        rawCand.votesCount = finalVotes;
       }
 
       // 局部刷新卡片或全列表刷新
       renderGallery();
       updatePills();
 
-      // 如果当前正处于全屏播放器，同步更新播放器里的心形按钮
+      // 如果当前正处于全屏播放器，同步更新播放器里的点赞状态与票数
       if(!$('player').classList.contains('hide') && WORKS[cur] && WORKS[cur].id === candidateId){
         renderPlayerLikeState(candidateId);
       }
@@ -942,17 +1846,22 @@ async function executeToggleVote(candidateId){
   }
 }
 
-/* ===== 核心：沉浸流全屏播放器 (点击进去直接播放 + 滑动也直接播放) ===== */
+/* ===== 核心：沉浸流播放器 (默认竖屏播放，点击全屏再展开) ===== */
 function openPlayer(idx){
   if(WORKS.length === 0) return;
   cur = idx;
   go(null);
-  show($('player'));
-  var w = WORKS[cur];
-  if(w && w.name){
-    document.title = w.name + ' · 作品展播';
+  var player = $('player');
+  // 需求1：默认先不全屏，默认严格保持竖屏！
+  if(player){
+    player.classList.remove('is-rotated');
+    player.classList.remove('is-fs-active');
   }
+  show(player);
+  document.body.style.overflow = 'hidden';
+  pushGuardHistory('player');
   renderPlayerCard(cur, 0, true); // 点击进去，直接播放！
+  updateUnifiedFullscreenBtn(false);
 }
 
 function renderPlayerCard(idx, animDir, autoPlay){
@@ -962,7 +1871,20 @@ function renderPlayerCard(idx, animDir, autoPlay){
   var s = $('slide');
   s.className = 'slide';
   void s.offsetWidth; // 强制 reflow，确保无论上滑下滑、连续同向反向切换都能 100% 触发平滑切卡过渡动效
-  s.className = 'slide' + (animDir === 1 ? ' anim-up' : (animDir === -1 ? ' anim-down' : ''));
+  var isLandscape = isCurrentVideoLandscape(idx);
+  s.className = 'slide' + (animDir === 1 ? ' anim-up' : (animDir === -1 ? ' anim-down' : '')) + (isLandscape ? ' is-landscape' : '');
+
+  // 核心：若处于全屏模式，保持全屏横屏展开状态
+  var player = $('player');
+  if(player && player.classList.contains('is-fs-active')){
+    player.classList.add('is-rotated');
+    updateUnifiedFullscreenBtn(true);
+  }
+
+  var ambientEl = $('slideAmbientBg');
+  if(ambientEl){
+    ambientEl.style.backgroundImage = (isLandscape && w.coverUrl) ? 'url(' + w.coverUrl + ')' : '';
+  }
 
   // 1. 彻底暂停并停止上一段视频的后台网络缓冲，释放移动端内存
   try {
@@ -982,33 +1904,42 @@ function renderPlayerCard(idx, animDir, autoPlay){
     videoEl.load();
   }
 
-  // 2. 填充文字介绍与状态 (去除生硬的项目描述词，保持画面通透纯净)
+  // 2. 填充候选人文字信息与点赞状态 (需求2：默认收起折叠面板，绝不遮挡底部字幕)
   renderPlayerLikeState(w.id);
-  $('pName').textContent = '@' + w.name;
+  var nameEl = $('pName');
+  if(nameEl) nameEl.textContent = '@' + w.name;
   var deptText = (w.department || '') + (w.position ? ' · ' + w.position : '');
-  $('pDept').textContent = deptText;
+  var deptEl = $('pDept');
+  if(deptEl) deptEl.textContent = deptText;
 
+  var fullTitle = w.videoTitle || '自媒体短视频创作提案';
   var titleEl = $('pTitle');
-  if(w.videoTitle && w.videoTitle !== '自媒体短视频创作提案' && w.videoTitle !== '自媒体短视频' && w.videoTitle !== '未命名'){
-    titleEl.textContent = '🎬 ' + w.videoTitle;
-    show(titleEl);
-  } else {
-    hide_(titleEl);
-  }
+  if(titleEl) titleEl.textContent = '🎬 ' + fullTitle;
+  var titleCompactEl = $('pTitleCompact');
+  if(titleCompactEl) titleCompactEl.textContent = '🎬 ' + fullTitle;
 
   var introEl = $('pIntro');
-  if(w.videoIntro){
-    introEl.textContent = w.videoIntro;
-    show(introEl);
-  } else {
-    hide_(introEl);
+  if(introEl){
+    var introText = w.videoIntro || w.personalIntro || '';
+    introEl.textContent = introText;
   }
 
-  $('pIdx').textContent = pad(idx + 1) + ' / ' + pad(WORKS.length || CFG.total);
+  // 默认保持折叠抽屉收起状态，露出字幕
+  hide_($('infoDrawer'));
+  var toggleTxt = $('infoToggleTxt');
+  if(toggleTxt) toggleTxt.textContent = '详情';
+  var toggleArrow = $('infoToggleArrow');
+  if(toggleArrow) toggleArrow.textContent = '▾';
+
+  // 需求3：视频里面的 xx/20 这种直接去掉 (已彻底移除 pIdx 设置)
   $('progBar').style.width = '0%';
+  var progThumbEl = $('progThumb');
+  if(progThumbEl) progThumbEl.style.left = '0%';
+  var progBufEl = $('progBuf');
+  if(progBufEl) progBufEl.style.width = '0%';
   updatePills();
 
-  // 3. 核心体验升级：点击进去直接播放，滑动也直接播放！
+  // 3. 点击进去直接播放，滑动也直接播放！
   if(autoPlay !== false){
     hide_($('playCenterBtn'));
     doPlayVideo();
@@ -1021,8 +1952,13 @@ function renderPlayerCard(idx, animDir, autoPlay){
 
 function renderPlayerLikeState(candId){
   var w = WORKS[cur];
+  if(!w) return;
   var isLiked = likedIds.indexOf(candId) > -1;
-  $('pNo').innerHTML = '作品 ' + (w.id || pad(cur + 1)) + (isLiked ? ' · ' + renderVoteIcon(true, 13) + ' 已投票' : '');
+  var votes = (typeof w.votesCount === 'number') ? w.votesCount : 0;
+  var noEl = $('pNo');
+  if(noEl){
+    noEl.innerHTML = (w.id || pad(cur + 1)) + ' · <strong>' + votes + ' 票</strong>' + (isLiked ? ' · 已投' : '');
+  }
   
   var btnLike = $('btnLike');
   btnLike.innerHTML = renderVoteIcon(isLiked, 26);
@@ -1035,6 +1971,11 @@ function renderPlayerLikeState(candId){
     $('pLikeText').textContent = '投TA一票';
     $('pLikeText').className = 'ctrl-label';
   }
+
+  var badge = $('pVoteCountBadge');
+  if(badge){
+    badge.textContent = votes + ' 票';
+  }
 }
 
 /* 核心：原生视频播放事件绑定，确保 UI 与播放器状态绝不同步错误 */
@@ -1045,6 +1986,7 @@ videoEl.addEventListener('play', function(){
 });
 
 videoEl.addEventListener('pause', function(){
+  if(isScrubbing) return;
   isPlaying = false;
   show($('playCenterBtn'));
   hide_($('videoBuffering'));
@@ -1055,7 +1997,7 @@ videoEl.addEventListener('pause', function(){
 });
 
 videoEl.addEventListener('waiting', function(){
-  if(!videoEl.paused){
+  if(!videoEl.paused && !isScrubbing){
     show($('videoBuffering'));
   }
 });
@@ -1069,11 +2011,46 @@ videoEl.addEventListener('canplay', function(){
   hide_($('videoBuffering'));
 });
 
-videoEl.addEventListener('timeupdate', function(){
-  if(videoEl.duration){
-    var pct = (videoEl.currentTime / videoEl.duration) * 100;
-    $('progBar').style.width = pct + '%';
+videoEl.addEventListener('loadedmetadata', function(){
+  if(videoEl.videoWidth && videoEl.videoHeight){
+    var isLand = videoEl.videoWidth > videoEl.videoHeight;
+    if(WORKS[cur]) WORKS[cur].isLandscape = isLand;
+    var s = $('slide');
+    if(s){
+      if(isLand) s.classList.add('is-landscape');
+      else s.classList.remove('is-landscape');
+    }
   }
+});
+
+videoEl.addEventListener('timeupdate', function(){
+  if(!isScrubbing && videoEl.duration){
+    var pct = (videoEl.currentTime / videoEl.duration) * 100;
+    var progBarEl = $('progBar');
+    var progThumbEl = $('progThumb');
+    if(progBarEl) progBarEl.style.width = pct + '%';
+    if(progThumbEl) progThumbEl.style.left = pct + '%';
+  }
+});
+
+// 缓冲流进度监听
+videoEl.addEventListener('progress', function(){
+  if(videoEl.duration && videoEl.buffered.length > 0){
+    try {
+      var bufEnd = videoEl.buffered.end(videoEl.buffered.length - 1);
+      var bufPct = (bufEnd / videoEl.duration) * 100;
+      var progBufEl = $('progBuf');
+      if(progBufEl) progBufEl.style.width = Math.min(100, bufPct) + '%';
+    } catch(e){}
+  }
+});
+
+videoEl.addEventListener('seeking', function(){
+  if(!isScrubbing) show($('videoBuffering'));
+});
+
+videoEl.addEventListener('seeked', function(){
+  hide_($('videoBuffering'));
 });
 
 videoEl.addEventListener('ended', function(){
@@ -1161,17 +2138,228 @@ function switchCard(dir){
   renderPlayerCard(cur, dir, true); // 滑动也直接开播！
 }
 
+/* ===== 需求2：视频个人信息抽屉折叠/展开控制器 ===== */
+window.toggleInfoDrawer = function(e){
+  if(e){
+    e.stopPropagation();
+  }
+  var drawer = $('infoDrawer');
+  var txt = $('infoToggleTxt');
+  var arrow = $('infoToggleArrow');
+  if(!drawer) return;
+  if(drawer.classList.contains('hide')){
+    show(drawer);
+    if(txt) txt.textContent = '收起';
+    if(arrow) arrow.textContent = '▴';
+  } else {
+    hide_(drawer);
+    if(txt) txt.textContent = '详情';
+    if(arrow) arrow.textContent = '▾';
+  }
+};
+
+function isIOS(){
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+/* ===== 需求4：唯一全屏播放控制器 (全屏自动切换横竖屏，退出全屏自动回退竖屏) ===== */
+function isCurrentVideoLandscape(idx){
+  var index = (typeof idx === 'number') ? idx : cur;
+  var w = WORKS[index];
+  if(!w) return false;
+  // 1. 服务端返回或已知显式横屏标记 (XH-07 晏建军, XH-11 濮子千, XH-18 王钢, XH-20 濮子千)
+  if(w.isLandscape === true || ['XH-07', 'XH-11', 'XH-18', 'XH-20'].indexOf(w.id) > -1) {
+    return true;
+  }
+  // 2. 视频流原生宽高已解析
+  if(index === cur && videoEl && videoEl.videoWidth && videoEl.videoHeight){
+    return videoEl.videoWidth > videoEl.videoHeight;
+  }
+  return false;
+}
+
+function isPlayerFullscreenActive(){
+  var player = $('player');
+  var hasClass = player && (player.classList.contains('is-fs-active') || player.classList.contains('is-rotated'));
+  var isDomFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+  return hasClass || isDomFs;
+}
+
+function enterUnifiedFullscreen(){
+  var player = $('player');
+  if(!player) return;
+
+  // 1. 核心需求：全屏时统一自动旋转横屏，进入沉浸横屏巨幕影院
+  player.classList.add('is-fs-active');
+  player.classList.add('is-rotated');
+
+  // 2. 尝试调用系统方向锁 (若系统支持)
+  try {
+    if(screen.orientation && screen.orientation.lock){
+      screen.orientation.lock('landscape').catch(function(){});
+    }
+  } catch(err){}
+
+  // 3. Android 及 PC 浏览器：尝试调用 DOM 标准全屏
+  // 注意：苹果 iOS 使用 H5 页面内全屏与旋转，绝不调用原生视频全屏（防止系统播放器吞噬网页导致退出全屏图标消失）
+  if(!isIOS()){
+    var target = player || document.documentElement;
+    try {
+      if(target.requestFullscreen){
+        target.requestFullscreen().catch(function(){});
+      } else if(target.webkitRequestFullscreen){
+        target.webkitRequestFullscreen();
+      } else if(target.mozRequestFullScreen){
+        target.mozRequestFullScreen();
+      } else if(target.msRequestFullscreen){
+        target.msRequestFullscreen();
+      }
+    } catch(e){}
+  }
+
+  updateUnifiedFullscreenBtn(true);
+}
+
+function exitUnifiedFullscreen(){
+  var player = $('player');
+  if(!player) return;
+
+  // 核心需求：退出全屏自动回退变成竖屏！
+  player.classList.remove('is-fs-active');
+  player.classList.remove('is-rotated'); // 自动回退变成竖屏
+
+  // 解锁屏幕方向，回到竖屏
+  try {
+    if(screen.orientation && screen.orientation.unlock){
+      screen.orientation.unlock();
+    }
+  } catch(err){}
+
+  // 退出 DOM 全屏 (Android / PC)
+  try {
+    if(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement){
+      if(document.exitFullscreen){
+        document.exitFullscreen().catch(function(){});
+      } else if(document.webkitExitFullscreen){
+        document.webkitExitFullscreen();
+      } else if(document.mozCancelFullScreen){
+        document.mozCancelFullScreen();
+      } else if(document.msExitFullscreen){
+        document.msExitFullscreen();
+      }
+    }
+  } catch(e){}
+
+  updateUnifiedFullscreenBtn(false);
+}
+
+window.toggleUnifiedFullscreen = function(e){
+  if(e){
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  if(isPlayerFullscreenActive()){
+    exitUnifiedFullscreen();
+  } else {
+    enterUnifiedFullscreen();
+  }
+};
+
+function updateUnifiedFullscreenBtn(isFs){
+  var btn = $('btnFullscreen');
+  var txt = $('fullscreenTxt');
+  var icon = $('fullscreenIcon');
+  if(!btn || !txt) return;
+  if(isFs){
+    btn.classList.add('is-fs');
+    txt.textContent = '退出全屏';
+    if(icon) icon.textContent = '✕';
+  } else {
+    btn.classList.remove('is-fs');
+    txt.textContent = '全屏';
+    if(icon) icon.textContent = '⛶';
+  }
+}
+
+// 监听系统全屏变化或用户按 Esc / 手势退出 (退出时自动回退为竖屏)
+['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(function(evt){
+  document.addEventListener(evt, function(){
+    var isDomFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+    if(!isDomFs && !isIOS()){
+      exitUnifiedFullscreen();
+    }
+  });
+});
+
+if(videoEl){
+  videoEl.addEventListener('webkitbeginfullscreen', function(){
+    var player = $('player');
+    if(player) player.classList.add('is-fs-active');
+    updateUnifiedFullscreenBtn(true);
+  });
+  videoEl.addEventListener('webkitendfullscreen', function(){
+    exitUnifiedFullscreen(); // 苹果退出全屏时自动回退为竖屏！
+  });
+}
+
 function closePlayer(){
+  exitUnifiedFullscreen(); // 退出全屏并自动回退为竖屏
+  var player = $('player');
+  if(player){
+    player.classList.remove('is-rotated');
+  }
   videoEl.pause();
   videoEl.removeAttribute('src');
   videoEl.load();
-  hide_($('player'));
-  document.title = '参选作品展播';
+  hide_(player);
+  document.body.style.overflow = '';
   go('gallery');
   renderGallery();
+
+  if(WORKS[cur]){
+    setTimeout(function(){
+      var card = document.querySelector('.card[data-id="' + WORKS[cur].id + '"]');
+      if(card){
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 50);
+  }
 }
 
-$('pClose').onclick = closePlayer;
+var pCloseBtn = $('pClose');
+if(pCloseBtn){
+  var lastCloseTs = 0;
+  pCloseBtn.onclick = function(e){
+    if(e){
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    var now = Date.now();
+    if(now - lastCloseTs < 400) return;
+    lastCloseTs = now;
+    closePlayer();
+  };
+}
+
+var btnFs = $('btnFullscreen');
+if(btnFs){
+  var lastFsToggleTs = 0;
+  btnFs.onclick = function(e){
+    if(e){
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    var now = Date.now();
+    if(now - lastFsToggleTs < 400) return;
+    lastFsToggleTs = now;
+    if(isPlayerFullscreenActive()){
+      exitUnifiedFullscreen();
+    } else {
+      enterUnifiedFullscreen();
+    }
+  };
+}
 
 /* 播放器内点赞按钮绑定 */
 $('btnLike').onclick = function(e){
@@ -1181,12 +2369,157 @@ $('btnLike').onclick = function(e){
   }
 };
 
+/* ==========================================
+ * 底部视频拖拽快进/快退进度条交互控制器 (支持点击跳转、平滑拖拽、触控事件、时间气泡实时显示)
+ * ========================================== */
+var isScrubbing = false;
+var wasPlayingBeforeScrub = false;
+var progWrap = $('progWrap');
+var progTrack = $('progTrack');
+var progTooltip = $('progTooltip');
+var progCurrentTime = $('progCurrentTime');
+var progDuration = $('progDuration');
+
+function formatSeconds(sec) {
+  if (isNaN(sec) || sec < 0 || !isFinite(sec)) return '00:00';
+  sec = Math.floor(sec);
+  var m = Math.floor(sec / 60);
+  var s = sec % 60;
+  return (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+}
+
+function getScrubRatio(e) {
+  var track = progTrack || progWrap;
+  if (!track) return 0;
+  var rect = track.getBoundingClientRect();
+  var clientX = e.clientX;
+  if (e.touches && e.touches.length > 0) {
+    clientX = e.touches[0].clientX;
+  } else if (e.changedTouches && e.changedTouches.length > 0) {
+    clientX = e.changedTouches[0].clientX;
+  }
+  if (clientX === undefined) return 0;
+  var x = clientX - rect.left;
+  return Math.max(0, Math.min(1, x / rect.width));
+}
+
+function updateScrubUI(ratio) {
+  var pct = ratio * 100;
+  var progBarEl = $('progBar');
+  var progThumbEl = $('progThumb');
+  if (progBarEl) progBarEl.style.width = pct + '%';
+  if (progThumbEl) progThumbEl.style.left = pct + '%';
+
+  if (videoEl && videoEl.duration && isFinite(videoEl.duration)) {
+    var targetTime = ratio * videoEl.duration;
+    if (progCurrentTime) progCurrentTime.textContent = formatSeconds(targetTime);
+    if (progDuration) progDuration.textContent = formatSeconds(videoEl.duration);
+
+    if (progTooltip && progWrap) {
+      var wrapWidth = progWrap.clientWidth || window.innerWidth;
+      var tooltipX = Math.max(48, Math.min(wrapWidth - 48, ratio * wrapWidth));
+      progTooltip.style.left = tooltipX + 'px';
+    }
+  }
+}
+
+function startScrub(e) {
+  if (!videoEl || !videoEl.duration || !isFinite(videoEl.duration)) return;
+  isScrubbing = true;
+  wasPlayingBeforeScrub = !videoEl.paused;
+  if (wasPlayingBeforeScrub) {
+    videoEl.pause();
+  }
+  if (progWrap) progWrap.classList.add('active');
+  if (progTooltip) show(progTooltip);
+  
+  var ratio = getScrubRatio(e);
+  updateScrubUI(ratio);
+}
+
+function moveScrub(e) {
+  if (!isScrubbing || !videoEl || !videoEl.duration || !isFinite(videoEl.duration)) return;
+  var ratio = getScrubRatio(e);
+  updateScrubUI(ratio);
+}
+
+function endScrub(e) {
+  if (!isScrubbing) return;
+  isScrubbing = false;
+  if (progWrap) progWrap.classList.remove('active');
+  if (progTooltip) hide_(progTooltip);
+
+  if (videoEl && videoEl.duration && isFinite(videoEl.duration)) {
+    var ratio = getScrubRatio(e);
+    var targetTime = ratio * videoEl.duration;
+    try {
+      videoEl.currentTime = Math.max(0, Math.min(videoEl.duration - 0.2, targetTime));
+    } catch(err) {
+      console.warn('Error setting currentTime:', err);
+    }
+    if (wasPlayingBeforeScrub) {
+      videoEl.play().catch(function(){});
+    }
+  }
+}
+
+if (progWrap) {
+  // 移动端触摸
+  progWrap.addEventListener('touchstart', function(e){
+    e.stopPropagation();
+    startScrub(e);
+  }, { passive: false });
+
+  progWrap.addEventListener('touchmove', function(e){
+    e.stopPropagation();
+    if (e.cancelable) e.preventDefault();
+    moveScrub(e);
+  }, { passive: false });
+
+  progWrap.addEventListener('touchend', function(e){
+    e.stopPropagation();
+    if (e.cancelable) e.preventDefault();
+    endScrub(e);
+  }, { passive: false });
+
+  progWrap.addEventListener('touchcancel', function(e){
+    e.stopPropagation();
+    endScrub(e);
+  }, { passive: false });
+
+  // PC 端鼠标
+  progWrap.addEventListener('mousedown', function(e){
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    startScrub(e);
+  });
+
+  window.addEventListener('mousemove', function(e){
+    if (isScrubbing) {
+      e.stopPropagation();
+      moveScrub(e);
+    }
+  });
+
+  window.addEventListener('mouseup', function(e){
+    if (isScrubbing) {
+      e.stopPropagation();
+      endScrub(e);
+    }
+  });
+
+  progWrap.addEventListener('click', function(e){
+    e.stopPropagation();
+  });
+}
+
 /* ===== 播放器内手势控制 (双向丝滑滑动 + 兼容 iOS/微信下拉防截胡 + 自动循环) ===== */
 var sx = 0, sy = 0, st = 0, moved = false, lastTapTs = 0;
 var stage = $('stage');
 
 stage.addEventListener('touchstart', function(e){
   if(e.touches.length !== 1) return;
+  if(e.target && e.target.closest('#progWrap, .prog-wrap')) return;
   sx = e.touches[0].clientX;
   sy = e.touches[0].clientY;
   st = Date.now();
@@ -1195,6 +2528,7 @@ stage.addEventListener('touchstart', function(e){
 
 stage.addEventListener('touchmove', function(e){
   if(e.touches.length !== 1) return;
+  if(isScrubbing || (e.target && e.target.closest('#progWrap, .prog-wrap'))) return;
   var dx = e.touches[0].clientX - sx;
   var dy = e.touches[0].clientY - sy;
   if(Math.abs(dy) > 8 || Math.abs(dx) > 8) {
@@ -1207,28 +2541,61 @@ stage.addEventListener('touchmove', function(e){
 }, { passive: false });
 
 function handleSwipeEnd(e){
+  if(isScrubbing) return;
   var touch = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
   var dy = touch ? (touch.clientY - sy) : 0;
   var dx = touch ? (touch.clientX - sx) : 0;
   var dt = Date.now() - st;
 
-  // 1. 垂直滑动手势检测 (高灵敏度判定：位移 > 30px 或 快速扫掠 < 300ms 且 > 20px)
-  var isFlick = dt < 320 && Math.abs(dy) > 20 && Math.abs(dy) > Math.abs(dx);
-  var isSwipe = Math.abs(dy) > 30 && Math.abs(dy) > Math.abs(dx) * 0.7;
+  var isRotated = $('player') && $('player').classList.contains('is-rotated');
 
-  if(isFlick || isSwipe){
-    // dy < 0: 手指向上推，切下一个视频 (dir = 1)
-    // dy > 0: 手指向下拉，切上一个视频 (dir = -1)
-    switchCard(dy < 0 ? 1 : -1);
-    return;
+  if(isRotated){
+    // 横屏状态下的滑动手势判定：
+    // 用户横持手机时，感知上的上下滑对应手机物理短边 (dx)；感知上的左右滑对应手机物理长边 (dy)
+    // 无论是感知上的上下滑还是左右滑，只要有明确滑动手势，都支持丝滑切换视频！
+    var dist = Math.max(Math.abs(dx), Math.abs(dy));
+    var isQuickFlick = dt < 350 && dist > 18;
+    var isFullSwipe = dist > 28;
+
+    if(isQuickFlick || isFullSwipe){
+      if(Math.abs(dx) >= Math.abs(dy)){
+        // 沿物理 X 轴滑动 (横持手机时的上下滑动)
+        // dx > 0 为向上推手势 (切下一部视频, dir = 1)；dx < 0 为向下拉手势 (切上一部视频, dir = -1)
+        switchCard(dx > 0 ? 1 : -1);
+      } else {
+        // 沿物理 Y 轴滑动 (横持手机时的左右扫动手势)
+        // dy < 0 为向左扫 (切下一部视频, dir = 1)；dy > 0 为向右扫 (切上一部视频, dir = -1)
+        switchCard(dy < 0 ? 1 : -1);
+      }
+      return;
+    }
+    // 横屏模式下绝不触发右滑返回列表，避免在全屏观影时误触退出！
+  } else {
+    // 竖屏常规模式：
+    var isFlick = dt < 320 && Math.abs(dy) > 20 && Math.abs(dy) > Math.abs(dx);
+    var isSwipe = Math.abs(dy) > 30 && Math.abs(dy) > Math.abs(dx) * 0.7;
+
+    if(isFlick || isSwipe){
+      // dy < 0: 手指向上推，切下一个视频 (dir = 1)
+      // dy > 0: 手指向下拉，切上一个视频 (dir = -1)
+      switchCard(dy < 0 ? 1 : -1);
+      return;
+    }
+
+    // 水平右滑返回展播列表 (仅在竖屏非全屏时触发，防止误触)
+    if(dx > 65 && Math.abs(dx) > Math.abs(dy) * 1.5){
+      closePlayer();
+      toast('已返回作品列表');
+      return;
+    }
   }
 
   // 2. 如果发生了拖动但未达到切换阈值，直接忽略点击
   if(moved || dt > 400) return;
 
-  // 3. 点击如果命中右侧悬浮控件或按钮，交给按钮自身
+  // 3. 点击如果命中右侧悬浮控件、顶部栏、进度条或按钮，交给对应控件自身
   var target = e.target;
-  if(target && target.closest('.ctrl, .arrows, .pbar, .info, .play-center-btn, .mask, #toast')){
+  if(target && target.closest('#progWrap, .prog-wrap, .ctrl, .arrows, .pbar, .info, .play-center-btn, .mask, #toast, .player-top-overlay, .btn-float-fullscreen, .btn-float-back')){
     return;
   }
 
@@ -1252,7 +2619,7 @@ stage.addEventListener('touchcancel', handleSwipeEnd, { passive: false });
 var isMouseDown = false;
 stage.addEventListener('mousedown', function(e){
   if(e.button !== 0) return;
-  if(e.target && e.target.closest('.ctrl, .arrows, .pbar, .info, .play-center-btn, .mask, #toast')) return;
+  if(e.target && e.target.closest('#progWrap, .prog-wrap, .ctrl, .arrows, .pbar, .info, .play-center-btn, .mask, #toast, .player-top-overlay, .btn-float-fullscreen, .btn-float-back')) return;
   isMouseDown = true;
   sx = e.clientX;
   sy = e.clientY;
@@ -1274,14 +2641,28 @@ window.addEventListener('mouseup', function(e){
   var dx = e.clientX - sx;
   var dt = Date.now() - st;
 
-  if(Math.abs(dy) > 30 && Math.abs(dy) > Math.abs(dx) * 0.7){
-    switchCard(dy < 0 ? 1 : -1);
-    return;
+  var isRotated = $('player') && $('player').classList.contains('is-rotated');
+  if(isRotated){
+    var dist = Math.max(Math.abs(dx), Math.abs(dy));
+    if(dist > 25){
+      if(Math.abs(dx) >= Math.abs(dy)){
+        switchCard(dx > 0 ? 1 : -1);
+      } else {
+        switchCard(dy < 0 ? 1 : -1);
+      }
+      return;
+    }
+  } else {
+    if(Math.abs(dy) > 30 && Math.abs(dy) > Math.abs(dx) * 0.7){
+      switchCard(dy < 0 ? 1 : -1);
+      return;
+    }
   }
   if(moved || dt > 400) return;
-  if(e.target && e.target.closest('.ctrl, .arrows, .pbar, .info, .play-center-btn, .mask, #toast')) return;
+  if(e.target && e.target.closest('#progWrap, .prog-wrap, .ctrl, .arrows, .pbar, .info, .play-center-btn, .mask, #toast, .player-top-overlay, .btn-float-fullscreen, .btn-float-back')) return;
   safeTogglePlay(e);
 });
+
 
 /* 键盘方向键与滚轮支持 (↑ 上一个, ↓ 下一个, 空格 播放/暂停) */
 stage.addEventListener('wheel', function(e){
@@ -1303,6 +2684,16 @@ window.addEventListener('keydown', function(e){
   } else if(e.key === ' '){
     e.preventDefault();
     toggleVideoPlay();
+  } else if(e.key === 'ArrowRight'){
+    e.preventDefault();
+    if(videoEl && videoEl.duration){
+      videoEl.currentTime = Math.min(videoEl.duration - 0.2, videoEl.currentTime + 5);
+    }
+  } else if(e.key === 'ArrowLeft'){
+    e.preventDefault();
+    if(videoEl && videoEl.duration){
+      videoEl.currentTime = Math.max(0, videoEl.currentTime - 5);
+    }
   }
 });
 
@@ -1407,14 +2798,243 @@ $('btnEndViewLeaderboard').onclick = loadLeaderboard;
 $('btnRefreshLb').onclick = loadLeaderboard;
 $('lbClose').onclick = function(){ hide_($('leaderboardMask')); };
 
-// 导出 Excel 表格
-$('btnExportExcel').onclick = function(){
-  window.open('/api/vote/export', '_blank');
+/* ===== 8. 微信内置浏览器防误滑退出与后退拦截系统 (Smart Back & Exit Guard) ===== */
+var isExitModalOpen = false;
+var isExiting = false;
+
+function pushGuardHistory(stateName){
+  try {
+    var state = { xh_guard: stateName || 'main', ts: Date.now() };
+    window.history.pushState(state, '', window.location.href);
+  } catch(e){}
+}
+
+function showExitConfirmModal(){
+  var titleEl = $('exitTitle');
+  var bodyEl = $('exitBody');
+  var btnConfirm = $('btnConfirmExit');
+
+  if(voter && voter.submitted){
+    titleEl.textContent = '确认退出展播页面？';
+    bodyEl.innerHTML = '您已完成投票并成功提交。<br>确认离开星火计划参选作品展播吗？';
+    btnConfirm.textContent = '退出页面';
+  } else if(likedIds && likedIds.length > 0){
+    titleEl.textContent = '推荐票尚未提交，确认退出？';
+    bodyEl.innerHTML = '您已投出 <b style="color:var(--gold);font-size:15px">' + likedIds.length + '</b> 张推荐票，但<b>尚未最终确认提交</b>！<br>若现在离开，本次投票将不会生效。';
+    btnConfirm.textContent = '仍要退出';
+  } else {
+    titleEl.textContent = '确认退出展播页面？';
+    bodyEl.innerHTML = '您当前尚未投出任何推荐票。<br>确认离开星火计划参选作品展播吗？';
+    btnConfirm.textContent = '确认退出';
+  }
+
+  isExitModalOpen = true;
+  show($('exitMask'));
+}
+
+function hideExitConfirmModal(){
+  isExitModalOpen = false;
+  hide_($('exitMask'));
+}
+
+$('btnStayVote').onclick = function(){
+  hideExitConfirmModal();
+  pushGuardHistory('stay');
 };
+
+$('btnConfirmExit').onclick = function(){
+  isExiting = true;
+  hideExitConfirmModal();
+  // 1. 优先调用微信内置 API 关闭当前窗口
+  if(typeof WeixinJSBridge !== 'undefined' && WeixinJSBridge.call){
+    try {
+      WeixinJSBridge.call('closeWindow');
+      return;
+    } catch(err){}
+  }
+  // 2. 尝试标准 window.close
+  try {
+    window.close();
+  } catch(e){}
+  // 3. 兜底回退历史栈退出
+  setTimeout(function(){
+    history.go(-2);
+  }, 100);
+};
+
+// 监听微信滑动后退与系统 Back 键
+window.addEventListener('popstate', function(e){
+  if(isExiting) return;
+
+  // 1. 如果当前正处于全屏视频播放器，优先退出播放器回到展播列表 (符合微信与短视频习惯)
+  if(!$('player').classList.contains('hide')){
+    closePlayer();
+    toast('已返回作品列表');
+    pushGuardHistory('gallery');
+    return;
+  }
+
+  // 2. 如果当前有排行榜弹窗打开，优先关闭弹窗
+  if(!$('leaderboardMask').classList.contains('hide')){
+    hide_($('leaderboardMask'));
+    pushGuardHistory('gallery');
+    return;
+  }
+
+  // 3. 如果当前有提交投票确认框打开，优先关闭提交确认框
+  if(!$('mask').classList.contains('hide')){
+    hide_($('mask'));
+    pushGuardHistory('gallery');
+    return;
+  }
+
+  // 4. 如果当前已经打开了退出确认框，按返回键则关闭退出弹窗
+  if(isExitModalOpen){
+    hideExitConfirmModal();
+    pushGuardHistory('gallery');
+    return;
+  }
+
+  // 5. 在展播列表页触发了退出滑动手势：重新垫入一条防御历史并弹出确认提示
+  pushGuardHistory('prompt');
+  showExitConfirmModal();
+});
+
+// 浏览器窗口关闭前兜底 (PC端/部分移动浏览器)
+window.addEventListener('beforeunload', function(e){
+  if(!isExiting && voter && !voter.submitted && likedIds && likedIds.length > 0){
+    e.preventDefault();
+    e.returnValue = '您当前有尚未提交的投票，确认要离开吗？';
+    return e.returnValue;
+  }
+});
+
+/* ========================================================
+ * 8. 二维码生成、扫码直达登录卡片与 URL 传参支持
+ * ======================================================== */
+// 桌面端专属：生成移动端直接访问并定位到登录卡片的二维码
+async function initDesktopQrCode(){
+  var qrImg = $('desktopQrImg');
+  var loadingEl = $('desktopQrLoading');
+  var statusTxt = $('qrStatusText');
+  var statusDot = $('statusDot');
+  var urlInput = $('desktopVoteUrlInput');
+  
+  if(loadingEl) show(loadingEl);
+  if(qrImg) qrImg.style.opacity = '0.35';
+  if(statusTxt) statusTxt.textContent = '正在生成二维码...';
+  if(statusDot) statusDot.className = 'status-dot';
+
+  try {
+    var targetVoteUrl = window.location.origin + '/vote#login';
+    if(urlInput) urlInput.value = targetVoteUrl;
+
+    var res = await fetch('/api/vote/qrcode?text=' + encodeURIComponent(targetVoteUrl));
+    var json = await res.json();
+    if(json.code === 0 && json.data && json.data.qrCodeUrl){
+      if(qrImg){
+        qrImg.src = json.data.qrCodeUrl;
+        qrImg.style.opacity = '1';
+      }
+      if(loadingEl) hide_(loadingEl);
+      if(statusTxt) statusTxt.textContent = '微信扫码直达工号登录卡片';
+      if(statusDot) statusDot.className = 'status-dot pulsing';
+    }
+  } catch(e){
+    console.warn('Init QR code error:', e);
+    if(statusTxt) statusTxt.textContent = '生成失败，点击刷新';
+  }
+}
+
+window.refreshDesktopQrCode = function(){
+  initDesktopQrCode();
+};
+
+// 检查 URL 中是否有直连工号参数或扫码锚点
+function checkUrlAuthParams(){
+  var urlParams = new URLSearchParams(window.location.search);
+  var jobNoFromUrl = urlParams.get('jobNo');
+  var nameFromUrl = urlParams.get('name');
+
+  // 1. 如果是从 URL 参数带入工号+姓名：自动填充
+  if(jobNoFromUrl){
+    $('loginJobNo').value = jobNoFromUrl;
+    if(nameFromUrl) $('loginName').value = nameFromUrl;
+  }
+
+  // 2. 扫码或带 #login 进入：自动平滑滚动到登录卡片并聚焦输入框
+  if(window.location.hash === '#login' || urlParams.get('scan') === '1'){
+    setTimeout(scrollToLoginCard, 200);
+  }
+}
+
+// 平滑滚动并高亮登录卡片
+function scrollToLoginCard(){
+  var card = $('loginCard');
+  if(card){
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(function(){
+      if(!$('loginName').value.trim()){
+        $('loginName').focus();
+      } else {
+        $('loginJobNo').focus();
+      }
+    }, 400);
+  }
+}
+
+// 复制链接辅助
+window.copyDesktopVoteUrl = function(){
+  var url = $('desktopVoteUrlInput') ? $('desktopVoteUrlInput').value : (window.location.origin + '/vote#login');
+  copyTextToClipboard(url, $('btnCopyDesktopUrl'), '复制投票链接');
+};
+
+function copyTextToClipboard(text, btnEl, defaultTxt){
+  if(!text) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      if(btnEl){
+        btnEl.textContent = '已复制 ✓';
+        setTimeout(function(){ btnEl.textContent = defaultTxt; }, 2000);
+      }
+      toast('投票链接已复制到剪贴板');
+    }).catch(function(){
+      execCopyFallback(text, btnEl, defaultTxt);
+    });
+  } else {
+    execCopyFallback(text, btnEl, defaultTxt);
+  }
+}
+
+function execCopyFallback(text, btnEl, defaultTxt){
+  var t = document.createElement('textarea');
+  t.value = text;
+  t.style.position = 'fixed';
+  t.style.opacity = '0';
+  document.body.appendChild(t);
+  t.select();
+  try {
+    document.execCommand('copy');
+    if(btnEl){
+      btnEl.textContent = '已复制 ✓';
+      setTimeout(function(){ btnEl.textContent = defaultTxt; }, 2000);
+    }
+    toast('投票链接已复制到剪贴板');
+  } catch(e){
+    toast('复制失败，请手动长按复制');
+  }
+  document.body.removeChild(t);
+}
 
 /* ===== 页面初始化 (防时序漏发，保证即刻执行) ===== */
 async function initApp(){
   initVoterSession();
+  updateUnifiedFullscreenBtn(false);
+  pushGuardHistory('init');
+  checkUrlAuthParams();
+  if(window.innerWidth >= 768){
+    initDesktopQrCode();
+  }
   await loadWorks();
 }
 if(document.readyState === 'loading'){
