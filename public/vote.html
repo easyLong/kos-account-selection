@@ -952,6 +952,91 @@
   .btn-card-vote.liked .vote-svg-icon.active,
   .btn-circle.liked .vote-svg-icon.active{animation:votePop .38s cubic-bezier(0.175,0.885,0.32,1.275)}
 
+  /* ---------- 抖音同款“戳戳戳”全屏爆心动效 (Douyin Floating Heart Blast) ---------- */
+  .dy-like-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 28;
+  }
+  .dy-floating-heart {
+    position: absolute;
+    width: 72px;
+    height: 72px;
+    pointer-events: none;
+    will-change: transform, opacity;
+    animation: dyHeartPop 0.85s cubic-bezier(0.18, 0.89, 0.32, 1.25) forwards;
+  }
+  .dy-floating-heart svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    filter: drop-shadow(0 4px 16px rgba(255, 44, 85, 0.75));
+  }
+  @keyframes dyHeartPop {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.2) rotate(var(--rot, 0deg));
+    }
+    18% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.28) rotate(var(--rot, 0deg));
+    }
+    35% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.0) rotate(var(--rot, 0deg));
+    }
+    70% {
+      opacity: 0.95;
+      transform: translate(calc(-50% + var(--driftX, 0px)), calc(-50% - 85px)) scale(1.08) rotate(calc(var(--rot, 0deg) * 1.2));
+    }
+    100% {
+      opacity: 0;
+      transform: translate(calc(-50% + var(--driftX, 0px)), calc(-50% - 150px)) scale(1.25) rotate(calc(var(--rot, 0deg) * 1.4));
+    }
+  }
+
+  .dy-float-plus1 {
+    position: absolute;
+    pointer-events: none;
+    z-index: 30;
+    font-size: 19px;
+    font-weight: 900;
+    color: #FFEAA7;
+    text-shadow: 0 0 12px rgba(255, 44, 85, 0.9), 0 2px 6px rgba(0,0,0,0.85);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    animation: dyPlus1Float 0.75s cubic-bezier(0.18, 0.89, 0.32, 1.25) forwards;
+  }
+  @keyframes dyPlus1Float {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+    22% { opacity: 1; transform: translate(-50%, -85%) scale(1.22); }
+    100% { opacity: 0; transform: translate(-50%, -150%) scale(1.0); }
+  }
+
+  .dy-sparkle {
+    position: absolute;
+    pointer-events: none;
+    color: #FFEAA7;
+    font-size: 16px;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.9);
+    animation: dySparkleBurst 0.6s ease-out forwards;
+  }
+  @keyframes dySparkleBurst {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.2); }
+    30% { opacity: 1; transform: translate(var(--sx, 10px), var(--sy, -10px)) scale(1.2); }
+    100% { opacity: 0; transform: translate(calc(var(--sx, 10px) * 1.8), calc(var(--sy, -10px) * 1.8)) scale(0.5); }
+  }
+
+  .btn-circle.dy-pop {
+    animation: dyBtnPop 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.25);
+  }
+  @keyframes dyBtnPop {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.28); }
+    100% { transform: scale(1); }
+  }
+
   /* ---------- 5. 提示弹层 / 模态框 ---------- */
   #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:90;background:rgba(23,20,15,.94);color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;display:flex;gap:12px;align-items:center;max-width:90%;box-shadow:0 6px 20px rgba(0,0,0,.35);border:1px solid rgba(197,154,63,.45)}
   #toast button{border:0;background:var(--gold);color:#3b2410;font-weight:700;padding:6px 12px;border-radius:8px;font-size:12px;white-space:nowrap;cursor:pointer}
@@ -1031,65 +1116,25 @@
       <!-- 手机主内容区域 -->
       <div id="phone">
 
-  <!-- ============ 1. 入口页 (实名去重认证) ============ -->
-  <section id="entry">
-    <div class="hero kv">
-      <span class="tag">汇添富 · 星火计划</span>
-      <h1>财经自媒体短视频<br>创作者选拔推荐</h1>
-      <p class="sub">评委专属通道 · 选拔最具潜力的自媒体之星</p>
-    </div>
-    
-    <div class="rules">
-      共 <b id="eTotal">0</b> 个参选作品，随时为心仪作品点赞推荐<br>
-      · 点进视频直接开播，上下滑动畅享自动连播<br>
-      · 刷到心仪作品随时点击 👍 即可点赞推荐，后台实时记录<br>
-      · 为保障所有作品公平曝光，已为您提供专属个性化顺序
-    </div>
-
-    <!-- 登录卡片 (输入姓名进行身份认证) -->
-    <div class="login-card" id="loginCard">
-      <div class="login-title">
-        <span style="font-size:16px">👤</span>
-        <span>评委 / 领导专属通道</span>
-      </div>
-
-      <div id="loggedInArea" class="hide" style="margin-bottom:12px">
-        <div class="login-status-badge" style="margin-bottom:0">
-          <span>当前身份：<strong id="loggedInfoTxt">--</strong></span>
-          <span class="sw-btn" id="btnSwitchAccount" style="color:var(--gold);font-weight:700;cursor:pointer">更换姓名</span>
-        </div>
-      </div>
-
-      <div id="loginFormArea">
-        <div class="form-row">
-          <label>您的姓名：</label>
-          <input type="text" id="loginName" placeholder="请输入您的姓名 (如：张总)" maxlength="20" autocomplete="name">
-        </div>
-        <button class="btn" id="btnStart" style="margin-top:8px">进入作品展播</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 2. 作品展播列表页 (支持直接点赞 + 真实视频有效画面) ============ -->
-  <section id="gallery" class="hide">
+  <!-- ============ 作品展播列表页 (真实视频有效画面封面 + 抖音同款点赞) ============ -->
+  <section id="gallery">
     <div class="topbar">
-      <span class="title" id="gTitle">全部作品 (0)</span>
-      <span class="pill user" id="pillUser">评委: --</span>
-      <span class="pill" id="pillBudget">已推荐 0 位</span>
+      <span class="title" id="gTitle">星火计划 · 创作者展播</span>
+      <span class="pill" id="pillTotalWorks">全部参选作品 (0)</span>
     </div>
 
     <div class="gallery-actions" style="justify-content:flex-end">
       <div style="display:flex;gap:6px">
-        <button class="btn ghost" id="btnOpenLeaderboard" style="padding:6px 10px;font-size:12.5px;width:auto">🏆 实时榜单</button>
-        <button class="btn sec" id="btnGoPlayer" style="padding:6px 12px;font-size:12.5px;width:auto">▶ 上下滑播放</button>
+        <button class="btn ghost" id="btnOpenLeaderboard" style="padding:6px 12px;font-size:12.5px;width:auto">🏆 实时榜单</button>
+        <button class="btn sec" id="btnGoPlayer" style="padding:6px 14px;font-size:12.5px;width:auto">▶ 沉浸刷视频</button>
       </div>
     </div>
 
-    <!-- 作品展示容器 (支持直接点赞，有效视频封面) -->
+    <!-- 作品展示容器 (支持真实视频封面预览，点击直达播放) -->
     <div class="grid" id="grid"></div>
   </section>
 
-  <!-- ============ 3. 沉浸流全屏播放器 (点了再播 + 绝不自动连贯切台) ============ -->
+  <!-- ============ 沉浸流全屏播放器 (支持双击与戳屏幕点赞) ============ -->
   <div id="player" class="hide">
     <!-- 顶部半透明悬浮栏 (完全不占视频高度，原生刘海屏安全距离) -->
     <div class="player-top-overlay">
@@ -1107,12 +1152,15 @@
         </div>
       </div>
 
-      <div class="float-meta-badge">
-        <span id="pBudget">已推荐 0 位</span>
+      <div class="float-meta-badge" id="floatLikeHint">
+        <span>双击屏幕点赞 👍</span>
       </div>
     </div>
 
     <div id="stage">
+      <!-- 抖音同款“戳戳戳”全屏心形爆破图层 -->
+      <div class="dy-like-container" id="dyLikeContainer"></div>
+
       <div class="slide" id="slide">
         <!-- 视频背景模糊层 (横屏视频时自动显现，打造抖音/视频号沉浸式背景) -->
         <div class="slide-ambient-bg" id="slideAmbientBg"></div>
@@ -1173,14 +1221,13 @@
         </div>
       </div>
 
-      <!-- 右侧悬浮操作栏 (专业点赞投票交互器) -->
+      <!-- 右侧悬浮操作栏 (抖音同款点赞交互) -->
       <div class="ctrl">
         <div class="ctrl-item" id="ctrlVoteItem">
-          <div class="btn-circle vote-capsule-btn" id="btnLike">
+          <div class="btn-circle vote-capsule-btn liked" id="btnLike" title="双击屏幕或点击点赞">
             <!-- 点赞矢量徽章由 renderPlayerLikeState 动态注入 -->
           </div>
-          <span class="ctrl-label" id="pLikeText">投TA一票</span>
-          <span class="ctrl-votes-badge" id="pVoteCountBadge">0 票</span>
+          <span class="ctrl-votes-badge" id="pVoteCountBadge">0 赞</span>
         </div>
       </div>
 
@@ -1293,25 +1340,25 @@
     <div class="sidebar-card">
       <div class="sidebar-header">
         <span class="sidebar-tag">汇添富 · 星火计划</span>
-        <h3 class="sidebar-title">手机微信扫码直达投票</h3>
-        <p class="sidebar-sub">手机微信扫一扫，进入手机端登录卡片，输入工号即可投票</p>
+        <h3 class="sidebar-title">手机微信扫码直达展播</h3>
+        <p class="sidebar-sub">手机微信扫一扫，免登录直接浏览作品，双击屏幕随时点赞</p>
       </div>
 
       <div class="qr-container-box">
         <div class="qr-img-wrapper" id="desktopQrBox" title="点击可重新获取二维码" onclick="refreshDesktopQrCode()">
-          <img src="" alt="手机扫码直达投票" class="qr-image" id="desktopQrImg" />
+          <img src="" alt="手机扫码直达展播" class="qr-image" id="desktopQrImg" />
           <div class="qr-loading hide" id="desktopQrLoading">正在生成二维码...</div>
         </div>
 
         <div class="qr-scan-status-pill" id="qrScanStatus">
           <span class="status-dot pulsing" id="statusDot"></span>
-          <span id="qrStatusText">微信扫码直达工号登录卡片</span>
+          <span id="qrStatusText">微信扫码直达作品展播</span>
         </div>
 
         <div class="qr-info-row">
           <input type="text" readonly id="desktopVoteUrlInput" class="qr-url-input" />
           <button class="btn-copy" id="btnCopyDesktopUrl" onclick="copyDesktopVoteUrl()">
-            复制投票链接
+            复制展播链接
           </button>
         </div>
       </div>
@@ -1323,11 +1370,11 @@
         </div>
         <div class="step-item">
           <span class="step-num">2</span>
-          <div class="step-text">手机直达 <b>“评委登录通道”</b></div>
+          <div class="step-text">手机直达 <b>“参选作品展播”</b></div>
         </div>
         <div class="step-item">
           <span class="step-num">3</span>
-          <div class="step-text">输入 <b>“姓名”</b> 即可开始评阅推荐</div>
+          <div class="step-text">上下滑动刷视频 <b>“戳屏幕点赞”</b></div>
         </div>
       </div>
     </div>
@@ -1414,39 +1461,35 @@ function $(id){ return document.getElementById(id); }
 function show(el){ if(el) el.classList.remove('hide'); }
 function hide_(el){ if(el) el.classList.add('hide'); }
 function go(id){
-  ['entry','gallery','end'].forEach(function(s){ hide_($(s)); });
+  ['gallery','end'].forEach(function(s){ var el = $(s); if(el) hide_(el); });
   if(id) show($(id));
 }
 function pad(n){ return n < 10 ? '0' + n : '' + n; }
 
-/* ===== 核心：专业点赞投票矢量渲染器 (👍 投TA一票 / ✓ 已投票) ===== */
-function renderVoteIcon(isLiked, size){
+/* ===== 核心：专业心形矢量渲染器 (抖音同款高光红心) ===== */
+function renderHeartSvg(isLiked, size){
   size = size || 18;
-  if(isLiked){
-    return '<svg class="vote-svg-icon active" viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true">' +
-      '<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z" fill="url(#gThumbL)" stroke="#FFEAA7" stroke-width="0.8" stroke-linejoin="round"/>' +
-      '<rect x="2" y="11" width="5" height="11" rx="1.5" fill="url(#gThumbD)" stroke="#FFEAA7" stroke-width="0.8"/>' +
-    '</svg>';
-  } else {
-    return '<svg class="vote-svg-icon default" viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true">' +
-      '<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
-      '<rect x="2" y="11" width="5" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
-    '</svg>';
-  }
+  return '<svg class="vote-svg-icon active" viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true">' +
+    '<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#gThumbL)"/>' +
+  '</svg>';
+}
+function renderVoteIcon(isLiked, size){
+  return renderHeartSvg(isLiked, size);
 }
 
 /* ===== Toast 提示 ===== */
 var toastTimer = null;
 function toast(msg, btnText, btnAction){
-  $('toastMsg').textContent = msg;
-  if(btnText){
+  var msgEl = $('toastMsg');
+  if(msgEl) msgEl.textContent = msg;
+  if(btnText && $('toastAct')){
     show($('toastAct'));
     $('toastAct').textContent = btnText;
     $('toastAct').onclick = function(){
       hide_($('toast'));
       if(btnAction) btnAction();
     };
-  } else {
+  } else if($('toastAct')) {
     hide_($('toast'));
   }
   show($('toast'));
@@ -1454,45 +1497,28 @@ function toast(msg, btnText, btnAction){
   toastTimer = setTimeout(function(){ hide_($('toast')); }, 3200);
 }
 
-/* ===== 1. 登录会话恢复与专属评委认证 ===== */
-function initVoterSession(){
+/* ===== 1. 匿名免登会话初始化 (扫码直达，无需输入姓名工号) ===== */
+function initAnonymousSession(){
   try {
     var raw = localStorage.getItem('xh_voter_session');
     if(raw){
       voter = JSON.parse(raw);
-      if(voter && voter.name){
-        if(!voter.jobNo) voter.jobNo = 'L_' + voter.name;
-        $('loginName').value = voter.name;
-        $('loggedInfoTxt').textContent = voter.name;
-        show($('loggedInArea'));
-        $('btnStart').textContent = '进入展播 (继续评阅)';
-      }
     }
   } catch(e){}
+  if(!voter || !voter.jobNo){
+    var guestId = 'v_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+    voter = { jobNo: guestId, name: '观众', submitted: false };
+    try {
+      localStorage.setItem('xh_voter_session', JSON.stringify(voter));
+    } catch(e){}
+  }
+  applyWorksOrder();
+}
+function initVoterSession(){
+  initAnonymousSession();
 }
 
-$('btnSwitchAccount').onclick = function(){
-  voter = null;
-  localStorage.removeItem('xh_voter_session');
-  $('loginName').value = '';
-  hide_($('loggedInArea'));
-  $('btnStart').textContent = '进入作品展播';
-  $('loginName').focus();
-  applyWorksOrder();
-  if(window.innerWidth >= 768){
-    initDesktopQrCode();
-  }
-};
-
-// 快捷体验：姓名输入框按回车直接进入展播
-$('loginName').addEventListener('keydown', function(e){
-  if(e.key === 'Enter'){
-    e.preventDefault();
-    doLogin();
-  }
-});
-
-/* ===== 2. 获取后台视频候选人数据 (带有效画面封面 coverUrl) ===== */
+/* ===== 2. 获取后台视频作品数据 ===== */
 async function loadWorks(){
   try {
     var res = await fetch('/api/vote/works');
@@ -1506,103 +1532,36 @@ async function loadWorks(){
   }
 
   CFG.total = WORKS.length;
-  $('eTotal').textContent = CFG.total;
-  $('sTotal').textContent = CFG.total;
-  if($('gTitle')) $('gTitle').textContent = '全部参选作品 (' + CFG.total + ')';
+  if($('pillTotalWorks')) $('pillTotalWorks').textContent = '全部参选作品 (' + CFG.total + ')';
+  if($('sTotal')) $('sTotal').textContent = CFG.total;
+  if($('gTitle')) $('gTitle').textContent = '星火计划 · 创作者展播';
 }
 
-/* ===== 3. 评委/领导认证进入 ===== */
-var isLoginInProgress = false;
-async function doLogin(){
-  if(isLoginInProgress) return;
-  var name = $('loginName').value.trim();
-
-  if(!name){
-    toast('请输入您的姓名');
-    $('loginName').focus();
-    return;
-  }
-  var jobNo = (voter && voter.jobNo) ? voter.jobNo : ('L_' + name);
-
-  // 本地离线文件打开防御提示
-  if(window.location.protocol === 'file:'){
-    toast('提示：当前为直接打开本地文件，请在浏览器中访问 http:// 服务网址');
-    return;
-  }
-
-  isLoginInProgress = true;
-  $('btnStart').disabled = true;
-  $('btnStart').textContent = '正在进入...';
-
-  try {
-    var res = await fetch('/api/vote/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name, jobNo: jobNo })
-    });
-    var json = await res.json();
-    if(json.code === 0 && json.data){
-      voter = json.data.voter;
-      likedIds = json.data.likedIds || [];
-      localStorage.setItem('xh_voter_session', JSON.stringify(voter));
-
-      // 核心：登录成功后立即按专属 ID 执行伪随机个性化洗牌
-      applyWorksOrder();
-
-      updatePills();
-      go('gallery');
-      renderGallery();
-
-      toast('欢迎您，' + voter.name + '！随时为心仪作品点赞推荐');
-    } else {
-      toast(json.message || '进入展播失败，请重试');
-    }
-  } catch(e){
-    console.error('Login error:', e);
-    toast('网络连接异常: ' + (e.message || '请确认服务正在运行'));
-  } finally {
-    isLoginInProgress = false;
-    $('btnStart').disabled = false;
-    $('btnStart').textContent = voter ? '进入展播 (继续评阅)' : '进入作品展播';
-  }
-}
-
-$('btnStart').onclick = doLogin;
-
-/* ===== 4. 刷新顶部已推荐作品数量 ===== */
 function updatePills(){
-  var count = likedIds.length;
-  var el = $('pillBudget');
-  if(el){
-    el.innerHTML = renderVoteIcon(true, 14) + ' <span>已推荐 ' + count + ' 位</span>';
-    el.className = 'pill' + (count > 0 ? ' user' : '');
-  }
-  if($('pBudget')) $('pBudget').innerHTML = renderVoteIcon(true, 13) + ' <span>已推荐 ' + count + ' 位</span>';
-  if($('pillUser') && voter) $('pillUser').textContent = '评委: ' + voter.name;
+  if($('pillTotalWorks')) $('pillTotalWorks').textContent = '全部参选作品 (' + CFG.total + ')';
 }
 
-/* ===== 5. 核心：渲染作品列表 (有效画面 + 直接点赞，不需要点进去) ===== */
+/* ===== 3. 核心：渲染作品列表 (真实视频封面预览，点击直达播放，无多余投票按钮) ===== */
 function renderGallery(){
   var g = $('grid');
+  if(!g) return;
   g.className = 'grid';
   g.innerHTML = '';
 
   if(WORKS.length === 0){
-    g.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px 10px;color:var(--sub);font-size:13.5px">暂无带有视频链接的候选人作品</div>';
+    g.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px 10px;color:var(--sub);font-size:13.5px">暂无候选人作品</div>';
     return;
   }
 
   WORKS.forEach(function(w, idx){
-    var isLiked = likedIds.indexOf(w.id) > -1;
     var coverImg = w.coverUrl || '/images/kos_hero.jpg';
-
     var card = document.createElement('div');
     card.className = 'card';
     card.setAttribute('data-id', w.id);
+    card.onclick = function(){ openPlayer(idx); };
 
     card.innerHTML = 
-      /* 需求3：展示真实有效画面 (视频第一帧高清海报截图) */
-      '<div class="card-cover-box" onclick="openPlayer(' + idx + ')">' +
+      '<div class="card-cover-box">' +
         '<img src="' + coverImg + '" alt="' + w.name + '" class="card-cover-img" loading="lazy" onerror="this.src=\'/images/kos_hero.jpg\'" />' +
         '<div class="cover-overlay"></div>' +
         '<div class="card-play-icon">▶</div>' +
@@ -1611,104 +1570,152 @@ function renderGallery(){
       '<div class="card-meta">' +
         '<div class="card-title-name">' +
           '<div class="card-nm">' + (w.name || '参选人') + '</div>' +
-          '<div class="card-votes-pill">' + renderVoteIcon(true, 13) + ' <span>' + (w.votesCount || 0) + ' 票</span></div>' +
+          '<div class="card-votes-pill">' + renderHeartSvg(true, 13) + ' <span id="cardVotes_' + w.id + '">' + (w.votesCount || 0) + ' 赞</span></div>' +
         '</div>' +
         '<div class="card-dp">' + (w.department || '汇添富') + ' · ' + (w.position || '创作者') + '</div>' +
         '<div class="card-vt">🎬 ' + (w.videoTitle || '自媒体短视频') + '</div>' +
-        /* 核心需求：胶囊投票按钮 (投TA一票 / 已投票 ✓) */
-        '<button class="btn-card-vote ' + (isLiked ? 'liked' : '') + '" onclick="onDirectVoteClick(event, \'' + w.id + '\')">' +
-          renderVoteIcon(isLiked, 15) +
-          '<span>' + (isLiked ? '已投票 ✓' : '投 TA 一票') + '</span>' +
-        '</button>' +
       '</div>';
 
     g.appendChild(card);
   });
-
-  updatePills();
 }
 
-/* ===== 核心需求2：不需要点进去才能点赞！列表直接点赞函数 ===== */
-window.onDirectVoteClick = function(e, candidateId){
-  if(e){
-    e.stopPropagation();
-    e.preventDefault();
+/* ========================================================
+ * 4. 抖音同款“戳戳戳”全屏屏幕点赞系统 (Douyin Tap-To-Like Engine)
+ * ======================================================== */
+var dyHeartColors = [
+  { c: '#FF2448', glow: 'rgba(255, 36, 72, 0.75)' },
+  { c: '#FF0055', glow: 'rgba(255, 0, 85, 0.75)' },
+  { c: '#FF3366', glow: 'rgba(255, 51, 102, 0.75)' },
+  { c: '#FF5252', glow: 'rgba(255, 82, 82, 0.75)' },
+  { c: '#FF2A6D', glow: 'rgba(255, 42, 109, 0.75)' }
+];
+
+var pendingLikesMap = {};
+var pendingLikeTimers = {};
+
+function triggerDouyinScreenLike(x, y){
+  var currentWork = WORKS[cur];
+  if(!currentWork) return;
+  var candId = currentWork.id;
+
+  // 1. 动效层：在触碰位置生成抖音同款爆心与浮动+1
+  spawnDouyinHeart(x, y);
+
+  // 2. 本地立即响应加赞 (0 延时爽快感)
+  currentWork.votesCount = (currentWork.votesCount || 0) + 1;
+  var badge = $('pVoteCountBadge');
+  if(badge) badge.textContent = currentWork.votesCount + ' 赞';
+  var noEl = $('pNo');
+  if(noEl) noEl.innerHTML = (currentWork.id || pad(cur + 1)) + ' · <strong>' + currentWork.votesCount + ' 赞</strong>';
+  var cardVotesEl = $('cardVotes_' + candId);
+  if(cardVotesEl) cardVotesEl.textContent = currentWork.votesCount + ' 赞';
+
+  // 3. 右侧心形按钮弹性弹跳
+  var btnLike = $('btnLike');
+  if(btnLike){
+    btnLike.classList.remove('dy-pop');
+    void btnLike.offsetWidth;
+    btnLike.classList.add('dy-pop');
   }
-  executeToggleVote(candidateId);
-};
 
-/* ===== 核心：执行点赞 / 取消点赞 (防高并发重复点击) ===== */
-var isVotingInProgress = false;
-async function executeToggleVote(candidateId){
-  if(isVotingInProgress) return;
-  if(!voter || !voter.name){
-    toast('请先在首页输入您的姓名');
-    return;
+  // 4. 移动端轻微触感震动反馈
+  if(navigator.vibrate){
+    try { navigator.vibrate(25); } catch(e){}
   }
-  var jobNo = voter.jobNo || ('L_' + voter.name);
 
-  var targetCand = WORKS.find(function(w){ return w.id === candidateId; });
-  var candName = targetCand ? targetCand.name : candidateId;
+  // 5. 防刷与批量合并提交 (350ms 内多次戳合并为单次请求，减轻服务端压力)
+  pendingLikesMap[candId] = (pendingLikesMap[candId] || 0) + 1;
+  clearTimeout(pendingLikeTimers[candId]);
+  pendingLikeTimers[candId] = setTimeout(function(){
+    var countToSend = pendingLikesMap[candId] || 1;
+    pendingLikesMap[candId] = 0;
+    sendLikesToBackend(candId, countToSend);
+  }, 350);
+}
 
-  isVotingInProgress = true;
+function spawnDouyinHeart(x, y){
+  var container = $('dyLikeContainer');
+  if(!container) return;
+
+  var color = dyHeartColors[Math.floor(Math.random() * dyHeartColors.length)];
+  var rot = (Math.random() - 0.5) * 54;
+  var driftX = (Math.random() - 0.5) * 60;
+
+  // 爆心
+  var heart = document.createElement('div');
+  heart.className = 'dy-floating-heart';
+  heart.style.left = x + 'px';
+  heart.style.top = y + 'px';
+  heart.style.setProperty('--rot', rot + 'deg');
+  heart.style.setProperty('--driftX', driftX + 'px');
+  heart.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="' + color.c + '"/></svg>';
+  container.appendChild(heart);
+
+  // 浮动 +1 提示
+  var plus1 = document.createElement('div');
+  plus1.className = 'dy-float-plus1';
+  plus1.style.left = (x + driftX * 0.4) + 'px';
+  plus1.style.top = (y - 36) + 'px';
+  plus1.textContent = '+1';
+  container.appendChild(plus1);
+
+  // 随机星芒粒子
+  for(var i = 0; i < 2; i++){
+    var sp = document.createElement('span');
+    sp.className = 'dy-sparkle';
+    sp.textContent = i === 0 ? '✦' : '✧';
+    sp.style.left = x + 'px';
+    sp.style.top = y + 'px';
+    sp.style.setProperty('--sx', ((Math.random() - 0.5) * 50) + 'px');
+    sp.style.setProperty('--sy', (-Math.random() * 40 - 10) + 'px');
+    container.appendChild(sp);
+    setTimeout((function(el){ return function(){ el.remove(); }; })(sp), 650);
+  }
+
+  setTimeout(function(){
+    heart.remove();
+    plus1.remove();
+  }, 900);
+}
+
+async function sendLikesToBackend(candidateId, count){
   try {
-    var res = await fetch('/api/vote/toggle', {
+    var jobNo = voter ? voter.jobNo : ('guest_' + Date.now());
+    var res = await fetch('/api/vote/like', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        jobNo: jobNo,
-        candidateId: candidateId
+        candidateId: candidateId,
+        count: count,
+        jobNo: jobNo
       })
     });
     var json = await res.json();
-    if(json.code === 0 && json.data){
-      likedIds = json.data.likedIds || [];
-      
-      // 更新该候选人本地投票数 (优先采用服务端返回的真实权威票数，杜绝对象引用重复叠加+2)
-      var finalVotes;
-      if (typeof json.data.candidateVotes === 'number') {
-        finalVotes = json.data.candidateVotes;
-      } else {
-        var prevCount = targetCand ? (targetCand.votesCount || 0) : (rawCand ? (rawCand.votesCount || 0) : 0);
-        finalVotes = Math.max(0, prevCount + (json.data.liked ? 1 : -1));
+    if(json.code === 0 && json.data && typeof json.data.candidateVotes === 'number'){
+      var cand = WORKS.find(function(w){ return w.id === candidateId; });
+      if(cand){
+        cand.votesCount = json.data.candidateVotes;
+        if(WORKS[cur] && WORKS[cur].id === candidateId){
+          var badge = $('pVoteCountBadge');
+          if(badge) badge.textContent = cand.votesCount + ' 赞';
+          var noEl = $('pNo');
+          if(noEl) noEl.innerHTML = (cand.id || pad(cur + 1)) + ' · <strong>' + cand.votesCount + ' 赞</strong>';
+        }
+        var cardVotesEl = $('cardVotes_' + candidateId);
+        if(cardVotesEl) cardVotesEl.textContent = cand.votesCount + ' 赞';
       }
-
-      if(targetCand){
-        targetCand.votesCount = finalVotes;
-      }
-      var rawCand = RAW_WORKS.find(function(w){ return w.id === candidateId; });
-      if(rawCand && rawCand !== targetCand){
-        rawCand.votesCount = finalVotes;
-      }
-
-      // 局部刷新卡片或全列表刷新
-      renderGallery();
-      updatePills();
-
-      // 如果当前正处于全屏播放器，同步更新播放器里的点赞状态与票数
-      if(!$('player').classList.contains('hide') && WORKS[cur] && WORKS[cur].id === candidateId){
-        renderPlayerLikeState(candidateId);
-      }
-
-      if(json.data.liked){
-        // 炸裂点赞动画
-        var b = $('bigHeart');
-        b.className = 'big-star-burst';
-        void b.offsetWidth;
-        b.className = 'big-star-burst burst';
-        toast('已为 ' + candName + ' 点赞推荐 👍 (已推荐 ' + likedIds.length + ' 位)');
-      } else {
-        toast('已取消对 ' + candName + ' 的推荐 (已推荐 ' + likedIds.length + ' 位)');
-      }
-    } else {
-      toast(json.message || '操作失败');
     }
   } catch(e){
-    toast('网络连接失败: ' + e.message);
-  } finally {
-    isVotingInProgress = false;
+    console.warn('Like request error:', e);
   }
 }
+
+window.executeToggleVote = function(candidateId){
+  var stageEl = $('stage');
+  var stageRect = stageEl ? stageEl.getBoundingClientRect() : { width: 300, height: 400 };
+  triggerDouyinScreenLike(stageRect.width / 2, stageRect.height / 2);
+};
 
 /* ===== 核心：沉浸流播放器 (默认竖屏播放，点击全屏再展开) ===== */
 function openPlayer(idx){
@@ -1817,28 +1824,21 @@ function renderPlayerCard(idx, animDir, autoPlay){
 function renderPlayerLikeState(candId){
   var w = WORKS[cur];
   if(!w) return;
-  var isLiked = likedIds.indexOf(candId) > -1;
   var votes = (typeof w.votesCount === 'number') ? w.votesCount : 0;
   var noEl = $('pNo');
   if(noEl){
-    noEl.innerHTML = (w.id || pad(cur + 1)) + ' · <strong>' + votes + ' 票</strong>' + (isLiked ? ' · 已投' : '');
+    noEl.innerHTML = (w.id || pad(cur + 1)) + ' · <strong>' + votes + ' 赞</strong>';
   }
   
   var btnLike = $('btnLike');
-  btnLike.innerHTML = renderVoteIcon(isLiked, 26);
-  if(isLiked){
+  if(btnLike){
+    btnLike.innerHTML = renderHeartSvg(true, 28);
     btnLike.className = 'btn-circle vote-capsule-btn liked';
-    $('pLikeText').textContent = '已投票 ✓';
-    $('pLikeText').className = 'ctrl-label liked';
-  } else {
-    btnLike.className = 'btn-circle vote-capsule-btn';
-    $('pLikeText').textContent = '投TA一票';
-    $('pLikeText').className = 'ctrl-label';
   }
 
   var badge = $('pVoteCountBadge');
   if(badge){
-    badge.textContent = votes + ' 票';
+    badge.textContent = votes + ' 赞';
   }
 }
 
@@ -2225,12 +2225,12 @@ if(btnFs){
   };
 }
 
-/* 播放器内点赞按钮绑定 */
+/* 播放器内右侧心形点赞按钮绑定 */
 $('btnLike').onclick = function(e){
   e.stopPropagation();
-  if(WORKS[cur]){
-    executeToggleVote(WORKS[cur].id);
-  }
+  var rect = $('btnLike').getBoundingClientRect();
+  var stageRect = stage.getBoundingClientRect();
+  triggerDouyinScreenLike(rect.left - stageRect.left + rect.width / 2, rect.top - stageRect.top + rect.height / 2);
 };
 
 /* ==========================================
@@ -2463,17 +2463,45 @@ function handleSwipeEnd(e){
     return;
   }
 
-  // 4. 双击点赞检测 (两次轻触间隔 < 280ms)
-  var now = Date.now();
-  if(now - lastTapTs < 280){
-    lastTapTs = 0;
-    if(WORKS[cur]) executeToggleVote(WORKS[cur].id);
-    return;
+  // 4. 触屏敲击 / 连续点赞检测
+  var touch = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
+  if(touch){
+    handleScreenTap(touch.clientX, touch.clientY, e);
   }
-  lastTapTs = now;
+}
 
-  // 5. 单击播放或暂停
-  safeTogglePlay(e);
+/* 核心：抖音同款多击/双击“戳戳戳”与单次暂停防冲撞调度器 */
+var singleTapTimer = null;
+var lastScreenTapTs = 0;
+var isMultiTapping = false;
+var multiTapResetTimer = null;
+
+function handleScreenTap(clientX, clientY, e){
+  var now = Date.now();
+  var diff = now - lastScreenTapTs;
+  lastScreenTapTs = now;
+
+  var stageRect = stage.getBoundingClientRect();
+  var relX = clientX - stageRect.left;
+  var relY = clientY - stageRect.top;
+
+  if(diff < 360){
+    // 连续轻触 / 双击 / “戳戳戳”点赞！
+    clearTimeout(singleTapTimer);
+    singleTapTimer = null;
+    isMultiTapping = true;
+    clearTimeout(multiTapResetTimer);
+    multiTapResetTimer = setTimeout(function(){ isMultiTapping = false; }, 600);
+
+    triggerDouyinScreenLike(relX, relY);
+  } else {
+    // 单击：延迟 240ms 判断是否为双击的第一拍
+    singleTapTimer = setTimeout(function(){
+      if(!isMultiTapping){
+        safeTogglePlay(e);
+      }
+    }, 240);
+  }
 }
 
 stage.addEventListener('touchend', handleSwipeEnd, { passive: false });
@@ -2524,7 +2552,7 @@ window.addEventListener('mouseup', function(e){
   }
   if(moved || dt > 400) return;
   if(e.target && e.target.closest('#progWrap, .prog-wrap, .ctrl, .arrows, .pbar, .info, .play-center-btn, .mask, #toast, .player-top-overlay, .btn-float-fullscreen, .btn-float-back')) return;
-  safeTogglePlay(e);
+  handleScreenTap(e.clientX, e.clientY, e);
 });
 
 
@@ -2782,7 +2810,7 @@ async function initDesktopQrCode(){
   if(statusDot) statusDot.className = 'status-dot';
 
   try {
-    var targetVoteUrl = window.location.origin + '/vote#login';
+    var targetVoteUrl = window.location.origin + '/vote';
     if(urlInput) urlInput.value = targetVoteUrl;
 
     var res = await fetch('/api/vote/qrcode?text=' + encodeURIComponent(targetVoteUrl));
@@ -2793,7 +2821,7 @@ async function initDesktopQrCode(){
         qrImg.style.opacity = '1';
       }
       if(loadingEl) hide_(loadingEl);
-      if(statusTxt) statusTxt.textContent = '微信扫码直达专属评阅通道';
+      if(statusTxt) statusTxt.textContent = '微信扫码直达作品展播';
       if(statusDot) statusDot.className = 'status-dot pulsing';
     }
   } catch(e){
@@ -2806,37 +2834,14 @@ window.refreshDesktopQrCode = function(){
   initDesktopQrCode();
 };
 
-// 检查 URL 中是否有直连姓名参数或扫码锚点
 function checkUrlAuthParams(){
-  var urlParams = new URLSearchParams(window.location.search);
-  var nameFromUrl = urlParams.get('name');
-
-  // 1. 如果是从 URL 参数带入姓名：自动填充
-  if(nameFromUrl){
-    $('loginName').value = nameFromUrl;
-  }
-
-  // 2. 扫码或带 #login 进入：自动平滑滚动到登录卡片并聚焦输入框
-  if(window.location.hash === '#login' || urlParams.get('scan') === '1'){
-    setTimeout(scrollToLoginCard, 200);
-  }
-}
-
-// 平滑滚动并高亮登录卡片
-function scrollToLoginCard(){
-  var card = $('loginCard');
-  if(card){
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(function(){
-      $('loginName').focus();
-    }, 400);
-  }
+  // 扫码直达作品展播，无需输入任何姓名或身份
 }
 
 // 复制链接辅助
 window.copyDesktopVoteUrl = function(){
-  var url = $('desktopVoteUrlInput') ? $('desktopVoteUrlInput').value : (window.location.origin + '/vote#login');
-  copyTextToClipboard(url, $('btnCopyDesktopUrl'), '复制投票链接');
+  var url = $('desktopVoteUrlInput') ? $('desktopVoteUrlInput').value : (window.location.origin + '/vote');
+  copyTextToClipboard(url, $('btnCopyDesktopUrl'), '复制展播链接');
 };
 
 function copyTextToClipboard(text, btnEl, defaultTxt){
@@ -2886,6 +2891,7 @@ async function initApp(){
     initDesktopQrCode();
   }
   await loadWorks();
+  renderGallery();
 }
 if(document.readyState === 'loading'){
   window.addEventListener('DOMContentLoaded', initApp);

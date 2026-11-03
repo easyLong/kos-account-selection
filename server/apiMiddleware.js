@@ -1014,10 +1014,62 @@ async function voterLogin(name, jobNo) {
   };
 }
 
-async function toggleVote(jobNo, candidateId) {
+async function addLikes(candidateId, count = 1, jobNo = '') {
+  const trimmedCandId = String(candidateId || '').trim();
+  if (!trimmedCandId) throw new Error('候选人ID不能为空');
+  const num = Math.max(1, Math.min(50, Number(count) || 1));
+  const candName = candidateNameMap[trimmedCandId] || trimmedCandId;
+  const baseKey = String(jobNo || 'guest').substring(0, 24);
+
+  if (dbAvailable && dbPool) {
+    const rows = [];
+    for (let i = 0; i < num; i++) {
+      const uniqueJob = `${baseKey}_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`;
+      rows.push([uniqueJob, '观众', trimmedCandId, candName]);
+    }
+    await dbPool.query(
+      'INSERT INTO htf_kos_votes (voterJobNo, voterName, candidateId, candidateName) VALUES ?',
+      [rows]
+    );
+    invalidateVoteCache();
+    let candidateVotes = 0;
+    try {
+      const [cntRows] = await dbPool.query('SELECT COUNT(*) as cnt FROM htf_kos_votes WHERE candidateId = ?', [trimmedCandId]);
+      candidateVotes = Number(cntRows && cntRows[0] ? cntRows[0].cnt : 0);
+    } catch (cntErr) {
+      console.warn('[Vote] Count query error:', cntErr.message);
+    }
+    return { liked: true, candidateVotes };
+  } else {
+    initStorage();
+    let votes = [];
+    try { votes = JSON.parse(fs.readFileSync(VOTES_FILE, 'utf-8') || '[]'); } catch (e) {}
+    for (let i = 0; i < num; i++) {
+      votes.push({
+        voterJobNo: `${baseKey}_${Date.now()}_${i}`,
+        voterName: '观众',
+        candidateId: trimmedCandId,
+        candidateName: candName,
+        createdAt: new Date().toISOString()
+      });
+    }
+    fs.writeFileSync(VOTES_FILE, JSON.stringify(votes, null, 2), 'utf-8');
+    invalidateVoteCache();
+    const candidateVotes = votes.filter(v => v.candidateId === trimmedCandId).length;
+    return { liked: true, candidateVotes };
+  }
+}
+
+async function toggleVote(jobNo, candidateId, count = 1) {
+  if (count && count > 1) {
+    return addLikes(candidateId, count, jobNo);
+  }
   let trimmedJobNo = String(jobNo || '').trim();
   const trimmedCandId = String(candidateId || '').trim();
-  if (!trimmedJobNo || !trimmedCandId) {
+  if (!trimmedJobNo) {
+    trimmedJobNo = 'guest_' + Date.now();
+  }
+  if (!trimmedCandId) {
     throw new Error('参数不完整');
   }
 
@@ -1967,15 +2019,20 @@ export function createApiMiddleware() {
           return;
         }
 
-        if (pathname === '/api/vote/toggle' && req.method === 'POST') {
+        if ((pathname === '/api/vote/toggle' || pathname === '/api/vote/like') && req.method === 'POST') {
           parseJsonBody(async (err, data) => {
-            if (err) {
+            if (err || !data || !data.candidateId) {
               res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-              res.end(JSON.stringify({ code: 400, message: 'Invalid JSON body' }));
+              res.end(JSON.stringify({ code: 400, message: 'Invalid vote parameters' }));
               return;
             }
             try {
-              const result = await toggleVote(data.jobNo, data.candidateId);
+              let result;
+              if (pathname === '/api/vote/like' || (data.count && data.count > 1)) {
+                result = await addLikes(data.candidateId, data.count || 1, data.jobNo);
+              } else {
+                result = await toggleVote(data.jobNo, data.candidateId, data.count);
+              }
               res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
               res.end(JSON.stringify({ code: 0, data: result }));
             } catch (voteErr) {
