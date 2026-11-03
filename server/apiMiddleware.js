@@ -956,9 +956,13 @@ async function getVoteWorks() {
 
 async function voterLogin(name, jobNo) {
   const trimmedName = String(name || '').trim();
-  const trimmedJobNo = String(jobNo || '').trim();
-  if (!trimmedName || !trimmedJobNo) {
-    throw new Error('请完整填写姓名和工号');
+  let trimmedJobNo = String(jobNo || '').trim();
+  if (!trimmedName) {
+    throw new Error('请填写您的姓名');
+  }
+  // 入口只填姓名，无需工号：未输入工号时以姓名标识作为唯一账户记录
+  if (!trimmedJobNo) {
+    trimmedJobNo = 'L_' + trimmedName;
   }
 
   let voter = null;
@@ -1005,13 +1009,13 @@ async function voterLogin(name, jobNo) {
       submittedAt: voter.submittedAt || ''
     },
     likedIds,
-    budgetTotal: 5,
-    budgetRemaining: Math.max(0, 5 - likedIds.length)
+    budgetTotal: 9999,
+    budgetRemaining: 9999
   };
 }
 
 async function toggleVote(jobNo, candidateId) {
-  const trimmedJobNo = String(jobNo || '').trim();
+  let trimmedJobNo = String(jobNo || '').trim();
   const trimmedCandId = String(candidateId || '').trim();
   if (!trimmedJobNo || !trimmedCandId) {
     throw new Error('参数不完整');
@@ -1024,16 +1028,20 @@ async function toggleVote(jobNo, candidateId) {
       dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJobNo])
     ]);
 
-    const voter = voterRows[0];
-    if (!voter) throw new Error('投票人未登录，请先输入工号');
-    if (voter.submitted) throw new Error('您已确认提交投票，无法再次修改');
+    let voter = voterRows[0];
+    if (!voter) {
+      // 容错兜底：若前置未建档，以工号/姓名自动登记
+      const autoName = trimmedJobNo.startsWith('L_') ? trimmedJobNo.substring(2) : trimmedJobNo;
+      await dbPool.query('INSERT IGNORE INTO htf_kos_voters (jobNo, name) VALUES (?, ?)', [trimmedJobNo, autoName]);
+      voter = { name: autoName };
+    }
 
     const candName = candidateNameMap[trimmedCandId] || trimmedCandId;
     const likedIds = (voteRows || []).map(r => r.candidateId);
     const isAlreadyLiked = likedIds.includes(trimmedCandId);
 
     if (isAlreadyLiked) {
-      // 1-query Unvote
+      // 取消推荐
       await dbPool.query('DELETE FROM htf_kos_votes WHERE voterJobNo = ? AND candidateId = ?', [trimmedJobNo, trimmedCandId]);
       const nextLikedIds = likedIds.filter(id => id !== trimmedCandId);
       invalidateVoteCache();
@@ -1044,13 +1052,9 @@ async function toggleVote(jobNo, candidateId) {
       } catch (cntErr) {
         console.warn('[Vote] Count query error:', cntErr.message);
       }
-      return { liked: false, likedIds: nextLikedIds, budgetRemaining: 5 - nextLikedIds.length, candidateVotes };
+      return { liked: false, likedIds: nextLikedIds, budgetRemaining: 9999, candidateVotes };
     } else {
-      // Fast budget check
-      if (likedIds.length >= 5) {
-        throw new Error('每人最多投 5 票，已达上限！可取消某位后再投给 TA');
-      }
-      // 1-query Vote insert with unique constraint protection
+      // 点赞直接加票（整体不设上限，领导刷到谁给谁点赞）
       await dbPool.query(`
         INSERT IGNORE INTO htf_kos_votes (voterJobNo, voterName, candidateId, candidateName)
         VALUES (?, ?, ?, ?)
@@ -1065,16 +1069,20 @@ async function toggleVote(jobNo, candidateId) {
       } catch (cntErr) {
         console.warn('[Vote] Count query error:', cntErr.message);
       }
-      return { liked: true, likedIds: nextLikedIds, budgetRemaining: 5 - nextLikedIds.length, candidateVotes };
+      return { liked: true, likedIds: nextLikedIds, budgetRemaining: 9999, candidateVotes };
     }
   } else {
     // JSON file fallback
     initStorage();
     let voters = [];
     try { voters = JSON.parse(fs.readFileSync(VOTERS_FILE, 'utf-8') || '[]'); } catch (e) {}
-    const voter = voters.find(v => v.jobNo === trimmedJobNo);
-    if (!voter) throw new Error('投票人未登录');
-    if (voter.submitted) throw new Error('您已提交投票');
+    let voter = voters.find(v => v.jobNo === trimmedJobNo);
+    if (!voter) {
+      const autoName = trimmedJobNo.startsWith('L_') ? trimmedJobNo.substring(2) : trimmedJobNo;
+      voter = { jobNo: trimmedJobNo, name: autoName, submitted: 0, createdAt: new Date().toISOString() };
+      voters.push(voter);
+      fs.writeFileSync(VOTERS_FILE, JSON.stringify(voters, null, 2), 'utf-8');
+    }
 
     let votes = [];
     try { votes = JSON.parse(fs.readFileSync(VOTES_FILE, 'utf-8') || '[]'); } catch (e) {}
@@ -1085,10 +1093,8 @@ async function toggleVote(jobNo, candidateId) {
       const likedIds = votes.filter(v => v.voterJobNo === trimmedJobNo).map(v => v.candidateId);
       invalidateVoteCache();
       const candidateVotes = votes.filter(v => v.candidateId === trimmedCandId).length;
-      return { liked: false, likedIds, budgetRemaining: 5 - likedIds.length, candidateVotes };
+      return { liked: false, likedIds, budgetRemaining: 9999, candidateVotes };
     } else {
-      const myCount = votes.filter(v => v.voterJobNo === trimmedJobNo).length;
-      if (myCount >= 5) throw new Error('每人最多投 5 票，已达上限！可取消某位后再投');
       votes.push({
         voterJobNo: trimmedJobNo,
         voterName: voter.name,
@@ -1100,7 +1106,7 @@ async function toggleVote(jobNo, candidateId) {
       const likedIds = votes.filter(v => v.voterJobNo === trimmedJobNo).map(v => v.candidateId);
       invalidateVoteCache();
       const candidateVotes = votes.filter(v => v.candidateId === trimmedCandId).length;
-      return { liked: true, likedIds, budgetRemaining: 5 - likedIds.length, candidateVotes };
+      return { liked: true, likedIds, budgetRemaining: 9999, candidateVotes };
     }
   }
 }
@@ -2126,9 +2132,9 @@ export function createApiMiddleware() {
         // 9.4 手机端扫码后确认登录授权 (同步登录电脑端)
         if (pathname === '/api/vote/scan-confirm' && req.method === 'POST') {
           parseJsonBody(async (err, body) => {
-            if (err || !body || !body.token || !body.jobNo) {
+            if (err || !body || !body.token || !body.name) {
               res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-              res.end(JSON.stringify({ code: 400, message: 'Invalid scan confirmation' }));
+              res.end(JSON.stringify({ code: 400, message: '请完整提供授权信息与姓名' }));
               return;
             }
             const token = body.token;
@@ -2139,7 +2145,7 @@ export function createApiMiddleware() {
             }
 
             try {
-              const voterResult = await voterLogin(body.name || '员工', body.jobNo);
+              const voterResult = await voterLogin(body.name, body.jobNo || ('L_' + body.name));
               scanSessions.set(token, {
                 status: 'confirmed',
                 voter: voterResult,

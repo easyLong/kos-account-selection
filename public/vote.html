@@ -340,13 +340,6 @@
       box-shadow: none;
       -webkit-overflow-scrolling: touch;
     }
-    .gallery-dock {
-      position: absolute;
-      left: 0;
-      transform: none;
-      width: 100%;
-      max-width: 100%;
-    }
   }
 
   /* 移动端原生全屏适配 (隐藏仿真手机壳与右侧栏) */
@@ -430,72 +423,7 @@
   .pill.out{border-color:#d99a90;color:#a03c1c;background:#fdeceb}
 
   /* ---------- 3. 展播列表 (支持直接点赞 + 真实有效画面) ---------- */
-  #gallery{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
-
-  /* ---------- 吸底操作栏 (吸盘式固定屏幕底部，随时提交免滑到底部) ---------- */
-  .gallery-dock{
-    position:fixed;
-    bottom:0;
-    left:50%;
-    transform:translateX(-50%);
-    width:100%;
-    max-width:440px;
-    z-index:30;
-    box-sizing:border-box;
-    padding:10px 16px max(12px, env(safe-area-inset-bottom));
-    background:rgba(246,243,238,.95);
-    backdrop-filter:blur(12px);
-    -webkit-backdrop-filter:blur(12px);
-    border-top:1px solid rgba(228,220,204,.9);
-    box-shadow:0 -4px 18px rgba(43,33,25,.08);
-  }
-  .gallery-dock-inner{
-    display:flex;
-    align-items:center;
-    gap:12px;
-  }
-  .dock-summary{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    min-width:72px;
-    line-height:1.2;
-    flex-shrink:0;
-  }
-  .dock-summary-label{
-    font-size:11px;
-    color:var(--sub);
-    font-weight:600;
-  }
-  .dock-summary-val{
-    display:flex;
-    align-items:baseline;
-    gap:2px;
-    margin-top:2px;
-  }
-  .dock-count-num{
-    font-size:18px;
-    font-weight:800;
-    color:var(--gold);
-    font-variant-numeric:tabular-nums;
-    transition:color .2s;
-  }
-  .dock-count-total{
-    font-size:11.5px;
-    color:var(--sub);
-  }
-  .btn-dock-submit{
-    flex:1;
-    margin:0;
-    padding:12px 16px;
-    font-size:14.5px;
-    letter-spacing:.3px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    box-shadow:0 3px 10px rgba(184,134,11,.25);
-  }
+  #gallery{padding-bottom:calc(28px + env(safe-area-inset-bottom))}
   
   .gallery-actions{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 2px}
   .view-switch-btns{display:flex;gap:4px;background:#ebe5d9;padding:3px;border-radius:8px}
@@ -1107,41 +1035,37 @@
   <section id="entry">
     <div class="hero kv">
       <span class="tag">汇添富 · 星火计划</span>
-      <h1>财经自媒体短视频<br>创作者选拔投票</h1>
-      <p class="sub">员工人气评选 · 选出你心目中最具潜力的自媒体之星</p>
+      <h1>财经自媒体短视频<br>创作者选拔推荐</h1>
+      <p class="sub">评委专属通道 · 选拔最具潜力的自媒体之星</p>
     </div>
     
     <div class="rules">
-      共 <b id="eTotal">0</b> 个作品，每人最多投 <b id="eBudget">5</b> 票<br>
+      共 <b id="eTotal">0</b> 个参选作品，随时为心仪作品点赞推荐<br>
       · 点进视频直接开播，上下滑动畅享自动连播<br>
-      · 点击 👍 直接投出你的推荐票，随时可取消重投<br>
-      · 为保障所有作品公平曝光，已为每位员工提供专属个性化顺序
+      · 刷到心仪作品随时点击 👍 即可点赞推荐，后台实时记录<br>
+      · 为保障所有作品公平曝光，已为您提供专属个性化顺序
     </div>
 
-    <!-- 登录卡片 (输入姓名与工号进行身份认证) -->
+    <!-- 登录卡片 (输入姓名进行身份认证) -->
     <div class="login-card" id="loginCard">
       <div class="login-title">
-        <span style="font-size:16px">🔑</span>
-        <span>员工工号认证登录</span>
+        <span style="font-size:16px">👤</span>
+        <span>评委 / 领导专属通道</span>
       </div>
 
       <div id="loggedInArea" class="hide" style="margin-bottom:12px">
         <div class="login-status-badge" style="margin-bottom:0">
-          <span>已记住：<strong id="loggedInfoTxt">--</strong></span>
-          <span class="sw-btn" id="btnSwitchAccount" style="color:var(--gold);font-weight:700;cursor:pointer">清空换号</span>
+          <span>当前身份：<strong id="loggedInfoTxt">--</strong></span>
+          <span class="sw-btn" id="btnSwitchAccount" style="color:var(--gold);font-weight:700;cursor:pointer">更换姓名</span>
         </div>
       </div>
 
       <div id="loginFormArea">
         <div class="form-row">
-          <label>姓名：</label>
-          <input type="text" id="loginName" placeholder="输入姓名 (如：张三)" maxlength="20" autocomplete="name">
+          <label>您的姓名：</label>
+          <input type="text" id="loginName" placeholder="请输入您的姓名 (如：张总)" maxlength="20" autocomplete="name">
         </div>
-        <div class="form-row">
-          <label>工号：</label>
-          <input type="text" id="loginJobNo" placeholder="输入工号 (如：10001)" maxlength="32" autocomplete="off">
-        </div>
-        <button class="btn" id="btnStart" style="margin-top:8px">开始投票</button>
+        <button class="btn" id="btnStart" style="margin-top:8px">进入作品展播</button>
       </div>
     </div>
   </section>
@@ -1150,8 +1074,8 @@
   <section id="gallery" class="hide">
     <div class="topbar">
       <span class="title" id="gTitle">全部作品 (0)</span>
-      <span class="pill user" id="pillUser">工号: --</span>
-      <span class="pill" id="pillBudget">剩余 5 / 5 票</span>
+      <span class="pill user" id="pillUser">评委: --</span>
+      <span class="pill" id="pillBudget">已推荐 0 位</span>
     </div>
 
     <div class="gallery-actions" style="justify-content:flex-end">
@@ -1163,20 +1087,6 @@
 
     <!-- 作品展示容器 (支持直接点赞，有效视频封面) -->
     <div class="grid" id="grid"></div>
-
-    <!-- 吸底操作栏 (吸盘式固定底部，无需滑到最底部) -->
-    <div class="gallery-dock" id="galleryDock">
-      <div class="gallery-dock-inner">
-        <div class="dock-summary">
-          <div class="dock-summary-label">已投推荐票</div>
-          <div class="dock-summary-val">
-            <span class="dock-count-num" id="dockCountNum">0</span>
-            <span class="dock-count-total">/ 5 票</span>
-          </div>
-        </div>
-        <button class="btn btn-dock-submit" id="btnSubmit">确认并提交我的票数</button>
-      </div>
-    </div>
   </section>
 
   <!-- ============ 3. 沉浸流全屏播放器 (点了再播 + 绝不自动连贯切台) ============ -->
@@ -1198,7 +1108,7 @@
       </div>
 
       <div class="float-meta-badge">
-        <span id="pBudget">剩余 5 票</span>
+        <span id="pBudget">已推荐 0 位</span>
       </div>
     </div>
 
@@ -1413,11 +1323,11 @@
         </div>
         <div class="step-item">
           <span class="step-num">2</span>
-          <div class="step-text">手机直达 <b>“工号登录卡片”</b></div>
+          <div class="step-text">手机直达 <b>“评委登录通道”</b></div>
         </div>
         <div class="step-item">
           <span class="step-num">3</span>
-          <div class="step-text">输入 <b>“员工姓名与工号”</b> 即可投票</div>
+          <div class="step-text">输入 <b>“姓名”</b> 即可开始评阅推荐</div>
         </div>
       </div>
     </div>
@@ -1426,11 +1336,11 @@
 
 <script>
 /* ===== 全局状态 ===== */
-var CFG = { budget: 5, total: 0 };
+var CFG = { budget: 9999, total: 0 };
 var RAW_WORKS = []; // 后台原始拉取作品全集
 var WORKS = []; // 当前登录员工专属伪随机洗牌后的流转顺序
 var voter = null; // { name: '', jobNo: '', submitted: false }
-var likedIds = []; // 候选人 ID 列表 (最多 5 个)
+var likedIds = []; // 已推荐候选人 ID 列表 (无上限点赞)
 
 /* ===== 核心：基于员工工号的伪随机洗牌算法 (保障参选人曝光公平) ===== */
 function getSeedFromJobNo(str){
@@ -1544,18 +1454,18 @@ function toast(msg, btnText, btnAction){
   toastTimer = setTimeout(function(){ hide_($('toast')); }, 3200);
 }
 
-/* ===== 1. 登录会话恢复与双向输入支持 ===== */
+/* ===== 1. 登录会话恢复与专属评委认证 ===== */
 function initVoterSession(){
   try {
     var raw = localStorage.getItem('xh_voter_session');
     if(raw){
       voter = JSON.parse(raw);
-      if(voter && voter.name && voter.jobNo){
+      if(voter && voter.name){
+        if(!voter.jobNo) voter.jobNo = 'L_' + voter.name;
         $('loginName').value = voter.name;
-        $('loginJobNo').value = voter.jobNo;
-        $('loggedInfoTxt').textContent = voter.name + ' (' + voter.jobNo + ')';
+        $('loggedInfoTxt').textContent = voter.name;
         show($('loggedInArea'));
-        $('btnStart').textContent = '进入作品集 (已就绪)';
+        $('btnStart').textContent = '进入展播 (继续评阅)';
       }
     }
   } catch(e){}
@@ -1565,9 +1475,8 @@ $('btnSwitchAccount').onclick = function(){
   voter = null;
   localStorage.removeItem('xh_voter_session');
   $('loginName').value = '';
-  $('loginJobNo').value = '';
   hide_($('loggedInArea'));
-  $('btnStart').textContent = '开始投票';
+  $('btnStart').textContent = '进入作品展播';
   $('loginName').focus();
   applyWorksOrder();
   if(window.innerWidth >= 768){
@@ -1575,18 +1484,8 @@ $('btnSwitchAccount').onclick = function(){
   }
 };
 
-// 快捷体验：姓名/工号输入框按回车直接提交登录
+// 快捷体验：姓名输入框按回车直接进入展播
 $('loginName').addEventListener('keydown', function(e){
-  if(e.key === 'Enter'){
-    e.preventDefault();
-    if($('loginJobNo').value.trim()){
-      doLogin();
-    } else {
-      $('loginJobNo').focus();
-    }
-  }
-});
-$('loginJobNo').addEventListener('keydown', function(e){
   if(e.key === 'Enter'){
     e.preventDefault();
     doLogin();
@@ -1608,24 +1507,22 @@ async function loadWorks(){
 
   CFG.total = WORKS.length;
   $('eTotal').textContent = CFG.total;
-  $('eBudget').textContent = CFG.budget;
   $('sTotal').textContent = CFG.total;
   if($('gTitle')) $('gTitle').textContent = '全部参选作品 (' + CFG.total + ')';
 }
 
-/* ===== 3. 员工实名登录 ===== */
+/* ===== 3. 评委/领导认证进入 ===== */
 var isLoginInProgress = false;
 async function doLogin(){
   if(isLoginInProgress) return;
   var name = $('loginName').value.trim();
-  var jobNo = $('loginJobNo').value.trim();
 
-  if(!name || !jobNo){
-    toast('请完整输入您的姓名与工号进行验证');
-    if(!name) $('loginName').focus();
-    else $('loginJobNo').focus();
+  if(!name){
+    toast('请输入您的姓名');
+    $('loginName').focus();
     return;
   }
+  var jobNo = (voter && voter.jobNo) ? voter.jobNo : ('L_' + name);
 
   // 本地离线文件打开防御提示
   if(window.location.protocol === 'file:'){
@@ -1635,7 +1532,7 @@ async function doLogin(){
 
   isLoginInProgress = true;
   $('btnStart').disabled = true;
-  $('btnStart').textContent = '正在验证身份...';
+  $('btnStart').textContent = '正在进入...';
 
   try {
     var res = await fetch('/api/vote/login', {
@@ -1649,20 +1546,16 @@ async function doLogin(){
       likedIds = json.data.likedIds || [];
       localStorage.setItem('xh_voter_session', JSON.stringify(voter));
 
-      // 核心：登录成功后立即按该员工工号执行专属伪随机个性化洗牌
+      // 核心：登录成功后立即按专属 ID 执行伪随机个性化洗牌
       applyWorksOrder();
 
       updatePills();
       go('gallery');
       renderGallery();
 
-      if(voter.submitted){
-        toast('您之前已提交过投票，当前为只读浏览模式');
-      } else {
-        toast('欢迎您，' + voter.name + '！您有 5 票推荐预算');
-      }
+      toast('欢迎您，' + voter.name + '！随时为心仪作品点赞推荐');
     } else {
-      toast(json.message || '登录验证失败，请重试');
+      toast(json.message || '进入展播失败，请重试');
     }
   } catch(e){
     console.error('Login error:', e);
@@ -1670,41 +1563,22 @@ async function doLogin(){
   } finally {
     isLoginInProgress = false;
     $('btnStart').disabled = false;
-    $('btnStart').textContent = voter ? '进入作品展示集' : '开始投票';
+    $('btnStart').textContent = voter ? '进入展播 (继续评阅)' : '进入作品展播';
   }
 }
 
 $('btnStart').onclick = doLogin;
 
-/* ===== 4. 刷新顶部与吸底票数统计 ===== */
+/* ===== 4. 刷新顶部已推荐作品数量 ===== */
 function updatePills(){
-  var left = Math.max(0, CFG.budget - likedIds.length);
+  var count = likedIds.length;
   var el = $('pillBudget');
   if(el){
-    el.innerHTML = renderVoteIcon(true, 14) + ' <span>剩余 ' + left + ' / ' + CFG.budget + ' 票</span>';
-    el.className = 'pill' + (left === 0 ? ' out' : (left === 1 ? ' warn' : ''));
+    el.innerHTML = renderVoteIcon(true, 14) + ' <span>已推荐 ' + count + ' 位</span>';
+    el.className = 'pill' + (count > 0 ? ' user' : '');
   }
-  if($('pBudget')) $('pBudget').innerHTML = renderVoteIcon(true, 13) + ' <span>剩余 ' + left + ' 票</span>';
-  if($('pillUser') && voter) $('pillUser').textContent = voter.name + ' (' + voter.jobNo + ')';
-
-  // 同步更新吸底操作栏 (已投推荐票数字 & 提交按钮文案状态)
-  var dockCount = $('dockCountNum');
-  if(dockCount){
-    dockCount.textContent = likedIds.length;
-    dockCount.style.color = likedIds.length >= CFG.budget ? '#e11d48' : 'var(--gold)';
-  }
-  var btnSub = $('btnSubmit');
-  if(btnSub){
-    if(voter && voter.submitted){
-      btnSub.textContent = '已确认提交 · 只读';
-      btnSub.disabled = true;
-    } else {
-      btnSub.textContent = likedIds.length > 0
-        ? '确认并提交我的票数 (' + likedIds.length + '/' + CFG.budget + ')'
-        : '确认并提交我的票数';
-      btnSub.disabled = false;
-    }
-  }
+  if($('pBudget')) $('pBudget').innerHTML = renderVoteIcon(true, 13) + ' <span>已推荐 ' + count + ' 位</span>';
+  if($('pillUser') && voter) $('pillUser').textContent = '评委: ' + voter.name;
 }
 
 /* ===== 5. 核心：渲染作品列表 (有效画面 + 直接点赞，不需要点进去) ===== */
@@ -1767,24 +1641,14 @@ window.onDirectVoteClick = function(e, candidateId){
 var isVotingInProgress = false;
 async function executeToggleVote(candidateId){
   if(isVotingInProgress) return;
-  if(!voter || !voter.jobNo){
-    toast('您尚未登录，请先在首页输入工号');
+  if(!voter || !voter.name){
+    toast('请先在首页输入您的姓名');
     return;
   }
-  if(voter.submitted){
-    toast('您已确认提交投票，无法再次修改');
-    return;
-  }
+  var jobNo = voter.jobNo || ('L_' + voter.name);
 
-  var isCurrentlyLiked = likedIds.indexOf(candidateId) > -1;
   var targetCand = WORKS.find(function(w){ return w.id === candidateId; });
   var candName = targetCand ? targetCand.name : candidateId;
-
-  // 本地前置 5 票上限拦截
-  if(!isCurrentlyLiked && likedIds.length >= CFG.budget){
-    toast('您的 5 票推荐已满，可取消其他候选人后再投给 TA！');
-    return;
-  }
 
   isVotingInProgress = true;
   try {
@@ -1792,7 +1656,7 @@ async function executeToggleVote(candidateId){
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        jobNo: voter.jobNo,
+        jobNo: jobNo,
         candidateId: candidateId
       })
     });
@@ -1832,9 +1696,9 @@ async function executeToggleVote(candidateId){
         b.className = 'big-star-burst';
         void b.offsetWidth;
         b.className = 'big-star-burst burst';
-        toast('已成功为 ' + candName + ' 投出推荐票 👍 (剩余 ' + (CFG.budget - likedIds.length) + ' 票)');
+        toast('已为 ' + candName + ' 点赞推荐 👍 (已推荐 ' + likedIds.length + ' 位)');
       } else {
-        toast('已取消对 ' + candName + ' 的推荐票 (剩余 ' + (CFG.budget - likedIds.length) + ' 票)');
+        toast('已取消对 ' + candName + ' 的推荐 (已推荐 ' + likedIds.length + ' 位)');
       }
     } else {
       toast(json.message || '操作失败');
@@ -2710,27 +2574,29 @@ function askSubmit(){
 
   $('mTitle').textContent = '确认提交您的投票？';
   $('mBody').innerHTML = likedIds.length > 0
-    ? '您已投出 <b>' + likedIds.length + '</b> 张推荐票（上限 5 票）。<br>提交后不可修改票数，确认提交吗？'
-    : '您当前未勾选任何推荐票，确认以弃权提交吗？';
+    ? '您已投出 <b>' + likedIds.length + '</b> 张推荐票。<br>确认提交吗？'
+    : '您当前未点赞推荐任何作品，确认提交吗？';
 
   show($('mask'));
 }
 
-$('btnSubmit').onclick = askSubmit;
-$('mCancel').onclick = function(){ hide_($('mask')); };
+if($('btnSubmit')) $('btnSubmit').onclick = askSubmit;
+if($('mCancel')) $('mCancel').onclick = function(){ hide_($('mask')); };
 
-$('mOk').onclick = async function(){
+if($('mOk')) $('mOk').onclick = async function(){
   hide_($('mask'));
   try {
     var res = await fetch('/api/vote/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jobNo: voter.jobNo })
+      body: JSON.stringify({ jobNo: (voter && voter.jobNo) ? voter.jobNo : ('L_' + (voter ? voter.name : '')) })
     });
     var json = await res.json();
     if(json.code === 0){
-      voter.submitted = true;
-      localStorage.setItem('xh_voter_session', JSON.stringify(voter));
+      if(voter){
+        voter.submitted = true;
+        localStorage.setItem('xh_voter_session', JSON.stringify(voter));
+      }
 
       $('sVote').textContent = likedIds.length;
       $('sSeen').textContent = seenIds.length;
@@ -2814,19 +2680,13 @@ function showExitConfirmModal(){
   var bodyEl = $('exitBody');
   var btnConfirm = $('btnConfirmExit');
 
-  if(voter && voter.submitted){
-    titleEl.textContent = '确认退出展播页面？';
-    bodyEl.innerHTML = '您已完成投票并成功提交。<br>确认离开星火计划参选作品展播吗？';
-    btnConfirm.textContent = '退出页面';
-  } else if(likedIds && likedIds.length > 0){
-    titleEl.textContent = '推荐票尚未提交，确认退出？';
-    bodyEl.innerHTML = '您已投出 <b style="color:var(--gold);font-size:15px">' + likedIds.length + '</b> 张推荐票，但<b>尚未最终确认提交</b>！<br>若现在离开，本次投票将不会生效。';
-    btnConfirm.textContent = '仍要退出';
+  titleEl.textContent = '确认退出展播页面？';
+  if(likedIds && likedIds.length > 0){
+    bodyEl.innerHTML = '您已为 <b style="color:var(--gold);font-size:15px">' + likedIds.length + '</b> 位选手点赞推荐，系统已实时保存。<br>确认离开星火计划参选作品展播吗？';
   } else {
-    titleEl.textContent = '确认退出展播页面？';
-    bodyEl.innerHTML = '您当前尚未投出任何推荐票。<br>确认离开星火计划参选作品展播吗？';
-    btnConfirm.textContent = '确认退出';
+    bodyEl.innerHTML = '确认离开星火计划参选作品展播吗？';
   }
+  btnConfirm.textContent = '退出页面';
 
   isExitModalOpen = true;
   show($('exitMask'));
@@ -2902,11 +2762,7 @@ window.addEventListener('popstate', function(e){
 
 // 浏览器窗口关闭前兜底 (PC端/部分移动浏览器)
 window.addEventListener('beforeunload', function(e){
-  if(!isExiting && voter && !voter.submitted && likedIds && likedIds.length > 0){
-    e.preventDefault();
-    e.returnValue = '您当前有尚未提交的投票，确认要离开吗？';
-    return e.returnValue;
-  }
+  // 系统已实时保存点赞，无需拦截提示
 });
 
 /* ========================================================
@@ -2937,7 +2793,7 @@ async function initDesktopQrCode(){
         qrImg.style.opacity = '1';
       }
       if(loadingEl) hide_(loadingEl);
-      if(statusTxt) statusTxt.textContent = '微信扫码直达工号登录卡片';
+      if(statusTxt) statusTxt.textContent = '微信扫码直达专属评阅通道';
       if(statusDot) statusDot.className = 'status-dot pulsing';
     }
   } catch(e){
@@ -2950,16 +2806,14 @@ window.refreshDesktopQrCode = function(){
   initDesktopQrCode();
 };
 
-// 检查 URL 中是否有直连工号参数或扫码锚点
+// 检查 URL 中是否有直连姓名参数或扫码锚点
 function checkUrlAuthParams(){
   var urlParams = new URLSearchParams(window.location.search);
-  var jobNoFromUrl = urlParams.get('jobNo');
   var nameFromUrl = urlParams.get('name');
 
-  // 1. 如果是从 URL 参数带入工号+姓名：自动填充
-  if(jobNoFromUrl){
-    $('loginJobNo').value = jobNoFromUrl;
-    if(nameFromUrl) $('loginName').value = nameFromUrl;
+  // 1. 如果是从 URL 参数带入姓名：自动填充
+  if(nameFromUrl){
+    $('loginName').value = nameFromUrl;
   }
 
   // 2. 扫码或带 #login 进入：自动平滑滚动到登录卡片并聚焦输入框
@@ -2974,11 +2828,7 @@ function scrollToLoginCard(){
   if(card){
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(function(){
-      if(!$('loginName').value.trim()){
-        $('loginName').focus();
-      } else {
-        $('loginJobNo').focus();
-      }
+      $('loginName').focus();
     }, 400);
   }
 }
