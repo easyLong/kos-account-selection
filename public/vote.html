@@ -1466,15 +1466,19 @@ function go(id){
 }
 function pad(n){ return n < 10 ? '0' + n : '' + n; }
 
-/* ===== 核心：专业心形矢量渲染器 (抖音同款高光红心) ===== */
-function renderHeartSvg(isLiked, size){
+/* ===== 核心：经典大拇指点赞手势矢量渲染器 (👍 经典金边红渐变手势) ===== */
+function renderThumbSvg(size){
   size = size || 18;
   return '<svg class="vote-svg-icon active" viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true">' +
-    '<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#gThumbL)"/>' +
+    '<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z" fill="url(#gThumbL)" stroke="#FFEAA7" stroke-width="0.8" stroke-linejoin="round"/>' +
+    '<rect x="2" y="11" width="5" height="11" rx="1.5" fill="url(#gThumbD)" stroke="#FFEAA7" stroke-width="0.8"/>' +
   '</svg>';
 }
+function renderHeartSvg(isLiked, size){
+  return renderThumbSvg(size);
+}
 function renderVoteIcon(isLiked, size){
-  return renderHeartSvg(isLiked, size);
+  return renderThumbSvg(size);
 }
 
 /* ===== Toast 提示 ===== */
@@ -1581,14 +1585,14 @@ function renderGallery(){
 }
 
 /* ========================================================
- * 4. 抖音同款“戳戳戳”全屏屏幕点赞系统 (Douyin Tap-To-Like Engine)
+ * 4. 经典大拇指点赞“戳戳戳”全屏屏幕点赞系统 (Tap-To-Like Engine)
  * ======================================================== */
-var dyHeartColors = [
-  { c: '#FF2448', glow: 'rgba(255, 36, 72, 0.75)' },
-  { c: '#FF0055', glow: 'rgba(255, 0, 85, 0.75)' },
-  { c: '#FF3366', glow: 'rgba(255, 51, 102, 0.75)' },
-  { c: '#FF5252', glow: 'rgba(255, 82, 82, 0.75)' },
-  { c: '#FF2A6D', glow: 'rgba(255, 42, 109, 0.75)' }
+var dyThumbColors = [
+  { c: 'url(#gThumbL)', cDark: 'url(#gThumbD)', glow: 'rgba(225, 29, 72, 0.75)' },
+  { c: '#FF2448', cDark: '#D91638', glow: 'rgba(255, 36, 72, 0.75)' },
+  { c: '#E11D48', cDark: '#BE123C', glow: 'rgba(225, 29, 72, 0.75)' },
+  { c: '#F59E0B', cDark: '#D97706', glow: 'rgba(245, 158, 11, 0.75)' },
+  { c: '#FF3B56', cDark: '#C71B3E', glow: 'rgba(255, 59, 86, 0.75)' }
 ];
 
 var pendingLikesMap = {};
@@ -1599,8 +1603,8 @@ function triggerDouyinScreenLike(x, y){
   if(!currentWork) return;
   var candId = currentWork.id;
 
-  // 1. 动效层：在触碰位置生成抖音同款爆心与浮动+1
-  spawnDouyinHeart(x, y);
+  // 1. 动效层：在触碰位置生成经典大拇指点赞手势与浮动+1
+  spawnDouyinThumb(x, y);
 
   // 2. 本地立即响应加赞 (0 延时爽快感)
   currentWork.votesCount = (currentWork.votesCount || 0) + 1;
@@ -1611,7 +1615,7 @@ function triggerDouyinScreenLike(x, y){
   var cardVotesEl = $('cardVotes_' + candId);
   if(cardVotesEl) cardVotesEl.textContent = currentWork.votesCount + ' 赞';
 
-  // 3. 右侧心形按钮弹性弹跳
+  // 3. 右侧大拇指点赞按钮弹性弹跳
   var btnLike = $('btnLike');
   if(btnLike){
     btnLike.classList.remove('dy-pop');
@@ -1634,29 +1638,33 @@ function triggerDouyinScreenLike(x, y){
   }, 350);
 }
 
-function spawnDouyinHeart(x, y){
+function spawnDouyinThumb(x, y){
   var container = $('dyLikeContainer');
   if(!container) return;
 
-  var color = dyHeartColors[Math.floor(Math.random() * dyHeartColors.length)];
-  var rot = (Math.random() - 0.5) * 54;
-  var driftX = (Math.random() - 0.5) * 60;
+  var color = dyThumbColors[Math.floor(Math.random() * dyThumbColors.length)];
+  var rot = (Math.random() - 0.5) * 44;
+  var driftX = (Math.random() - 0.5) * 55;
 
-  // 爆心
-  var heart = document.createElement('div');
-  heart.className = 'dy-floating-heart';
-  heart.style.left = x + 'px';
-  heart.style.top = y + 'px';
-  heart.style.setProperty('--rot', rot + 'deg');
-  heart.style.setProperty('--driftX', driftX + 'px');
-  heart.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="' + color.c + '"/></svg>';
-  container.appendChild(heart);
+  // 经典大拇指点赞手势
+  var thumb = document.createElement('div');
+  thumb.className = 'dy-floating-heart';
+  thumb.style.left = x + 'px';
+  thumb.style.top = y + 'px';
+  thumb.style.setProperty('--rot', rot + 'deg');
+  thumb.style.setProperty('--driftX', driftX + 'px');
+  thumb.innerHTML = 
+    '<svg viewBox="0 0 24 24" width="76" height="76" style="filter:drop-shadow(0 4px 18px ' + color.glow + ');">' +
+      '<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z" fill="' + color.c + '" stroke="#FFEAA7" stroke-width="0.9" stroke-linejoin="round"/>' +
+      '<rect x="2" y="11" width="5" height="11" rx="1.5" fill="' + (color.cDark || color.c) + '" stroke="#FFEAA7" stroke-width="0.9"/>' +
+    '</svg>';
+  container.appendChild(thumb);
 
   // 浮动 +1 提示
   var plus1 = document.createElement('div');
   plus1.className = 'dy-float-plus1';
   plus1.style.left = (x + driftX * 0.4) + 'px';
-  plus1.style.top = (y - 36) + 'px';
+  plus1.style.top = (y - 38) + 'px';
   plus1.textContent = '+1';
   container.appendChild(plus1);
 
@@ -1674,9 +1682,12 @@ function spawnDouyinHeart(x, y){
   }
 
   setTimeout(function(){
-    heart.remove();
+    thumb.remove();
     plus1.remove();
   }, 900);
+}
+function spawnDouyinHeart(x, y){
+  spawnDouyinThumb(x, y);
 }
 
 async function sendLikesToBackend(candidateId, count){
