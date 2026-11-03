@@ -1014,22 +1014,40 @@ async function voterLogin(name, jobNo) {
   };
 }
 
+async function getUserLikedCandidateIds(voterJobNo) {
+  const trimmedJob = String(voterJobNo || '').trim();
+  if (!trimmedJob) return [];
+  if (dbAvailable && dbPool) {
+    try {
+      const [rows] = await dbPool.query('SELECT candidateId FROM htf_kos_votes WHERE voterJobNo = ?', [trimmedJob]);
+      return (rows || []).map(r => r.candidateId);
+    } catch (e) {
+      console.warn('[Vote] getUserLikedCandidateIds DB error:', e.message);
+      return [];
+    }
+  } else {
+    try {
+      if (fs.existsSync(VOTES_FILE)) {
+        const votes = JSON.parse(fs.readFileSync(VOTES_FILE, 'utf-8') || '[]');
+        return votes.filter(v => v.voterJobNo === trimmedJob).map(v => v.candidateId);
+      }
+    } catch (e) {}
+    return [];
+  }
+}
+
 async function addLikes(candidateId, count = 1, jobNo = '') {
   const trimmedCandId = String(candidateId || '').trim();
   if (!trimmedCandId) throw new Error('候选人ID不能为空');
-  const num = Math.max(1, Math.min(50, Number(count) || 1));
   const candName = candidateNameMap[trimmedCandId] || trimmedCandId;
-  const baseKey = String(jobNo || 'guest').substring(0, 24);
+  const trimmedJobNo = String(jobNo || 'guest').trim().substring(0, 64);
 
   if (dbAvailable && dbPool) {
-    const rows = [];
-    for (let i = 0; i < num; i++) {
-      const uniqueJob = `${baseKey}_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`;
-      rows.push([uniqueJob, '观众', trimmedCandId, candName]);
-    }
+    // 计数只能一次：利用 MySQL UNIQUE KEY uk_voter_cand (voterJobNo, candidateId)
+    // 使用 INSERT IGNORE，单个投票人/设备仅计入 1 票，绝不重复递增计数
     await dbPool.query(
-      'INSERT INTO htf_kos_votes (voterJobNo, voterName, candidateId, candidateName) VALUES ?',
-      [rows]
+      'INSERT IGNORE INTO htf_kos_votes (voterJobNo, voterName, candidateId, candidateName) VALUES (?, ?, ?, ?)',
+      [trimmedJobNo, '观众', trimmedCandId, candName]
     );
     invalidateVoteCache();
     let candidateVotes = 0;
@@ -1044,17 +1062,19 @@ async function addLikes(candidateId, count = 1, jobNo = '') {
     initStorage();
     let votes = [];
     try { votes = JSON.parse(fs.readFileSync(VOTES_FILE, 'utf-8') || '[]'); } catch (e) {}
-    for (let i = 0; i < num; i++) {
+    // 计数只能一次：若当前 voterJobNo 已给该候选人点过赞，绝不重复计入
+    const alreadyVoted = votes.some(v => v.voterJobNo === trimmedJobNo && v.candidateId === trimmedCandId);
+    if (!alreadyVoted) {
       votes.push({
-        voterJobNo: `${baseKey}_${Date.now()}_${i}`,
+        voterJobNo: trimmedJobNo,
         voterName: '观众',
         candidateId: trimmedCandId,
         candidateName: candName,
         createdAt: new Date().toISOString()
       });
+      fs.writeFileSync(VOTES_FILE, JSON.stringify(votes, null, 2), 'utf-8');
+      invalidateVoteCache();
     }
-    fs.writeFileSync(VOTES_FILE, JSON.stringify(votes, null, 2), 'utf-8');
-    invalidateVoteCache();
     const candidateVotes = votes.filter(v => v.candidateId === trimmedCandId).length;
     return { liked: true, candidateVotes };
   }
@@ -1990,9 +2010,13 @@ export function createApiMiddleware() {
 
         // 9. Video Showcase & Voting APIs
         if (pathname === '/api/vote/works' && req.method === 'GET') {
-          getVoteWorks().then(works => {
+          const voterJobNo = (url.searchParams.get('jobNo') || '').trim();
+          Promise.all([
+            getVoteWorks(),
+            voterJobNo ? getUserLikedCandidateIds(voterJobNo) : Promise.resolve([])
+          ]).then(([works, userLikedIds]) => {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ code: 0, data: works }));
+            res.end(JSON.stringify({ code: 0, data: works, userLikedIds: userLikedIds || [] }));
           }).catch(err => {
             res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({ code: 500, message: err.message }));

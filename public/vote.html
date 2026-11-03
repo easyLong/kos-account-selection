@@ -1467,18 +1467,28 @@ function go(id){
 function pad(n){ return n < 10 ? '0' + n : '' + n; }
 
 /* ===== 核心：经典大拇指点赞手势矢量渲染器 (👍 经典金边红渐变手势) ===== */
-function renderThumbSvg(size){
+function renderThumbSvg(isLiked, size){
+  if(typeof isLiked === 'number'){
+    size = isLiked;
+    isLiked = true;
+  }
   size = size || 18;
+  if(isLiked === false){
+    return '<svg class="vote-svg-icon" viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true">' +
+      '<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.8" stroke-linejoin="round"/>' +
+      '<rect x="2" y="11" width="5" height="11" rx="1.5" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.8"/>' +
+    '</svg>';
+  }
   return '<svg class="vote-svg-icon active" viewBox="0 0 24 24" width="' + size + '" height="' + size + '" aria-hidden="true">' +
     '<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z" fill="url(#gThumbL)" stroke="#FFEAA7" stroke-width="0.8" stroke-linejoin="round"/>' +
     '<rect x="2" y="11" width="5" height="11" rx="1.5" fill="url(#gThumbD)" stroke="#FFEAA7" stroke-width="0.8"/>' +
   '</svg>';
 }
 function renderHeartSvg(isLiked, size){
-  return renderThumbSvg(size);
+  return renderThumbSvg(isLiked, size);
 }
 function renderVoteIcon(isLiked, size){
-  return renderThumbSvg(size);
+  return renderThumbSvg(isLiked, size);
 }
 
 /* ===== Toast 提示 ===== */
@@ -1516,6 +1526,14 @@ function initAnonymousSession(){
       localStorage.setItem('xh_voter_session', JSON.stringify(voter));
     } catch(e){}
   }
+  try {
+    var savedLikes = localStorage.getItem('xh_voter_liked_ids');
+    if(savedLikes){
+      likedIds = JSON.parse(savedLikes) || [];
+    }
+  } catch(e){
+    likedIds = [];
+  }
   applyWorksOrder();
 }
 function initVoterSession(){
@@ -1525,10 +1543,18 @@ function initVoterSession(){
 /* ===== 2. 获取后台视频作品数据 ===== */
 async function loadWorks(){
   try {
-    var res = await fetch('/api/vote/works');
+    var url = '/api/vote/works' + (voter && voter.jobNo ? ('?jobNo=' + encodeURIComponent(voter.jobNo)) : '');
+    var res = await fetch(url);
     var json = await res.json();
     if(json.code === 0 && Array.isArray(json.data)){
       RAW_WORKS = json.data;
+      if(Array.isArray(json.userLikedIds)){
+        var map = {};
+        (likedIds || []).forEach(function(id){ map[id] = true; });
+        json.userLikedIds.forEach(function(id){ map[id] = true; });
+        likedIds = Object.keys(map);
+        try { localStorage.setItem('xh_voter_liked_ids', JSON.stringify(likedIds)); } catch(e){}
+      }
       applyWorksOrder();
     }
   } catch(e){
@@ -1595,27 +1621,16 @@ var dyThumbColors = [
   { c: '#FF3B56', cDark: '#C71B3E', glow: 'rgba(255, 59, 86, 0.75)' }
 ];
 
-var pendingLikesMap = {};
-var pendingLikeTimers = {};
-
 function triggerDouyinScreenLike(x, y){
   var currentWork = WORKS[cur];
   if(!currentWork) return;
   var candId = currentWork.id;
+  var isFirstLike = likedIds.indexOf(candId) === -1;
 
-  // 1. 动效层：在触碰位置生成经典大拇指点赞手势与浮动+1
-  spawnDouyinThumb(x, y);
+  // 1. 动效层：在触碰位置生成经典大拇指点赞手势与动效粒子（效果要：每次触碰必出绚丽手势与星芒）
+  spawnDouyinThumb(x, y, isFirstLike);
 
-  // 2. 本地立即响应加赞 (0 延时爽快感)
-  currentWork.votesCount = (currentWork.votesCount || 0) + 1;
-  var badge = $('pVoteCountBadge');
-  if(badge) badge.textContent = currentWork.votesCount + ' 赞';
-  var noEl = $('pNo');
-  if(noEl) noEl.innerHTML = (currentWork.id || pad(cur + 1)) + ' · <strong>' + currentWork.votesCount + ' 赞</strong>';
-  var cardVotesEl = $('cardVotes_' + candId);
-  if(cardVotesEl) cardVotesEl.textContent = currentWork.votesCount + ' 赞';
-
-  // 3. 右侧大拇指点赞按钮弹性弹跳
+  // 2. 右侧大拇指点赞按钮弹性弹跳
   var btnLike = $('btnLike');
   if(btnLike){
     btnLike.classList.remove('dy-pop');
@@ -1623,22 +1638,49 @@ function triggerDouyinScreenLike(x, y){
     btnLike.classList.add('dy-pop');
   }
 
-  // 4. 移动端轻微触感震动反馈
+  // 3. 移动端轻微触感震动反馈
   if(navigator.vibrate){
-    try { navigator.vibrate(25); } catch(e){}
+    try { navigator.vibrate(isFirstLike ? 30 : 18); } catch(e){}
   }
 
-  // 5. 防刷与批量合并提交 (350ms 内多次戳合并为单次请求，减轻服务端压力)
-  pendingLikesMap[candId] = (pendingLikesMap[candId] || 0) + 1;
-  clearTimeout(pendingLikeTimers[candId]);
-  pendingLikeTimers[candId] = setTimeout(function(){
-    var countToSend = pendingLikesMap[candId] || 1;
-    pendingLikesMap[candId] = 0;
-    sendLikesToBackend(candId, countToSend);
-  }, 350);
+  // 4. 计数只能一次：仅在首次点赞时递增并提交，后续戳戳戳只留绚丽触碰动效
+  if(isFirstLike){
+    likedIds.push(candId);
+    try {
+      localStorage.setItem('xh_voter_liked_ids', JSON.stringify(likedIds));
+    } catch(e){}
+
+    // 本地立即响应加赞
+    currentWork.votesCount = (currentWork.votesCount || 0) + 1;
+    var badge = $('pVoteCountBadge');
+    if(badge) badge.textContent = currentWork.votesCount + ' 赞';
+    var noEl = $('pNo');
+    if(noEl) noEl.innerHTML = (currentWork.id || pad(cur + 1)) + ' · <strong>' + currentWork.votesCount + ' 赞</strong>';
+    var cardVotesEl = $('cardVotes_' + candId);
+    if(cardVotesEl) cardVotesEl.textContent = currentWork.votesCount + ' 赞';
+
+    // 更新右侧点赞图标为高亮金红大拇指状态
+    if(btnLike){
+      btnLike.innerHTML = renderThumbSvg(true, 28);
+      btnLike.classList.add('liked');
+      btnLike.setAttribute('title', '已点赞');
+    }
+
+    // 首次点赞触发中心大赞炸裂光效
+    var bigHeart = $('bigHeart');
+    if(bigHeart){
+      bigHeart.classList.remove('burst');
+      void bigHeart.offsetWidth;
+      bigHeart.classList.add('burst');
+      setTimeout(function(){ if(bigHeart) bigHeart.classList.remove('burst'); }, 800);
+    }
+
+    // 提交到后台服务端进行去重记录 (每人每候选人严格限1票)
+    sendLikesToBackend(candId);
+  }
 }
 
-function spawnDouyinThumb(x, y){
+function spawnDouyinThumb(x, y, showPlus1){
   var container = $('dyLikeContainer');
   if(!container) return;
 
@@ -1646,7 +1688,7 @@ function spawnDouyinThumb(x, y){
   var rot = (Math.random() - 0.5) * 44;
   var driftX = (Math.random() - 0.5) * 55;
 
-  // 经典大拇指点赞手势
+  // 经典大拇指点赞手势 (每次触碰必出，丝滑绚丽)
   var thumb = document.createElement('div');
   thumb.className = 'dy-floating-heart';
   thumb.style.left = x + 'px';
@@ -1660,15 +1702,18 @@ function spawnDouyinThumb(x, y){
     '</svg>';
   container.appendChild(thumb);
 
-  // 浮动 +1 提示
-  var plus1 = document.createElement('div');
-  plus1.className = 'dy-float-plus1';
-  plus1.style.left = (x + driftX * 0.4) + 'px';
-  plus1.style.top = (y - 38) + 'px';
-  plus1.textContent = '+1';
-  container.appendChild(plus1);
+  // 浮动 +1 提示：仅在首次计票时浮现，避免重复戳误导用户以为计数增加了
+  var plus1 = null;
+  if(showPlus1){
+    plus1 = document.createElement('div');
+    plus1.className = 'dy-float-plus1';
+    plus1.style.left = (x + driftX * 0.4) + 'px';
+    plus1.style.top = (y - 38) + 'px';
+    plus1.textContent = '+1';
+    container.appendChild(plus1);
+  }
 
-  // 随机星芒粒子
+  // 随机星芒粒子 (每次触碰都有，视觉动效拉满)
   for(var i = 0; i < 2; i++){
     var sp = document.createElement('span');
     sp.className = 'dy-sparkle';
@@ -1683,14 +1728,14 @@ function spawnDouyinThumb(x, y){
 
   setTimeout(function(){
     thumb.remove();
-    plus1.remove();
+    if(plus1) plus1.remove();
   }, 900);
 }
 function spawnDouyinHeart(x, y){
-  spawnDouyinThumb(x, y);
+  spawnDouyinThumb(x, y, false);
 }
 
-async function sendLikesToBackend(candidateId, count){
+async function sendLikesToBackend(candidateId){
   try {
     var jobNo = voter ? voter.jobNo : ('guest_' + Date.now());
     var res = await fetch('/api/vote/like', {
@@ -1698,7 +1743,7 @@ async function sendLikesToBackend(candidateId, count){
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         candidateId: candidateId,
-        count: count,
+        count: 1,
         jobNo: jobNo
       })
     });
@@ -1841,10 +1886,12 @@ function renderPlayerLikeState(candId){
     noEl.innerHTML = (w.id || pad(cur + 1)) + ' · <strong>' + votes + ' 赞</strong>';
   }
   
+  var isLiked = likedIds.indexOf(w.id) !== -1;
   var btnLike = $('btnLike');
   if(btnLike){
-    btnLike.innerHTML = renderHeartSvg(true, 28);
-    btnLike.className = 'btn-circle vote-capsule-btn liked';
+    btnLike.innerHTML = renderThumbSvg(isLiked, 28);
+    btnLike.className = isLiked ? 'btn-circle vote-capsule-btn liked' : 'btn-circle vote-capsule-btn';
+    btnLike.setAttribute('title', isLiked ? '已点赞' : '双击屏幕或点击点赞');
   }
 
   var badge = $('pVoteCountBadge');
