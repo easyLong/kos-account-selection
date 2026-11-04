@@ -594,8 +594,10 @@
     }
   }
 
-  @media(orientation: landscape) and (max-height: 500px){
-    #player.is-rotated{
+  @media(orientation: landscape){
+    #player.is-rotated,
+    #player.is-rotated:fullscreen,
+    #player.is-rotated:-webkit-full-screen {
       transform: none !important;
       top: 0 !important;
       left: 0 !important;
@@ -604,6 +606,9 @@
       width: 100vw !important;
       height: 100vh !important;
       height: 100dvh !important;
+    }
+    #player.is-rotated .player-top-overlay{
+      padding:calc(10px + env(safe-area-inset-top, 0px)) calc(24px + env(safe-area-inset-right, 0px)) 10px calc(24px + env(safe-area-inset-left, 0px)) !important;
     }
   }
 
@@ -769,6 +774,21 @@
     border-radius: 0 !important;
     z-index: 99999 !important;
     background: #000 !important;
+  }
+
+  /* 核心：华为/安卓在 DOM 全屏且处于移动端旋转巨幕时，保证严格居中旋转，防止被 top:0 偏移拉扯 */
+  #player.is-rotated:fullscreen,
+  #player.is-rotated:-webkit-full-screen,
+  #player.is-rotated:-moz-full-screen,
+  #player.is-rotated:-ms-fullscreen {
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100vh !important;
+    width: 100dvh !important;
+    height: 100vw !important;
+    transform: translate(-50%, -50%) rotate(90deg) !important;
   }
 
   #stage{
@@ -1244,7 +1264,6 @@
           webkit-playsinline="true" 
           x5-playsinline="true" 
           x5-video-player-type="h5-page"
-          x5-video-orientation="portrait"
           controlsList="nodownload noremoteplayback"
           disablePictureInPicture="true"
           preload="auto"
