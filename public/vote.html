@@ -450,16 +450,54 @@
   .card-heart-action.liked{background:#fff;border-color:rgba(255,75,100,.35);box-shadow:0 4px 16px rgba(225,29,72,.38),0 0 0 2px rgba(255,60,90,.2);transform:scale(1.05)}
   
   .card-meta{padding:10px 10px 12px;display:flex;flex-direction:column;gap:3px}
-  .card-title-name{display:flex;justify-content:space-between;align-items:baseline}
-  .card-nm{font-size:13.5px;font-weight:700;color:#221a14}
-  .card-votes-pill{font-size:11.5px;color:var(--gold);font-weight:700;display:flex;align-items:center;gap:4px}
-  .card-dp{font-size:11px;color:var(--sub);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .card-vt{font-size:12px;color:#4a2c10;font-weight:600;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card-title-name{display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .card-nm{font-size:14px;font-weight:700;color:#221a14;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+  
+  /* 需求：卡片“👍 N 票”放大，作为点赞交互按钮（删掉卡片底部投TA一票按钮） */
+  .card-vote-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    padding:4px 10px;
+    border-radius:99px;
+    border:1px solid rgba(225,29,72,.32);
+    background:rgba(255,45,80,.06);
+    color:#E11D48;
+    font-size:13px;
+    font-weight:800;
+    line-height:1;
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+    transition:all .2s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow:0 1px 4px rgba(225,29,72,.08);
+    flex-shrink:0;
+  }
+  .card-vote-btn:active{transform:scale(.92)}
+  .card-vote-btn.liked{
+    background:linear-gradient(135deg,#FF2448 0%,#D91638 100%);
+    border-color:#FFEAA7;
+    color:#FFFFFF;
+    box-shadow:0 3px 12px rgba(225,29,72,.38), 0 0 0 1px rgba(255,234,167,.4);
+  }
+  .card-vote-btn .card-vote-icon{display:flex;align-items:center;justify-content:center;line-height:1}
+  .card-vote-btn .card-vote-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;letter-spacing:.3px;white-space:nowrap}
+  .card-vote-btn.dy-pop{animation:cardVotePop .35s cubic-bezier(0.18,0.89,0.32,1.25)}
+  @keyframes cardVotePop{0%{transform:scale(1)}45%{transform:scale(1.2)}100%{transform:scale(1)}}
 
-  /* 核心需求：卡片底部专业胶囊投票按钮 (投TA一票 / 已投票 ✓) */
-  .btn-card-vote{margin-top:10px;width:100%;padding:8px 0;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;border:1px solid rgba(212,175,55,.45);background:linear-gradient(180deg,#fffdf9 0%,#faf3e3 100%);color:#784913;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,.04);transition:all .22s cubic-bezier(0.34,1.56,0.64,1)}
-  .btn-card-vote:active{transform:scale(.97)}
-  .btn-card-vote.liked{background:linear-gradient(135deg,#ff3b56 0%,#e11d48 55%,#be123c 100%);color:#fff;border-color:transparent;box-shadow:0 4px 14px rgba(225,29,72,.42);letter-spacing:.5px}
+  .card-floating-thumb{position:fixed;z-index:99999;pointer-events:none;transform:translate(-50%,-50%);animation:cardThumbFloat .75s cubic-bezier(0.18,0.89,0.32,1.25) forwards}
+  @keyframes cardThumbFloat{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(var(--rot,0deg))}
+    25%{opacity:1;transform:translate(-50%,-85%) scale(1.22) rotate(var(--rot,0deg))}
+    100%{opacity:0;transform:translate(calc(-50% + var(--driftX,0px)),-150%) scale(1.0) rotate(var(--rot,0deg))}
+  }
+  .card-floating-plus1{position:absolute;top:-14px;right:-10px;font-size:14px;font-weight:900;color:#FFEAA7;text-shadow:0 0 8px rgba(225,29,72,.9)}
+
+  .card-dp{font-size:11px;color:var(--sub);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+  .card-vt{font-size:12px;color:#4a2c10;font-weight:600;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
 
   /* 单列大卡片视图 (Feed Mode) */
   .feed-mode{display:flex;flex-direction:column;gap:16px;padding:12px}
@@ -1571,7 +1609,7 @@ function updatePills(){
   if($('pillTotalWorks')) $('pillTotalWorks').textContent = '全部参选作品 (' + CFG.total + ')';
 }
 
-/* ===== 3. 核心：渲染作品列表 (真实视频封面预览，点击直达播放，无多余投票按钮) ===== */
+/* ===== 3. 核心：渲染作品列表 (需求：把卡片上的 👍 1 票 放大作为点赞，删掉底部投TA一票) ===== */
 function renderGallery(){
   var g = $('grid');
   if(!g) return;
@@ -1585,10 +1623,15 @@ function renderGallery(){
 
   WORKS.forEach(function(w, idx){
     var coverImg = w.coverUrl || '/images/kos_hero.jpg';
+    var isLiked = likedIds.indexOf(w.id) !== -1;
     var card = document.createElement('div');
     card.className = 'card';
     card.setAttribute('data-id', w.id);
-    card.onclick = function(){ openPlayer(idx); };
+    card.onclick = function(e){
+      // 避免点击放大点赞按钮时误触发进播放器
+      if(e.target && e.target.closest('.card-vote-btn')) return;
+      openPlayer(idx);
+    };
 
     card.innerHTML = 
       '<div class="card-cover-box">' +
@@ -1600,7 +1643,11 @@ function renderGallery(){
       '<div class="card-meta">' +
         '<div class="card-title-name">' +
           '<div class="card-nm">' + (w.name || '参选人') + '</div>' +
-          '<div class="card-votes-pill">' + renderHeartSvg(true, 13) + ' <span id="cardVotes_' + w.id + '">' + (w.votesCount || 0) + ' 赞</span></div>' +
+          '<!-- 需求：放大作为点赞交互按钮 (去重计票+弹跳+飞赞动效) -->' +
+          '<button class="card-vote-btn ' + (isLiked ? 'liked' : '') + '" id="cardVoteBtn_' + w.id + '" onclick="handleCardVoteClick(event, \'' + w.id + '\', ' + idx + ')" title="' + (isLiked ? '已点赞' : '点击为TA点赞') + '">' +
+            '<span class="card-vote-icon">' + renderThumbSvg(isLiked, 16) + '</span>' +
+            '<span class="card-vote-text" id="cardVotes_' + w.id + '">' + (w.votesCount || 0) + ' 票</span>' +
+          '</button>' +
         '</div>' +
         '<div class="card-dp">' + (w.department || '汇添富') + ' · ' + (w.position || '创作者') + '</div>' +
         '<div class="card-vt">🎬 ' + (w.videoTitle || '自媒体短视频') + '</div>' +
@@ -1608,6 +1655,102 @@ function renderGallery(){
 
     g.appendChild(card);
   });
+}
+
+/* ===== 卡片独立点赞交互系统 (需求：把 👍 1 票 放大作为点赞，删掉底部投TA一票) ===== */
+function handleCardVoteClick(e, candidateId, idx){
+  if(e){
+    e.stopPropagation();
+    if(e.preventDefault) e.preventDefault();
+  }
+  var cand = WORKS.find(function(w){ return w.id === candidateId; });
+  if(!cand) return;
+
+  var isFirstLike = likedIds.indexOf(candidateId) === -1;
+  var btn = $('cardVoteBtn_' + candidateId);
+
+  // 1. 动效反馈：卡片点赞按钮弹跳 Pop
+  if(btn){
+    btn.classList.remove('dy-pop');
+    void btn.offsetWidth;
+    btn.classList.add('dy-pop');
+  }
+
+  // 2. 动效反馈：在卡片按钮上方生成向上飘散的大拇指与+1
+  if(btn){
+    spawnCardThumbBurst(btn, isFirstLike);
+  }
+
+  // 3. 移动端轻微触感震动反馈
+  if(navigator.vibrate){
+    try { navigator.vibrate(isFirstLike ? 30 : 18); } catch(err){}
+  }
+
+  // 4. 计数只能一次核心逻辑
+  if(isFirstLike){
+    likedIds.push(candidateId);
+    try {
+      localStorage.setItem('xh_voter_liked_ids', JSON.stringify(likedIds));
+    } catch(err){}
+
+    cand.votesCount = (cand.votesCount || 0) + 1;
+
+    // 立即更新卡片按钮高亮与数字
+    if(btn){
+      btn.classList.add('liked');
+      btn.setAttribute('title', '已点赞');
+      var iconEl = btn.querySelector('.card-vote-icon');
+      if(iconEl) iconEl.innerHTML = renderThumbSvg(true, 16);
+      var textEl = $('cardVotes_' + candidateId);
+      if(textEl) textEl.textContent = cand.votesCount + ' 票';
+    }
+
+    // 若播放器当前也停在该候选人，同步播放器状态
+    if(WORKS[cur] && WORKS[cur].id === candidateId){
+      var badge = $('pVoteCountBadge');
+      if(badge) badge.textContent = cand.votesCount + ' 赞';
+      var noEl = $('pNo');
+      if(noEl) noEl.innerHTML = (cand.id || pad(cur + 1)) + ' · <strong>' + cand.votesCount + ' 赞</strong>';
+      var pBtnLike = $('btnLike');
+      if(pBtnLike){
+        pBtnLike.innerHTML = renderThumbSvg(true, 28);
+        pBtnLike.className = 'btn-circle vote-capsule-btn liked';
+      }
+    }
+
+    // 提交到后台服务端进行去重记录 (每人每候选人严格限1票)
+    sendLikesToBackend(candidateId);
+  }
+}
+
+function spawnCardThumbBurst(btn, showPlus1){
+  var rect = btn.getBoundingClientRect();
+  var color = dyThumbColors[Math.floor(Math.random() * dyThumbColors.length)];
+  var rot = (Math.random() - 0.5) * 36;
+  var driftX = (Math.random() - 0.5) * 30;
+
+  var floatEl = document.createElement('div');
+  floatEl.className = 'card-floating-thumb';
+  floatEl.style.left = (rect.left + rect.width / 2) + 'px';
+  floatEl.style.top = (rect.top + rect.height / 2) + 'px';
+  floatEl.style.setProperty('--rot', rot + 'deg');
+  floatEl.style.setProperty('--driftX', driftX + 'px');
+
+  floatEl.innerHTML = 
+    '<svg viewBox="0 0 24 24" width="38" height="38" style="filter:drop-shadow(0 3px 12px ' + color.glow + ');">' +
+      '<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z" fill="' + color.c + '" stroke="#FFEAA7" stroke-width="0.9" stroke-linejoin="round"/>' +
+      '<rect x="2" y="11" width="5" height="11" rx="1.5" fill="' + (color.cDark || color.c) + '" stroke="#FFEAA7" stroke-width="0.9"/>' +
+    '</svg>';
+
+  if(showPlus1){
+    var plus1 = document.createElement('div');
+    plus1.className = 'card-floating-plus1';
+    plus1.textContent = '+1';
+    floatEl.appendChild(plus1);
+  }
+
+  document.body.appendChild(floatEl);
+  setTimeout(function(){ floatEl.remove(); }, 750);
 }
 
 /* ========================================================
@@ -1657,7 +1800,14 @@ function triggerDouyinScreenLike(x, y){
     var noEl = $('pNo');
     if(noEl) noEl.innerHTML = (currentWork.id || pad(cur + 1)) + ' · <strong>' + currentWork.votesCount + ' 赞</strong>';
     var cardVotesEl = $('cardVotes_' + candId);
-    if(cardVotesEl) cardVotesEl.textContent = currentWork.votesCount + ' 赞';
+    if(cardVotesEl) cardVotesEl.textContent = currentWork.votesCount + ' 票';
+    var cardBtn = $('cardVoteBtn_' + candId);
+    if(cardBtn){
+      cardBtn.classList.add('liked');
+      cardBtn.setAttribute('title', '已点赞');
+      var iconEl = cardBtn.querySelector('.card-vote-icon');
+      if(iconEl) iconEl.innerHTML = renderThumbSvg(true, 16);
+    }
 
     // 更新右侧点赞图标为高亮金红大拇指状态
     if(btnLike){
@@ -1759,7 +1909,14 @@ async function sendLikesToBackend(candidateId){
           if(noEl) noEl.innerHTML = (cand.id || pad(cur + 1)) + ' · <strong>' + cand.votesCount + ' 赞</strong>';
         }
         var cardVotesEl = $('cardVotes_' + candidateId);
-        if(cardVotesEl) cardVotesEl.textContent = cand.votesCount + ' 赞';
+        if(cardVotesEl) cardVotesEl.textContent = cand.votesCount + ' 票';
+        var cardBtn = $('cardVoteBtn_' + candidateId);
+        if(cardBtn && likedIds.indexOf(candidateId) !== -1){
+          cardBtn.classList.add('liked');
+          cardBtn.setAttribute('title', '已点赞');
+          var iconEl = cardBtn.querySelector('.card-vote-icon');
+          if(iconEl) iconEl.innerHTML = renderThumbSvg(true, 16);
+        }
       }
     }
   } catch(e){
