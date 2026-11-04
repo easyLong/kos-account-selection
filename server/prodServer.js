@@ -162,6 +162,15 @@ const server = http.createServer((req, res) => {
     // Prevent path traversal
     pathname = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
 
+    // Direct serve for vote page (supports /vote, /vote/, /vote.html)
+    if (pathname === '/vote' || pathname === '/vote/' || pathname === '/vote.html') {
+      const voteFilePath = path.join(PUBLIC_DIR, 'vote.html');
+      if (fs.existsSync(voteFilePath) && fs.statSync(voteFilePath).isFile()) {
+        serveFile(voteFilePath, req, res);
+        return;
+      }
+    }
+
     // Check in public directory (uploads, images, favicon, etc.)
     if (pathname.startsWith('/uploads/') || pathname.startsWith('/images/') || pathname === '/favicon.svg' || pathname === '/icons.svg') {
       const publicFilePath = path.join(PUBLIC_DIR, pathname);

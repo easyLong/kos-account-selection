@@ -2255,7 +2255,7 @@ export function createApiMiddleware() {
           return;
         }
 
-        if (pathname === '/vote' || pathname === '/vote/') {
+        if (pathname === '/vote' || pathname === '/vote/' || pathname === '/vote.html' || pathname === '/vote/index.html') {
           const votePath = path.resolve(process.cwd(), 'public', 'vote.html');
           if (fs.existsSync(votePath)) {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
