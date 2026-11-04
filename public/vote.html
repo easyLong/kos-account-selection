@@ -697,38 +697,6 @@
     box-shadow:0 0 18px rgba(245, 158, 11, 0.8), 0 2px 8px rgba(0,0,0,0.5) !important;
   }
 
-  /* 核心：声音/静音切换控制按钮 */
-  .btn-float-sound{
-    display:flex;
-    align-items:center;
-    gap:4px;
-    background:rgba(0,0,0,.55);
-    border:1.5px solid rgba(255,255,255,.32);
-    border-radius:99px;
-    padding:6px 12px;
-    font-size:12px;
-    font-weight:700;
-    color:#fff;
-    cursor:pointer;
-    backdrop-filter:blur(12px);
-    -webkit-backdrop-filter:blur(12px);
-    transition:all .2s ease;
-    user-select:none;
-    -webkit-user-select:none;
-    touch-action:manipulation;
-    box-shadow:0 2px 10px rgba(0,0,0,.4);
-    white-space:nowrap;
-    flex-shrink:0;
-    pointer-events:auto !important;
-    -webkit-tap-highlight-color:transparent;
-  }
-  .btn-float-sound:active{transform:scale(.92);background:rgba(255,255,255,.3)}
-  .btn-float-sound.is-muted{
-    background:rgba(225,29,72,.75) !important;
-    border-color:rgba(255,180,190,.9) !important;
-  }
-  .btn-float-sound .sound-icon{font-size:13px;line-height:1}
-
   /* 静音保护提示胶囊 (若遭遇 iOS 静音自动起播，浮现柔和提示引导点击开启) */
   .mute-hint-pill{
     position:absolute;
@@ -1232,14 +1200,8 @@
         <span class="back-txt">返回</span>
       </div>
 
-      <!-- 顶部操作按钮胶囊组：声音开关 + 全屏按钮 -->
+      <!-- 顶部操作按钮组：全屏播放按钮 -->
       <div class="player-top-actions">
-        <!-- 核心：声音开关 (支持一键切换静音/有声，状态实时同步) -->
-        <div class="btn-float-sound" id="btnSoundToggle" title="切换声音">
-          <span class="sound-icon" id="soundIcon">🔊</span>
-          <span class="sound-txt" id="soundTxt">声音</span>
-        </div>
-
         <!-- 核心：唯一全屏播放按钮 (智能全屏横竖屏切换，退出自动回退竖屏) -->
         <div class="btn-float-fullscreen" id="btnFullscreen" title="开启全屏播放">
           <span class="fullscreen-icon" id="fullscreenIcon">⛶</span>
@@ -2124,21 +2086,7 @@ window.executeToggleVote = function(candidateId){
 var userExplicitlyMuted = false;
 
 function updateSoundUI(){
-  var isMuted = videoEl.muted || videoEl.volume === 0;
-  var btn = $('btnSoundToggle');
-  var icon = $('soundIcon');
-  var txt = $('soundTxt');
-  if(btn){
-    if(isMuted){
-      btn.classList.add('is-muted');
-      if(icon) icon.textContent = '🔇';
-      if(txt) txt.textContent = '静音中';
-    } else {
-      btn.classList.remove('is-muted');
-      if(icon) icon.textContent = '🔊';
-      if(txt) txt.textContent = '声音开';
-    }
-  }
+  // 保持空实现，防止其他调用点报错
 }
 
 function showMuteNotice(showNotice){
@@ -2172,35 +2120,6 @@ window.unmuteVideoImmediately = function(e){
   }
   toast('已开启声音 🔊');
 };
-
-function toggleSound(e){
-  if(e){
-    e.stopPropagation();
-    if(e.cancelable && e.type === 'touchend') e.preventDefault();
-  }
-  try {
-    if(videoEl.muted || videoEl.volume === 0){
-      userExplicitlyMuted = false;
-      videoEl.muted = false;
-      videoEl.volume = 1.0;
-      showMuteNotice(false);
-      toast('声音已开启 🔊');
-    } else {
-      userExplicitlyMuted = true;
-      videoEl.muted = true;
-      showMuteNotice(false);
-      toast('已切换为静音 🔇');
-    }
-  } catch(err){
-    console.warn('Toggle sound error:', err);
-  }
-  updateSoundUI();
-}
-
-var btnSound = $('btnSoundToggle');
-if(btnSound){
-  btnSound.onclick = toggleSound;
-}
 
 /* ===== 核心：沉浸流播放器 (默认竖屏播放，点击全屏再展开) ===== */
 function openPlayer(idx){
