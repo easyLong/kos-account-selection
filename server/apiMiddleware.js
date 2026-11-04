@@ -2010,13 +2010,22 @@ export function createApiMiddleware() {
 
         // 9. Video Showcase & Voting APIs
         if (pathname === '/api/vote/works' && req.method === 'GET') {
-          const voterJobNo = (url.searchParams.get('jobNo') || '').trim();
+          let voterJobNo = (url.searchParams.get('jobNo') || '').trim();
+          if (!voterJobNo && req.headers && req.headers.cookie) {
+            const match = String(req.headers.cookie).match(/(?:^|;\s*)xh_df_id=([^;]*)/);
+            if (match) voterJobNo = decodeURIComponent(match[1]).trim();
+          }
+
           Promise.all([
             getVoteWorks(),
             voterJobNo ? getUserLikedCandidateIds(voterJobNo) : Promise.resolve([])
           ]).then(([works, userLikedIds]) => {
-            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ code: 0, data: works, userLikedIds: userLikedIds || [] }));
+            const respHeaders = { 'Content-Type': 'application/json; charset=utf-8' };
+            if (voterJobNo) {
+              respHeaders['Set-Cookie'] = `xh_df_id=${encodeURIComponent(voterJobNo)}; Max-Age=315360000; Path=/; SameSite=Lax`;
+            }
+            res.writeHead(200, respHeaders);
+            res.end(JSON.stringify({ code: 0, data: works, userLikedIds: userLikedIds || [], deviceId: voterJobNo || '' }));
           }).catch(err => {
             res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({ code: 500, message: err.message }));
@@ -2057,7 +2066,11 @@ export function createApiMiddleware() {
               } else {
                 result = await toggleVote(data.jobNo, data.candidateId, data.count);
               }
-              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              const respHeaders = { 'Content-Type': 'application/json; charset=utf-8' };
+              if (data.jobNo) {
+                respHeaders['Set-Cookie'] = `xh_df_id=${encodeURIComponent(String(data.jobNo).trim())}; Max-Age=315360000; Path=/; SameSite=Lax`;
+              }
+              res.writeHead(200, respHeaders);
               res.end(JSON.stringify({ code: 0, data: result }));
             } catch (voteErr) {
               res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });

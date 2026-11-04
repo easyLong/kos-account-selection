@@ -1549,21 +1549,149 @@ function toast(msg, btnText, btnAction){
   toastTimer = setTimeout(function(){ hide_($('toast')); }, 3200);
 }
 
-/* ===== 1. 匿名免登会话初始化 (扫码直达，无需输入姓名工号) ===== */
+/* ========================================================
+ * 方案 1：设备本地持久化高熵唯一指纹系统 (Device Persistent Fingerprint)
+ * 具备多层存储交叉回填自愈 (localStorage + Cookie + sessionStorage)
+ * 硬件屏幕特征 + Canvas 渲染特征 + 加密级熵源合成，彻底免疫公司内网局域网共享 IP 冲突
+ * ======================================================== */
+function getCookie(name){
+  try {
+    var match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : null;
+  } catch(e){
+    return null;
+  }
+}
+
+function setCookie(name, value, days){
+  try {
+    days = days || 3650; // 默认保存 10 年持久 Cookie
+    var d = new Date();
+    d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+  } catch(e){}
+}
+
+function getCanvasFingerprint(){
+  try {
+    var canvas = document.createElement('canvas');
+    canvas.width = 160;
+    canvas.height = 40;
+    var ctx = canvas.getContext('2d');
+    if(!ctx) return 'nc';
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial, sans-serif';
+    ctx.fillStyle = '#f60';
+    ctx.fillRect(100, 1, 55, 20);
+    ctx.fillStyle = '#069';
+    ctx.fillText('SparkKOS,2026', 2, 15);
+    var dataUri = canvas.toDataURL();
+    var hash = 0;
+    for(var i = 0; i < dataUri.length; i++){
+      hash = ((hash << 5) - hash) + dataUri.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(36);
+  } catch(e){
+    return 'cfb';
+  }
+}
+
+function generateDeviceFingerprintId(){
+  // 1. 硬件屏幕物理参数特征 (分辨率、色彩深度、像素比)
+  var screenTrait = [
+    window.screen ? (window.screen.width || 0) : 0,
+    window.screen ? (window.screen.height || 0) : 0,
+    window.screen ? (window.screen.colorDepth || 0) : 0,
+    window.devicePixelRatio || 1
+  ].join('x');
+
+  // 2. 环境时区与渲染芯片特征
+  var envTrait = [
+    new Date().getTimezoneOffset(),
+    navigator.hardwareConcurrency || 2,
+    navigator.language || 'zh-CN',
+    getCanvasFingerprint()
+  ].join('_');
+
+  // 3. 加密安全级随机熵
+  var cryptoRand = '';
+  if(window.crypto && window.crypto.getRandomValues){
+    var buf = new Uint32Array(2);
+    window.crypto.getRandomValues(buf);
+    cryptoRand = buf[0].toString(36) + buf[1].toString(36);
+  } else {
+    cryptoRand = Math.random().toString(36).substring(2, 10);
+  }
+
+  // 4. 合成前缀为 dev_ 的高熵设备全局唯一 ID (如 dev_9f2a7b_k8z1m4)
+  var rawSeed = screenTrait + '|' + envTrait + '|' + Date.now() + '|' + cryptoRand;
+  var hash = 0;
+  for(var i = 0; i < rawSeed.length; i++){
+    hash = ((hash << 5) - hash) + rawSeed.charCodeAt(i);
+    hash |= 0;
+  }
+  return 'dev_' + Math.abs(hash).toString(36) + '_' + cryptoRand.substring(0, 8);
+}
+
+function getOrCreateDeviceId(){
+  var STORAGE_KEY = 'xh_device_fingerprint_id';
+  var COOKIE_KEY = 'xh_df_id';
+
+  var idFromLocal = null;
+  var idFromCookie = null;
+  var idFromSession = null;
+
+  // 1. 逐层读取 (localStorage -> Cookie -> sessionStorage)
+  try { idFromLocal = localStorage.getItem(STORAGE_KEY); } catch(e){}
+  try { idFromCookie = getCookie(COOKIE_KEY); } catch(e){}
+  try { idFromSession = sessionStorage.getItem(STORAGE_KEY); } catch(e){}
+
+  // 2. 仲裁决策：若任一存储层已存在合法设备 ID，直接复用
+  var finalId = idFromLocal || idFromCookie || idFromSession;
+
+  // 3. 若均不存在，生成新高熵设备指纹 ID
+  if(!finalId || !/^dev_|^v_/.test(finalId)){
+    finalId = generateDeviceFingerprintId();
+  }
+
+  // 4. 多层交叉回填与自愈免疫（localStorage 丢失由 Cookie 自动补回，反之亦然）
+  try { localStorage.setItem(STORAGE_KEY, finalId); } catch(e){}
+  setCookie(COOKIE_KEY, finalId, 3650);
+  try { sessionStorage.setItem(STORAGE_KEY, finalId); } catch(e){}
+
+  return finalId;
+}
+
+function persistLikedIds(ids){
+  if(!Array.isArray(ids)) return;
+  try {
+    localStorage.setItem('xh_voter_liked_ids', JSON.stringify(ids));
+  } catch(e){}
+  try {
+    setCookie('xh_liked_ids', JSON.stringify(ids), 3650);
+  } catch(e){}
+}
+
+/* ===== 1. 匿名免登会话初始化 (基于设备唯一指纹，扫码直达，完全免疫内网同IP) ===== */
 function initAnonymousSession(){
+  var deviceId = getOrCreateDeviceId();
+
   try {
     var raw = localStorage.getItem('xh_voter_session');
     if(raw){
       voter = JSON.parse(raw);
     }
   } catch(e){}
-  if(!voter || !voter.jobNo){
-    var guestId = 'v_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
-    voter = { jobNo: guestId, name: '观众', submitted: false };
+
+  if(!voter || voter.jobNo !== deviceId){
+    voter = { jobNo: deviceId, name: '评委', submitted: false };
     try {
       localStorage.setItem('xh_voter_session', JSON.stringify(voter));
     } catch(e){}
   }
+
+  // 读取已点赞记录：localStorage 优先，Cookie 兜底回填
   try {
     var savedLikes = localStorage.getItem('xh_voter_liked_ids');
     if(savedLikes){
@@ -1572,13 +1700,24 @@ function initAnonymousSession(){
   } catch(e){
     likedIds = [];
   }
+
+  if(!likedIds || likedIds.length === 0){
+    try {
+      var cookieLikes = getCookie('xh_liked_ids');
+      if(cookieLikes){
+        likedIds = JSON.parse(cookieLikes) || [];
+        try { localStorage.setItem('xh_voter_liked_ids', JSON.stringify(likedIds)); } catch(e){}
+      }
+    } catch(e){}
+  }
+
   applyWorksOrder();
 }
 function initVoterSession(){
   initAnonymousSession();
 }
 
-/* ===== 2. 获取后台视频作品数据 ===== */
+/* ===== 2. 获取后台视频作品数据 (带入设备唯一标识，服务端同步去重状态) ===== */
 async function loadWorks(){
   try {
     var url = '/api/vote/works' + (voter && voter.jobNo ? ('?jobNo=' + encodeURIComponent(voter.jobNo)) : '');
@@ -1591,7 +1730,7 @@ async function loadWorks(){
         (likedIds || []).forEach(function(id){ map[id] = true; });
         json.userLikedIds.forEach(function(id){ map[id] = true; });
         likedIds = Object.keys(map);
-        try { localStorage.setItem('xh_voter_liked_ids', JSON.stringify(likedIds)); } catch(e){}
+        persistLikedIds(likedIds);
       }
       applyWorksOrder();
     }
@@ -1689,9 +1828,7 @@ function handleCardVoteClick(e, candidateId, idx){
   // 4. 计数只能一次核心逻辑
   if(isFirstLike){
     likedIds.push(candidateId);
-    try {
-      localStorage.setItem('xh_voter_liked_ids', JSON.stringify(likedIds));
-    } catch(err){}
+    persistLikedIds(likedIds);
 
     cand.votesCount = (cand.votesCount || 0) + 1;
 
@@ -1789,9 +1926,7 @@ function triggerDouyinScreenLike(x, y){
   // 4. 计数只能一次：仅在首次点赞时递增并提交，后续戳戳戳只留绚丽触碰动效
   if(isFirstLike){
     likedIds.push(candId);
-    try {
-      localStorage.setItem('xh_voter_liked_ids', JSON.stringify(likedIds));
-    } catch(e){}
+    persistLikedIds(likedIds);
 
     // 本地立即响应加赞
     currentWork.votesCount = (currentWork.votesCount || 0) + 1;
