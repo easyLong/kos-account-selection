@@ -13,7 +13,8 @@
     "pm2:status": "pm2 status",
     "pm2:logs": "pm2 logs htf-kos-server",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "clean-votes": "node server/clean-votes.cjs"
   },
   "dependencies": {
     "ali-oss": "^6.23.0",
