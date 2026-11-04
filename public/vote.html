@@ -1252,6 +1252,16 @@
         </div>
       </div>
 
+      <!-- 右侧悬浮操作栏 (经典大拇指点赞手势与动效入口) -->
+      <div class="ctrl">
+        <div class="ctrl-item" id="ctrlVoteItem">
+          <div class="btn-circle vote-capsule-btn" id="btnLike" title="双击屏幕或点击点赞">
+            <!-- 点赞矢量徽章由 renderPlayerLikeState 动态注入 -->
+          </div>
+          <span class="ctrl-label" id="pLikeLabel">点赞</span>
+        </div>
+      </div>
+
       <!-- 投票推荐点赞震撼炸裂动效 (巨型点赞 + 星芒粒子) -->
       <div class="big-star-burst" id="bigHeart">
         <div class="thumb-burst-halo"></div>
@@ -1744,10 +1754,13 @@ function renderGallery(){
 
   WORKS.forEach(function(w, idx){
     var coverImg = w.coverUrl || '/images/kos_hero.jpg';
+    var isLiked = likedIds.indexOf(w.id) !== -1;
     var card = document.createElement('div');
     card.className = 'card';
     card.setAttribute('data-id', w.id);
-    card.onclick = function(){
+    card.onclick = function(e){
+      // 避免点击卡片点赞按钮时误触发进播放器
+      if(e.target && e.target.closest('.card-vote-btn')) return;
       openPlayer(idx);
     };
 
@@ -1759,7 +1772,14 @@ function renderGallery(){
         '<span class="card-cand-id">' + (w.id || pad(idx + 1)) + '</span>' +
       '</div>' +
       '<div class="card-meta">' +
-        '<div class="card-nm">' + (w.name || '参选人') + '</div>' +
+        '<div class="card-title-name">' +
+          '<div class="card-nm">' + (w.name || '参选人') + '</div>' +
+          '<!-- 卡片经典大拇指点赞手势与动效入口 (纯享点赞动效，不展示具体数字) -->' +
+          '<button class="card-vote-btn ' + (isLiked ? 'liked' : '') + '" id="cardVoteBtn_' + w.id + '" onclick="handleCardVoteClick(event, \'' + w.id + '\', ' + idx + ')" title="' + (isLiked ? '已点赞' : '点击为TA点赞') + '">' +
+            '<span class="card-vote-icon">' + renderThumbSvg(isLiked, 15) + '</span>' +
+            '<span class="card-vote-text" id="cardVotes_' + w.id + '">' + (isLiked ? '已赞' : '点赞') + '</span>' +
+          '</button>' +
+        '</div>' +
         '<div class="card-dp">' + (w.department || '汇添富') + ' · ' + (w.position || '创作者') + '</div>' +
         '<div class="card-vt">🎬 ' + (w.videoTitle || '自媒体短视频') + '</div>' +
       '</div>';
@@ -1804,26 +1824,30 @@ function handleCardVoteClick(e, candidateId, idx){
 
     cand.votesCount = (cand.votesCount || 0) + 1;
 
-    // 立即更新卡片按钮高亮与数字
+    // 立即更新卡片按钮高亮与文字
     if(btn){
       btn.classList.add('liked');
       btn.setAttribute('title', '已点赞');
       var iconEl = btn.querySelector('.card-vote-icon');
-      if(iconEl) iconEl.innerHTML = renderThumbSvg(true, 16);
+      if(iconEl) iconEl.innerHTML = renderThumbSvg(true, 15);
       var textEl = $('cardVotes_' + candidateId);
-      if(textEl) textEl.textContent = cand.votesCount + ' 票';
+      if(textEl) textEl.textContent = '已赞';
     }
 
     // 若播放器当前也停在该候选人，同步播放器状态
     if(WORKS[cur] && WORKS[cur].id === candidateId){
-      var badge = $('pVoteCountBadge');
-      if(badge) badge.textContent = cand.votesCount + ' 赞';
       var noEl = $('pNo');
       if(noEl) noEl.textContent = (cand.id || pad(cur + 1));
       var pBtnLike = $('btnLike');
       if(pBtnLike){
         pBtnLike.innerHTML = renderThumbSvg(true, 28);
         pBtnLike.className = 'btn-circle vote-capsule-btn liked';
+        pBtnLike.setAttribute('title', '已点赞');
+      }
+      var label = $('pLikeLabel');
+      if(label){
+        label.textContent = '已赞';
+        label.className = 'ctrl-label liked';
       }
     }
 
@@ -1907,20 +1931,25 @@ function triggerDouyinScreenLike(x, y){
     var noEl = $('pNo');
     if(noEl) noEl.textContent = (currentWork.id || pad(cur + 1));
     var cardVotesEl = $('cardVotes_' + candId);
-    if(cardVotesEl) cardVotesEl.textContent = currentWork.votesCount + ' 票';
+    if(cardVotesEl) cardVotesEl.textContent = '已赞';
     var cardBtn = $('cardVoteBtn_' + candId);
     if(cardBtn){
       cardBtn.classList.add('liked');
       cardBtn.setAttribute('title', '已点赞');
       var iconEl = cardBtn.querySelector('.card-vote-icon');
-      if(iconEl) iconEl.innerHTML = renderThumbSvg(true, 16);
+      if(iconEl) iconEl.innerHTML = renderThumbSvg(true, 15);
     }
 
-    // 更新右侧点赞图标为高亮金红大拇指状态
+    // 更新右侧点赞图标为高亮金红大拇指状态与已赞文案
     if(btnLike){
       btnLike.innerHTML = renderThumbSvg(true, 28);
       btnLike.classList.add('liked');
       btnLike.setAttribute('title', '已点赞');
+    }
+    var label = $('pLikeLabel');
+    if(label){
+      label.textContent = '已赞';
+      label.classList.add('liked');
     }
 
     // 首次点赞触发中心大赞炸裂光效
@@ -2016,13 +2045,13 @@ async function sendLikesToBackend(candidateId){
           if(noEl) noEl.textContent = (cand.id || pad(cur + 1));
         }
         var cardVotesEl = $('cardVotes_' + candidateId);
-        if(cardVotesEl) cardVotesEl.textContent = cand.votesCount + ' 票';
+        if(cardVotesEl) cardVotesEl.textContent = '已赞';
         var cardBtn = $('cardVoteBtn_' + candidateId);
         if(cardBtn && likedIds.indexOf(candidateId) !== -1){
           cardBtn.classList.add('liked');
           cardBtn.setAttribute('title', '已点赞');
           var iconEl = cardBtn.querySelector('.card-vote-icon');
-          if(iconEl) iconEl.innerHTML = renderThumbSvg(true, 16);
+          if(iconEl) iconEl.innerHTML = renderThumbSvg(true, 15);
         }
       }
     }
@@ -2157,9 +2186,10 @@ function renderPlayerLikeState(candId){
     btnLike.setAttribute('title', isLiked ? '已点赞' : '双击屏幕或点击点赞');
   }
 
-  var badge = $('pVoteCountBadge');
-  if(badge){
-    badge.textContent = ((typeof w.votesCount === 'number') ? w.votesCount : 0) + ' 赞';
+  var label = $('pLikeLabel');
+  if(label){
+    label.textContent = isLiked ? '已赞' : '点赞';
+    label.className = isLiked ? 'ctrl-label liked' : 'ctrl-label';
   }
 }
 
@@ -2794,9 +2824,38 @@ function handleSwipeEnd(e){
   }
 }
 
-/* 核心：屏幕轻触播放/暂停调度器 */
+/* 核心：经典大拇指双击/戳戳戳爆赞与单击暂停防冲撞调度器 */
+var singleTapTimer = null;
+var lastScreenTapTs = 0;
+var isMultiTapping = false;
+var multiTapResetTimer = null;
+
 function handleScreenTap(clientX, clientY, e){
-  safeTogglePlay(e);
+  var now = Date.now();
+  var diff = now - lastScreenTapTs;
+  lastScreenTapTs = now;
+
+  var stageRect = stage.getBoundingClientRect();
+  var relX = clientX - stageRect.left;
+  var relY = clientY - stageRect.top;
+
+  if(diff < 360){
+    // 连续轻触 / 双击 / “戳戳戳”点赞动效！
+    clearTimeout(singleTapTimer);
+    singleTapTimer = null;
+    isMultiTapping = true;
+    clearTimeout(multiTapResetTimer);
+    multiTapResetTimer = setTimeout(function(){ isMultiTapping = false; }, 600);
+
+    triggerDouyinScreenLike(relX, relY);
+  } else {
+    // 单击：延迟 240ms 判断是否为双击的第一拍
+    singleTapTimer = setTimeout(function(){
+      if(!isMultiTapping){
+        safeTogglePlay(e);
+      }
+    }, 240);
+  }
 }
 
 stage.addEventListener('touchend', handleSwipeEnd, { passive: false });
