@@ -547,6 +547,20 @@
       box-shadow:0 24px 90px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.15) !important;
       z-index:99999 !important;
     }
+    #player.is-fs-active:not(.is-rotated){
+      position:fixed !important;
+      max-width:480px !important;
+      width:100% !important;
+      height:100vh !important;
+      height:100dvh !important;
+      top:50% !important;
+      left:50% !important;
+      bottom:auto !important;
+      transform:translate(-50%, -50%) !important;
+      border-radius:18px !important;
+      box-shadow:0 0 0 9999px rgba(0,0,0,.85), 0 24px 90px rgba(0,0,0,.9) !important;
+      z-index:99999 !important;
+    }
   }
 
   /* 移动端全屏旋转 (物理90°无损大屏) */
@@ -2158,10 +2172,14 @@ function renderPlayerCard(idx, animDir, autoPlay){
   var isLandscape = isCurrentVideoLandscape(idx);
   s.className = 'slide' + (animDir === 1 ? ' anim-up' : (animDir === -1 ? ' anim-down' : '')) + (isLandscape ? ' is-landscape' : '');
 
-  // 核心：若处于全屏模式，保持全屏横屏展开状态
+  // 核心：若处于全屏模式，根据当前视频是横屏还是竖屏智能决定是否旋转
   var player = $('player');
   if(player && player.classList.contains('is-fs-active')){
-    player.classList.add('is-rotated');
+    if(isLandscape){
+      player.classList.add('is-rotated');
+    } else {
+      player.classList.remove('is-rotated');
+    }
     updateUnifiedFullscreenBtn(true);
   }
 
@@ -2297,6 +2315,15 @@ videoEl.addEventListener('loadedmetadata', function(){
     if(s){
       if(isLand) s.classList.add('is-landscape');
       else s.classList.remove('is-landscape');
+    }
+    // 核心：若用户在视频元数据解析前就已点击了全屏，根据真实解析宽高比动态校准横竖屏
+    var player = $('player');
+    if(player && player.classList.contains('is-fs-active')){
+      if(isLand){
+        player.classList.add('is-rotated');
+      } else {
+        player.classList.remove('is-rotated');
+      }
     }
   }
 });
@@ -2487,19 +2514,31 @@ function enterUnifiedFullscreen(){
   var player = $('player');
   if(!player) return;
 
-  // 1. 核心需求：全屏时统一自动旋转横屏，进入沉浸横屏巨幕影院
-  player.classList.add('is-fs-active');
-  player.classList.add('is-rotated');
+  var isLandscape = isCurrentVideoLandscape(cur);
 
-  // 2. 尝试调用系统方向锁 (若系统支持)
-  try {
-    if(screen.orientation && screen.orientation.lock){
-      screen.orientation.lock('landscape').catch(function(){});
-    }
-  } catch(err){}
+  // 1. 核心状态：全屏模式激活
+  player.classList.add('is-fs-active');
+
+  // 2. 核心智能判断：
+  // 只有横屏视频 (如 16:9) 点击全屏才旋转为横屏巨幕；
+  // 竖屏视频 (如 9:16) 必须严格保持竖屏，绝不强行横屏旋转！
+  if(isLandscape){
+    player.classList.add('is-rotated');
+    try {
+      if(screen.orientation && screen.orientation.lock){
+        screen.orientation.lock('landscape').catch(function(){});
+      }
+    } catch(err){}
+  } else {
+    player.classList.remove('is-rotated');
+    try {
+      if(screen.orientation && screen.orientation.lock){
+        screen.orientation.lock('portrait').catch(function(){});
+      }
+    } catch(err){}
+  }
 
   // 3. Android 及 PC 浏览器：尝试调用 DOM 标准全屏
-  // 注意：苹果 iOS 使用 H5 页面内全屏与旋转，绝不调用原生视频全屏（防止系统播放器吞噬网页导致退出全屏图标消失）
   if(!isIOS()){
     var target = player || document.documentElement;
     try {
