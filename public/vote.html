@@ -1754,13 +1754,10 @@ function renderGallery(){
 
   WORKS.forEach(function(w, idx){
     var coverImg = w.coverUrl || '/images/kos_hero.jpg';
-    var isLiked = likedIds.indexOf(w.id) !== -1;
     var card = document.createElement('div');
     card.className = 'card';
     card.setAttribute('data-id', w.id);
-    card.onclick = function(e){
-      // 避免点击卡片点赞按钮时误触发进播放器
-      if(e.target && e.target.closest('.card-vote-btn')) return;
+    card.onclick = function(){
       openPlayer(idx);
     };
 
@@ -1772,14 +1769,7 @@ function renderGallery(){
         '<span class="card-cand-id">' + (w.id || pad(idx + 1)) + '</span>' +
       '</div>' +
       '<div class="card-meta">' +
-        '<div class="card-title-name">' +
-          '<div class="card-nm">' + (w.name || '参选人') + '</div>' +
-          '<!-- 卡片经典大拇指点赞手势与动效入口 (纯享点赞动效，不展示具体数字) -->' +
-          '<button class="card-vote-btn ' + (isLiked ? 'liked' : '') + '" id="cardVoteBtn_' + w.id + '" onclick="handleCardVoteClick(event, \'' + w.id + '\', ' + idx + ')" title="' + (isLiked ? '已点赞' : '点击为TA点赞') + '">' +
-            '<span class="card-vote-icon">' + renderThumbSvg(isLiked, 15) + '</span>' +
-            '<span class="card-vote-text" id="cardVotes_' + w.id + '">' + (isLiked ? '已赞' : '点赞') + '</span>' +
-          '</button>' +
-        '</div>' +
+        '<div class="card-nm">' + (w.name || '参选人') + '</div>' +
         '<div class="card-dp">' + (w.department || '汇添富') + ' · ' + (w.position || '创作者') + '</div>' +
         '<div class="card-vt">🎬 ' + (w.videoTitle || '自媒体短视频') + '</div>' +
       '</div>';
