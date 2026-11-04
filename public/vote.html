@@ -827,16 +827,7 @@
     color:#fff;
     letter-spacing:.3px;
   }
-  .info .no{
-    font-size:11px;
-    font-weight:700;
-    color:var(--gold-l,#FFEAA7);
-    background:rgba(0,0,0,.5);
-    padding:1px 7px;
-    border-radius:6px;
-    border:0.5px solid rgba(255,255,255,.2);
-    backdrop-filter:blur(6px);
-  }
+  .info .no{display:none!important}
   .info-title-row{
     display:flex;
     align-items:center;
@@ -934,15 +925,7 @@
     overflow-y:auto;
   }
 
-  .ctrl{
-    position:absolute;
-    right:14px;
-    bottom:calc(50px + env(safe-area-inset-bottom, 0px));
-    z-index:10;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-  }
+  .ctrl{display:none!important}
   .ctrl .ctrl-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
   .ctrl .btn-circle{width:56px;height:56px;border-radius:50%;background:rgba(20,18,25,.65);border:1.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:rgba(255,255,255,.92);box-shadow:0 4px 20px rgba(0,0,0,.5);transition:all .25s cubic-bezier(0.34,1.56,0.64,1)}
   .ctrl .btn-circle:active{transform:scale(.88)}
@@ -1230,7 +1213,6 @@
         <div class="info-collapsed-bar" id="infoCollapsedBar" onclick="toggleInfoDrawer(event)">
           <div class="info-header-line">
             <span class="nmm" id="pName">@创作者</span>
-            <span class="no" id="pNo">作品 01</span>
           </div>
           <div class="info-title-row">
             <span class="vtt-compact" id="pTitleCompact">🎬 视频提案</span>
@@ -1249,16 +1231,6 @@
           </div>
           <div class="vtt" id="pTitle"></div>
           <div class="vii" id="pIntro"></div>
-        </div>
-      </div>
-
-      <!-- 右侧悬浮操作栏 (经典大拇指点赞手势与动效入口) -->
-      <div class="ctrl">
-        <div class="ctrl-item" id="ctrlVoteItem">
-          <div class="btn-circle vote-capsule-btn" id="btnLike" title="双击屏幕或点击点赞">
-            <!-- 点赞矢量徽章由 renderPlayerLikeState 动态注入 -->
-          </div>
-          <span class="ctrl-label" id="pLikeLabel">点赞</span>
         </div>
       </div>
 
