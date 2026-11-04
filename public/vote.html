@@ -1162,10 +1162,7 @@
     </div>
 
     <div class="gallery-actions" style="justify-content:flex-end">
-      <div style="display:flex;gap:6px">
-        <button class="btn ghost" id="btnOpenLeaderboard" style="padding:6px 12px;font-size:12.5px;width:auto">🏆 实时榜单</button>
-        <button class="btn sec" id="btnGoPlayer" style="padding:6px 14px;font-size:12.5px;width:auto">▶ 沉浸刷视频</button>
-      </div>
+      <button class="btn sec" id="btnGoPlayer" style="padding:6px 14px;font-size:12.5px;width:auto">▶ 沉浸刷视频</button>
     </div>
 
     <!-- 作品展示容器 (支持真实视频封面预览，点击直达播放) -->
@@ -1188,10 +1185,6 @@
           <span class="fullscreen-icon" id="fullscreenIcon">⛶</span>
           <span class="fullscreen-txt" id="fullscreenTxt">全屏</span>
         </div>
-      </div>
-
-      <div class="float-meta-badge" id="floatLikeHint">
-        <span>双击屏幕点赞 👍</span>
       </div>
     </div>
 
@@ -1259,16 +1252,6 @@
         </div>
       </div>
 
-      <!-- 右侧悬浮操作栏 (抖音同款点赞交互) -->
-      <div class="ctrl">
-        <div class="ctrl-item" id="ctrlVoteItem">
-          <div class="btn-circle vote-capsule-btn liked" id="btnLike" title="双击屏幕或点击点赞">
-            <!-- 点赞矢量徽章由 renderPlayerLikeState 动态注入 -->
-          </div>
-          <span class="ctrl-votes-badge" id="pVoteCountBadge">0 赞</span>
-        </div>
-      </div>
-
       <!-- 投票推荐点赞震撼炸裂动效 (巨型点赞 + 星芒粒子) -->
       <div class="big-star-burst" id="bigHeart">
         <div class="thumb-burst-halo"></div>
@@ -1314,7 +1297,6 @@
       您的投票已提交成功。
     </div>
     <div style="padding:0 24px;display:flex;flex-direction:column;gap:10px">
-      <button class="btn" id="btnEndViewLeaderboard">🏆 查看当前投票排行榜</button>
       <button class="btn ghost" id="btnBackGallery">继续浏览作品展示（只读）</button>
     </div>
   </section>
@@ -1379,7 +1361,7 @@
       <div class="sidebar-header">
         <span class="sidebar-tag">汇添富 · 星火计划</span>
         <h3 class="sidebar-title">手机微信扫码直达展播</h3>
-        <p class="sidebar-sub">手机微信扫一扫，免登录直接浏览作品，双击屏幕随时点赞</p>
+        <p class="sidebar-sub">手机微信扫一扫，免登录直接浏览作品，畅享沉浸式展播体验</p>
       </div>
 
       <div class="qr-container-box">
@@ -1762,32 +1744,22 @@ function renderGallery(){
 
   WORKS.forEach(function(w, idx){
     var coverImg = w.coverUrl || '/images/kos_hero.jpg';
-    var isLiked = likedIds.indexOf(w.id) !== -1;
     var card = document.createElement('div');
     card.className = 'card';
     card.setAttribute('data-id', w.id);
-    card.onclick = function(e){
-      // 避免点击放大点赞按钮时误触发进播放器
-      if(e.target && e.target.closest('.card-vote-btn')) return;
+    card.onclick = function(){
       openPlayer(idx);
     };
 
     card.innerHTML = 
       '<div class="card-cover-box">' +
-        '<img src="' + coverImg + '" alt="' + w.name + '" class="card-cover-img" loading="lazy" onerror="this.src=\'/images/kos_hero.jpg\'" />' +
+        '<img src="' + coverImg + '" alt="' + (w.name || '参选人') + '" class="card-cover-img" loading="lazy" onerror="this.src=\'/images/kos_hero.jpg\'" />' +
         '<div class="cover-overlay"></div>' +
         '<div class="card-play-icon">▶</div>' +
         '<span class="card-cand-id">' + (w.id || pad(idx + 1)) + '</span>' +
       '</div>' +
       '<div class="card-meta">' +
-        '<div class="card-title-name">' +
-          '<div class="card-nm">' + (w.name || '参选人') + '</div>' +
-          '<!-- 需求：放大作为点赞交互按钮 (去重计票+弹跳+飞赞动效) -->' +
-          '<button class="card-vote-btn ' + (isLiked ? 'liked' : '') + '" id="cardVoteBtn_' + w.id + '" onclick="handleCardVoteClick(event, \'' + w.id + '\', ' + idx + ')" title="' + (isLiked ? '已点赞' : '点击为TA点赞') + '">' +
-            '<span class="card-vote-icon">' + renderThumbSvg(isLiked, 16) + '</span>' +
-            '<span class="card-vote-text" id="cardVotes_' + w.id + '">' + (w.votesCount || 0) + ' 票</span>' +
-          '</button>' +
-        '</div>' +
+        '<div class="card-nm">' + (w.name || '参选人') + '</div>' +
         '<div class="card-dp">' + (w.department || '汇添富') + ' · ' + (w.position || '创作者') + '</div>' +
         '<div class="card-vt">🎬 ' + (w.videoTitle || '自媒体短视频') + '</div>' +
       '</div>';
@@ -1847,7 +1819,7 @@ function handleCardVoteClick(e, candidateId, idx){
       var badge = $('pVoteCountBadge');
       if(badge) badge.textContent = cand.votesCount + ' 赞';
       var noEl = $('pNo');
-      if(noEl) noEl.innerHTML = (cand.id || pad(cur + 1)) + ' · <strong>' + cand.votesCount + ' 赞</strong>';
+      if(noEl) noEl.textContent = (cand.id || pad(cur + 1));
       var pBtnLike = $('btnLike');
       if(pBtnLike){
         pBtnLike.innerHTML = renderThumbSvg(true, 28);
@@ -1933,7 +1905,7 @@ function triggerDouyinScreenLike(x, y){
     var badge = $('pVoteCountBadge');
     if(badge) badge.textContent = currentWork.votesCount + ' 赞';
     var noEl = $('pNo');
-    if(noEl) noEl.innerHTML = (currentWork.id || pad(cur + 1)) + ' · <strong>' + currentWork.votesCount + ' 赞</strong>';
+    if(noEl) noEl.textContent = (currentWork.id || pad(cur + 1));
     var cardVotesEl = $('cardVotes_' + candId);
     if(cardVotesEl) cardVotesEl.textContent = currentWork.votesCount + ' 票';
     var cardBtn = $('cardVoteBtn_' + candId);
@@ -2041,7 +2013,7 @@ async function sendLikesToBackend(candidateId){
           var badge = $('pVoteCountBadge');
           if(badge) badge.textContent = cand.votesCount + ' 赞';
           var noEl = $('pNo');
-          if(noEl) noEl.innerHTML = (cand.id || pad(cur + 1)) + ' · <strong>' + cand.votesCount + ' 赞</strong>';
+          if(noEl) noEl.textContent = (cand.id || pad(cur + 1));
         }
         var cardVotesEl = $('cardVotes_' + candidateId);
         if(cardVotesEl) cardVotesEl.textContent = cand.votesCount + ' 票';
@@ -2172,10 +2144,9 @@ function renderPlayerCard(idx, animDir, autoPlay){
 function renderPlayerLikeState(candId){
   var w = WORKS[cur];
   if(!w) return;
-  var votes = (typeof w.votesCount === 'number') ? w.votesCount : 0;
   var noEl = $('pNo');
   if(noEl){
-    noEl.innerHTML = (w.id || pad(cur + 1)) + ' · <strong>' + votes + ' 赞</strong>';
+    noEl.textContent = (w.id || pad(cur + 1));
   }
   
   var isLiked = likedIds.indexOf(w.id) !== -1;
@@ -2188,7 +2159,7 @@ function renderPlayerLikeState(candId){
 
   var badge = $('pVoteCountBadge');
   if(badge){
-    badge.textContent = votes + ' 赞';
+    badge.textContent = ((typeof w.votesCount === 'number') ? w.votesCount : 0) + ' 赞';
   }
 }
 
@@ -2576,12 +2547,15 @@ if(btnFs){
 }
 
 /* 播放器内右侧心形点赞按钮绑定 */
-$('btnLike').onclick = function(e){
-  e.stopPropagation();
-  var rect = $('btnLike').getBoundingClientRect();
-  var stageRect = stage.getBoundingClientRect();
-  triggerDouyinScreenLike(rect.left - stageRect.left + rect.width / 2, rect.top - stageRect.top + rect.height / 2);
-};
+var btnLikeEl = $('btnLike');
+if(btnLikeEl){
+  btnLikeEl.onclick = function(e){
+    e.stopPropagation();
+    var rect = btnLikeEl.getBoundingClientRect();
+    var stageRect = stage.getBoundingClientRect();
+    triggerDouyinScreenLike(rect.left - stageRect.left + rect.width / 2, rect.top - stageRect.top + rect.height / 2);
+  };
+}
 
 /* ==========================================
  * 底部视频拖拽快进/快退进度条交互控制器 (支持点击跳转、平滑拖拽、触控事件、时间气泡实时显示)
@@ -2820,38 +2794,9 @@ function handleSwipeEnd(e){
   }
 }
 
-/* 核心：抖音同款多击/双击“戳戳戳”与单次暂停防冲撞调度器 */
-var singleTapTimer = null;
-var lastScreenTapTs = 0;
-var isMultiTapping = false;
-var multiTapResetTimer = null;
-
+/* 核心：屏幕轻触播放/暂停调度器 */
 function handleScreenTap(clientX, clientY, e){
-  var now = Date.now();
-  var diff = now - lastScreenTapTs;
-  lastScreenTapTs = now;
-
-  var stageRect = stage.getBoundingClientRect();
-  var relX = clientX - stageRect.left;
-  var relY = clientY - stageRect.top;
-
-  if(diff < 360){
-    // 连续轻触 / 双击 / “戳戳戳”点赞！
-    clearTimeout(singleTapTimer);
-    singleTapTimer = null;
-    isMultiTapping = true;
-    clearTimeout(multiTapResetTimer);
-    multiTapResetTimer = setTimeout(function(){ isMultiTapping = false; }, 600);
-
-    triggerDouyinScreenLike(relX, relY);
-  } else {
-    // 单击：延迟 240ms 判断是否为双击的第一拍
-    singleTapTimer = setTimeout(function(){
-      if(!isMultiTapping){
-        safeTogglePlay(e);
-      }
-    }, 240);
-  }
+  safeTogglePlay(e);
 }
 
 stage.addEventListener('touchend', handleSwipeEnd, { passive: false });
@@ -3037,10 +2982,10 @@ async function loadLeaderboard(){
   }
 }
 
-$('btnOpenLeaderboard').onclick = loadLeaderboard;
-$('btnEndViewLeaderboard').onclick = loadLeaderboard;
-$('btnRefreshLb').onclick = loadLeaderboard;
-$('lbClose').onclick = function(){ hide_($('leaderboardMask')); };
+if($('btnOpenLeaderboard')) $('btnOpenLeaderboard').onclick = loadLeaderboard;
+if($('btnEndViewLeaderboard')) $('btnEndViewLeaderboard').onclick = loadLeaderboard;
+if($('btnRefreshLb')) $('btnRefreshLb').onclick = loadLeaderboard;
+if($('lbClose')) $('lbClose').onclick = function(){ hide_($('leaderboardMask')); };
 
 /* ===== 8. 微信内置浏览器防误滑退出与后退拦截系统 (Smart Back & Exit Guard) ===== */
 var isExitModalOpen = false;
