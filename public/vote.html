@@ -9,7 +9,7 @@
 <meta name="browsermode" content="application">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>星火计划 · 创作者选拔投票</title>
+<title>星火计划 · 参赛作品</title>
 <style>
   :root{
     --brown:#4a2c10; --gold:#b8860b; --gold-l:#e8c766; --cream:#f6f3ee;
@@ -697,6 +697,76 @@
     box-shadow:0 0 18px rgba(245, 158, 11, 0.8), 0 2px 8px rgba(0,0,0,0.5) !important;
   }
 
+  /* 核心：声音/静音切换控制按钮 */
+  .btn-float-sound{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    background:rgba(0,0,0,.55);
+    border:1.5px solid rgba(255,255,255,.32);
+    border-radius:99px;
+    padding:6px 12px;
+    font-size:12px;
+    font-weight:700;
+    color:#fff;
+    cursor:pointer;
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    transition:all .2s ease;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:manipulation;
+    box-shadow:0 2px 10px rgba(0,0,0,.4);
+    white-space:nowrap;
+    flex-shrink:0;
+    pointer-events:auto !important;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn-float-sound:active{transform:scale(.92);background:rgba(255,255,255,.3)}
+  .btn-float-sound.is-muted{
+    background:rgba(225,29,72,.75) !important;
+    border-color:rgba(255,180,190,.9) !important;
+  }
+  .btn-float-sound .sound-icon{font-size:13px;line-height:1}
+
+  /* 静音保护提示胶囊 (若遭遇 iOS 静音自动起播，浮现柔和提示引导点击开启) */
+  .mute-hint-pill{
+    position:absolute;
+    top:calc(58px + env(safe-area-inset-top, 0px));
+    left:50%;
+    transform:translateX(-50%);
+    z-index:26;
+    display:flex;
+    align-items:center;
+    gap:7px;
+    background:rgba(25,20,15,.92);
+    border:1px solid rgba(245,158,11,.8);
+    color:#FFEAA7;
+    padding:7px 16px;
+    border-radius:99px;
+    font-size:12.5px;
+    font-weight:700;
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    box-shadow:0 6px 22px rgba(0,0,0,.6);
+    cursor:pointer;
+    pointer-events:auto;
+    white-space:nowrap;
+    animation:muteFloat 2s ease-in-out infinite alternate;
+  }
+  @keyframes muteFloat{
+    0%{transform:translateX(-50%) translateY(0)}
+    100%{transform:translateX(-50%) translateY(-3px)}
+  }
+  .mute-hint-pill:active{transform:translateX(-50%) scale(.95)}
+  .mute-hint-pill .pulse-dot{
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#ff4757;
+    box-shadow:0 0 8px #ff4757;
+  }
+
   /* 横屏旋转全屏时，强制视频完整展现，绝不被任何比例拉伸裁剪 */
   #player.is-rotated #videoEl{
     object-fit:contain !important;
@@ -1128,7 +1198,7 @@
       <!-- 微信顶栏 (桌面端独有) -->
       <div class="wechat-header-bar">
         <div class="wx-left">
-          <span class="wx-title">星火计划 · 创作者选拔投票</span>
+          <span class="wx-title">星火计划 · 参赛作品</span>
         </div>
         <div class="wx-right">
           <span class="wx-more-dots">···</span>
@@ -1141,7 +1211,7 @@
   <!-- ============ 作品展播列表页 (真实视频有效画面封面 + 抖音同款点赞) ============ -->
   <section id="gallery">
     <div class="topbar">
-      <span class="title" id="gTitle">星火计划 · 创作者展播</span>
+      <span class="title" id="gTitle">星火计划 · 参赛作品</span>
       <span class="pill" id="pillTotalWorks">全部参选作品 (0)</span>
     </div>
 
@@ -1162,14 +1232,26 @@
         <span class="back-txt">返回</span>
       </div>
 
-      <!-- 中间操作按钮胶囊组：只保留一个全屏按钮 -->
+      <!-- 顶部操作按钮胶囊组：声音开关 + 全屏按钮 -->
       <div class="player-top-actions">
+        <!-- 核心：声音开关 (支持一键切换静音/有声，状态实时同步) -->
+        <div class="btn-float-sound" id="btnSoundToggle" title="切换声音">
+          <span class="sound-icon" id="soundIcon">🔊</span>
+          <span class="sound-txt" id="soundTxt">声音</span>
+        </div>
+
         <!-- 核心：唯一全屏播放按钮 (智能全屏横竖屏切换，退出自动回退竖屏) -->
         <div class="btn-float-fullscreen" id="btnFullscreen" title="开启全屏播放">
           <span class="fullscreen-icon" id="fullscreenIcon">⛶</span>
           <span class="fullscreen-txt" id="fullscreenTxt">全屏</span>
         </div>
       </div>
+    </div>
+
+    <!-- 静音保护提示条 (若 iOS / 微信触发静音自动起播，浮现引导一键开声) -->
+    <div class="mute-hint-pill hide" id="muteHintPill" onclick="unmuteVideoImmediately(event)">
+      <span class="pulse-dot"></span>
+      <span>正在静音播放，点击开启声音 🔊</span>
     </div>
 
     <div id="stage">
@@ -1706,7 +1788,7 @@ async function loadWorks(){
   CFG.total = WORKS.length;
   if($('pillTotalWorks')) $('pillTotalWorks').textContent = '全部参选作品 (' + CFG.total + ')';
   if($('sTotal')) $('sTotal').textContent = CFG.total;
-  if($('gTitle')) $('gTitle').textContent = '星火计划 · 创作者展播';
+  if($('gTitle')) $('gTitle').textContent = '星火计划 · 参赛作品';
 }
 
 function updatePills(){
@@ -1731,6 +1813,10 @@ function renderGallery(){
     card.className = 'card';
     card.setAttribute('data-id', w.id);
     card.onclick = function(){
+      try {
+        videoEl.muted = false;
+        videoEl.volume = 1.0;
+      } catch(e){}
       openPlayer(idx);
     };
 
@@ -2032,6 +2118,90 @@ window.executeToggleVote = function(candidateId){
   triggerDouyinScreenLike(stageRect.width / 2, stageRect.height / 2);
 };
 
+/* ==================================================
+ * 核心：全局音效与声音状态智能管理 (全面适配 iOS 17/18、iPhone 16 Pro Max、微信内置浏览器)
+ * ================================================== */
+var userExplicitlyMuted = false;
+
+function updateSoundUI(){
+  var isMuted = videoEl.muted || videoEl.volume === 0;
+  var btn = $('btnSoundToggle');
+  var icon = $('soundIcon');
+  var txt = $('soundTxt');
+  if(btn){
+    if(isMuted){
+      btn.classList.add('is-muted');
+      if(icon) icon.textContent = '🔇';
+      if(txt) txt.textContent = '静音中';
+    } else {
+      btn.classList.remove('is-muted');
+      if(icon) icon.textContent = '🔊';
+      if(txt) txt.textContent = '声音开';
+    }
+  }
+}
+
+function showMuteNotice(showNotice){
+  var pill = $('muteHintPill');
+  if(!pill) return;
+  if(showNotice){
+    show(pill);
+    clearTimeout(window._muteNoticeTimer);
+    window._muteNoticeTimer = setTimeout(function(){
+      hide_(pill);
+    }, 4500);
+  } else {
+    hide_(pill);
+  }
+}
+
+window.unmuteVideoImmediately = function(e){
+  if(e){
+    e.stopPropagation();
+    if(e.cancelable && e.type === 'touchend') e.preventDefault();
+  }
+  userExplicitlyMuted = false;
+  try {
+    videoEl.muted = false;
+    videoEl.volume = 1.0;
+  } catch(err){}
+  showMuteNotice(false);
+  updateSoundUI();
+  if(videoEl.paused){
+    videoEl.play().catch(function(){});
+  }
+  toast('已开启声音 🔊');
+};
+
+function toggleSound(e){
+  if(e){
+    e.stopPropagation();
+    if(e.cancelable && e.type === 'touchend') e.preventDefault();
+  }
+  try {
+    if(videoEl.muted || videoEl.volume === 0){
+      userExplicitlyMuted = false;
+      videoEl.muted = false;
+      videoEl.volume = 1.0;
+      showMuteNotice(false);
+      toast('声音已开启 🔊');
+    } else {
+      userExplicitlyMuted = true;
+      videoEl.muted = true;
+      showMuteNotice(false);
+      toast('已切换为静音 🔇');
+    }
+  } catch(err){
+    console.warn('Toggle sound error:', err);
+  }
+  updateSoundUI();
+}
+
+var btnSound = $('btnSoundToggle');
+if(btnSound){
+  btnSound.onclick = toggleSound;
+}
+
 /* ===== 核心：沉浸流播放器 (默认竖屏播放，点击全屏再展开) ===== */
 function openPlayer(idx){
   if(WORKS.length === 0) return;
@@ -2046,6 +2216,15 @@ function openPlayer(idx){
   show(player);
   document.body.style.overflow = 'hidden';
   pushGuardHistory('player');
+
+  // 【核心修复】：在用户点击卡片的同步手势上下文中直接解锁有声播放
+  try {
+    videoEl.muted = false;
+    videoEl.volume = 1.0;
+  } catch(e){}
+  updateSoundUI();
+  showMuteNotice(false);
+
   renderPlayerCard(cur, 0, true); // 点击进去，直接播放！
   updateUnifiedFullscreenBtn(false);
 }
@@ -2072,23 +2251,22 @@ function renderPlayerCard(idx, animDir, autoPlay){
     ambientEl.style.backgroundImage = (isLandscape && w.coverUrl) ? 'url(' + w.coverUrl + ')' : '';
   }
 
-  // 1. 彻底暂停并停止上一段视频的后台网络缓冲，释放移动端内存
+  // 1. 切换视频源：平滑切换，避免反复 removeAttribute/load 导致 iOS WebKit 用户手势授权丢失
   try {
     videoEl.pause();
-    videoEl.removeAttribute('src');
-    videoEl.load();
   } catch(e){}
   isPlaying = false;
   hide_($('videoBuffering'));
   
-  // 核心：利用 poster 预载首帧真实有效画面
   if(w.coverUrl){
     videoEl.poster = w.coverUrl;
   }
-  if(w.videoUrl){
+  if(w.videoUrl && videoEl.src !== w.videoUrl){
     videoEl.src = w.videoUrl;
-    videoEl.load();
   }
+  try {
+    videoEl.currentTime = 0;
+  } catch(e){}
 
   // 2. 填充候选人文字信息与点赞状态 (需求2：默认收起折叠面板，绝不遮挡底部字幕)
   renderPlayerLikeState(w.id);
@@ -2248,7 +2426,7 @@ videoEl.addEventListener('error', function(err){
   console.warn('Video element error:', err);
 });
 
-/* 核心：直接开播函数 (带移动端静音策略自动降级，确保 100% 自动播放成功) */
+/* 核心：直接开播函数 (带移动端静音策略自动降级与状态通知，确保 100% 自动播放成功) */
 function doPlayVideo(){
   if(!videoEl.src) return;
   show($('videoBuffering'));
@@ -2258,11 +2436,15 @@ function doPlayVideo(){
       hide_($('videoBuffering'));
       hide_($('playCenterBtn'));
       isPlaying = true;
+      updateSoundUI();
+      showMuteNotice(videoEl.muted);
     }).catch(function(err){
       console.warn('Playback with audio rejected, falling back to muted autoplay:', err);
       hide_($('videoBuffering'));
       // 移动端 Safari / 微信策略限制有声自动播放：静音后立即自动起播
       videoEl.muted = true;
+      updateSoundUI();
+      showMuteNotice(true);
       videoEl.play().then(function(){
         hide_($('videoBuffering'));
         hide_($('playCenterBtn'));
@@ -2298,21 +2480,36 @@ function safeTogglePlay(e){
   var now = Date.now();
   if(now - lastActionTs < 350) return; // 拦截 350ms 内重复 click/touchend 事件
   lastActionTs = now;
-  if(videoEl.muted){
-    videoEl.muted = false; // 用户首次触控，自动解除可能的静音状态
+  if(videoEl.muted && !userExplicitlyMuted){
+    try {
+      videoEl.muted = false; // 用户触控，自动解除可能的静音状态
+      videoEl.volume = 1.0;
+      updateSoundUI();
+      showMuteNotice(false);
+    } catch(err){}
   }
   toggleVideoPlay();
 }
 
 $('playCenterBtn').onclick = safeTogglePlay;
 
-/* 上下滑动切换卡片 (双向循环切换 + 滑动直接起播) */
+/* 上下滑动切换卡片 (双向循环切换 + 滑动直接起播 + 状态平滑继承) */
 function switchCard(dir){
   if(!WORKS || WORKS.length === 0) return;
   if(WORKS.length === 1){
     toast('仅有 1 个参赛作品');
     return;
   }
+
+  // 核心：若前一个作品有声播放且用户未主动静音，切换作品时保持有声状态
+  if(!userExplicitlyMuted){
+    try {
+      videoEl.muted = false;
+      videoEl.volume = 1.0;
+    } catch(e){}
+  }
+  updateSoundUI();
+  showMuteNotice(false);
 
   // 循环取模：首位往上滑循环到末尾，末位往下滑循环回首位，彻底打破边界死锁！
   cur = (cur + dir + WORKS.length) % WORKS.length;
@@ -2490,9 +2687,15 @@ function closePlayer(){
   if(player){
     player.classList.remove('is-rotated');
   }
-  videoEl.pause();
-  videoEl.removeAttribute('src');
-  videoEl.load();
+  try {
+    videoEl.pause();
+    videoEl.currentTime = 0;
+    // 退出播放器时重置有声状态，平滑保留 WebKit 媒体上下文
+    videoEl.muted = false;
+    videoEl.volume = 1.0;
+  } catch(e){}
+  showMuteNotice(false);
+  updateSoundUI();
   hide_(player);
   document.body.style.overflow = '';
   go('gallery');
@@ -2797,6 +3000,16 @@ var isMultiTapping = false;
 var multiTapResetTimer = null;
 
 function handleScreenTap(clientX, clientY, e){
+  // 核心：若此前处于静音状态且非用户刻意静音，任何屏幕触碰手势在原生交互栈内立即同步解锁有声！
+  if(videoEl.muted && !userExplicitlyMuted){
+    try {
+      videoEl.muted = false;
+      videoEl.volume = 1.0;
+      updateSoundUI();
+      showMuteNotice(false);
+    } catch(err){}
+  }
+
   var now = Date.now();
   var diff = now - lastScreenTapTs;
   lastScreenTapTs = now;
